@@ -9,7 +9,10 @@
 - **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。
 - **只有 `Date` 是假的**，固定在 2026-10-24（`src/test/fixedToday.ts`，E2E 共用）。`setTimeout` 等計時器是真的，所以 user-event、`findBy*`、toast 自動消失都照常運作。
 - **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
-- **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）與 `ResizeObserver`（Radix `Checkbox`、`RadioGroup`）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
+- **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）、`ResizeObserver`（Radix `Checkbox`、`RadioGroup`）與 `Element.prototype.setPointerCapture` 等 pointer capture 方法（點 sonner toast 上的按鈕）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
+- **sonner toast 跨測試殘留**：toast 存在 sonner 的模組層級狀態，`<Toaster />` 掛載時會重播還沒消失的 toast，所以上一個測試的「復原」按鈕會跑到下一個測試。`src/test/setup.ts` 的 `afterEach` 已呼叫 `toast.dismiss()`，新增 toast 不用再處理；但同一個測試裡連續刪除兩次，畫面上會同時有兩個「復原」，要先等前一個消失或改用 `getAllByRole`。
+- **toast 的按鈕用 role 取**：`await screen.findByRole('button', { name: '復原' })`；訊息用 `findByText('已刪除一組')`。自動消失靠真實計時器，要驗證「約 5 秒後消失」只能真的等，測試要調高 timeout（例如 `it(..., 10_000)`），這類測試只寫一個。
+- **刪除、排序後畫面是非同步更新**：寫入 IndexedDB 後由 live query 重新渲染，點完「刪除第 2 組」「上移」後用 `waitFor` 斷言結果，不要立刻 `getBy*`。
 - **長字串用 `user.paste`**：測字數上限時 `user.type` 一字一字打很慢，先 `user.click(欄位)` 再 `user.paste('臥'.repeat(41))`。
 - **shadcn／Radix 元件的實際 role**：
   - `ToggleGroup type="single"` 是 `radiogroup`／`radio`：`getByRole('radio', { name: '肩' })`、`toBeChecked()`

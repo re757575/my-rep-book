@@ -16,7 +16,15 @@ export {
   addSetToWorkoutExercise,
   cloneSetForNext,
   emptySetValues,
+  moveWorkoutExercise,
+  removeSet,
+  removeWorkoutExercise,
+  restoreSet,
+  restoreWorkoutExercise,
   updateSetValues,
+  updateWorkoutExerciseNote,
   type EditContext,
+  type RemovedSet,
+  type RemovedWorkoutExercise,
 } from './workoutEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
