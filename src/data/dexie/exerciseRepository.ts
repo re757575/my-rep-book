@@ -6,7 +6,6 @@ import {
 } from '@/domain'
 import type { ExerciseRepository } from '../repositories'
 import type { CustomExerciseRow, MyRepBookDb } from './db'
-import { notImplemented } from './notImplemented'
 
 function toRow(exercise: CustomExercise): CustomExerciseRow {
   return { ...exercise, nameKey: normalizeExerciseName(exercise.nameZh) }
@@ -17,6 +16,17 @@ function toCustomExercise({ nameKey: _nameKey, ...exercise }: CustomExerciseRow)
 }
 
 export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseRepository {
+  /** 更新自訂動作的部分欄位，並刷新更新時間 */
+  async function patchCustom(id: string, patch: Partial<CustomExercise>) {
+    await db.transaction('rw', db.customExercises, async () => {
+      const row = await db.customExercises.get(id)
+      if (!row) throw new Error(`找不到自訂動作 ${id}`)
+      await db.customExercises.put(
+        toRow({ ...toCustomExercise(row), ...patch, updatedAt: new Date().toISOString() }),
+      )
+    })
+  }
+
   return {
     listAll() {
       return db.transaction('r', db.hiddenPresets, db.customExercises, async () => {
@@ -56,18 +66,26 @@ export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseReposito
       return exercise
     },
 
-    async updateCustom(id, input) {
-      await db.transaction('rw', db.customExercises, async () => {
-        const row = await db.customExercises.get(id)
-        if (!row) throw new Error(`找不到自訂動作 ${id}`)
-        await db.customExercises.put(
-          toRow({ ...toCustomExercise(row), ...input, updatedAt: new Date().toISOString() }),
-        )
-      })
+    updateCustom(id, input) {
+      return patchCustom(id, input)
     },
 
-    archiveCustom: notImplemented('ExerciseRepository.archiveCustom'),
-    unarchiveCustom: notImplemented('ExerciseRepository.unarchiveCustom'),
-    deleteCustom: notImplemented('ExerciseRepository.deleteCustom'),
+    archiveCustom(id) {
+      return patchCustom(id, { archived: true })
+    },
+
+    unarchiveCustom(id) {
+      return patchCustom(id, { archived: false })
+    },
+
+    async deleteCustom(id) {
+      await db.transaction('rw', db.customExercises, db.workouts, async () => {
+        // 已有紀錄的動作只能封存，避免訓練引用到不存在的動作
+        if ((await db.workouts.where('exerciseIds').equals(id).count()) > 0) {
+          throw new Error(`自訂動作 ${id} 已有紀錄，無法刪除`)
+        }
+        await db.customExercises.delete(id)
+      })
+    },
   }
 }
