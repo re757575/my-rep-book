@@ -10,3 +10,12 @@ export {
   TRACKING_TYPE_LABELS,
 } from './labels'
 export { isHiddenOrArchived } from './library'
+export { formatDateTitle, toLocalDate } from './dates'
+export {
+  addExerciseToWorkout,
+  addSetToWorkoutExercise,
+  cloneSetForNext,
+  emptySetValues,
+  updateSetValues,
+  type EditContext,
+} from './workoutEdits'

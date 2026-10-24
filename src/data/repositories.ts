@@ -14,6 +14,11 @@ export interface WorkoutRepository {
   getByDate(date: LocalDate): Promise<Workout | undefined>
   /** 新增或覆寫該日期的訓練；衍生欄位由實作自動推導 */
   save(workout: Workout): Promise<void>
+  /**
+   * 在單一 transaction 中讀取該日期的訓練（沒有時為 undefined）、套用 `change` 後寫回；
+   * 衍生欄位由實作自動推導。連續快速編輯時用這個方法，才不會以過時的資料覆寫掉前一次的變更。
+   */
+  update(date: LocalDate, change: (current: Workout | undefined) => Workout): Promise<void>
   delete(date: LocalDate): Promise<void>
   /** 列出包含該動作的訓練，由新到舊；`before` 不含當天 */
   listByExercise(
