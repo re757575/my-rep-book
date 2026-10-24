@@ -288,7 +288,7 @@ export type SetValues =
 | `weightKg` | 是 | ≥ 0；以顯示單位輸入時最多 2 位小數 | `inputmode="decimal"` |
 | `reps` | 是 | 正整數，1–9999 | `inputmode="numeric"` |
 | `addedWeightKg` | 否 | ≥ 0；最多 2 位小數 | `inputmode="decimal"` |
-| `durationSec` | 是 | > 0；以 `mm:ss` 輸入，mm 為 0–999，ss 為 0–59 | `inputmode="numeric"` |
+| `durationSec` | 是 | > 0；以 `mm:ss` 輸入，mm 為 0–999，ss 為 0–59。也接受只輸入數字，最後兩位當作秒數（`130` 即 1:30），因為 iOS 數字鍵盤沒有冒號；儲存後一律顯示成 `mm:ss`（如 `01:30`） | `inputmode="numeric"` |
 | `distanceKm` | 是 | ≥ 0；最多 2 位小數 | `inputmode="decimal"` |
 
 不合法的輸入在欄位下方即時顯示錯誤，且不寫入儲存（保留上一個合法值或 null）。
