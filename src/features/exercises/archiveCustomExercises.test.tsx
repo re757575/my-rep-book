@@ -144,7 +144,9 @@ describe('封存有紀錄的自訂動作', () => {
     await goToTab(user, '今天')
     await user.click(await screen.findByRole('button', { name: '加入動作' }))
     const dialog = await screen.findByRole('dialog', { name: '加入動作' })
-    expect(await within(dialog).findByRole('button', { name: /^Smith 臥推/ })).toBeInTheDocument()
+    // 它已有紀錄，也會出現在「最近使用」，所以只看全部動作的清單
+    const list = await within(dialog).findByRole('list', { name: '動作清單' })
+    expect(within(list).getByRole('button', { name: /^Smith 臥推/ })).toBeInTheDocument()
   })
 })
 

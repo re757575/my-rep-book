@@ -38,5 +38,10 @@ export function createDexieWorkoutRepository(db: MyRepBookDb): WorkoutRepository
     async hasAnyWithExercise(exerciseId) {
       return (await db.workouts.where('exerciseIds').equals(exerciseId).count()) > 0
     },
+
+    async listRecent({ limit, offset = 0 }) {
+      const rows = await db.workouts.orderBy('date').reverse().offset(offset).limit(limit).toArray()
+      return rows.map(toWorkout)
+    },
   }
 }

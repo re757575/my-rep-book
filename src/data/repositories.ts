@@ -28,6 +28,8 @@ export interface WorkoutRepository {
   /** 列出區間內（含頭尾）有訓練的日期 */
   listDatesInRange(from: LocalDate, to: LocalDate): Promise<LocalDate[]>
   hasAnyWithExercise(exerciseId: string): Promise<boolean>
+  /** 列出訓練，由新到舊；用於分批往前找最近使用的動作 */
+  listRecent(options: { limit: number; offset?: number }): Promise<Workout[]>
 }
 
 /** 新增或編輯自訂動作時的欄位 */

@@ -28,3 +28,4 @@ export {
   type EditContext,
 } from './workoutEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
+export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'

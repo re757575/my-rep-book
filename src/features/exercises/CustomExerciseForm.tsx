@@ -152,12 +152,17 @@ function SingleChoiceGroup<T extends string>({
   )
 }
 
+/** 「取消」的行為：連到某個路由（獨立頁面），或交給呼叫端處理（例如在加入動作選單中返回清單） */
+type CancelAction =
+  { cancelTo: string; onCancel?: never } | { onCancel: () => void; cancelTo?: never }
+
 /** 新增與編輯自訂動作共用的表單 */
 export function CustomExerciseForm({
   defaultValues,
   existing,
   excludeId,
   cancelTo,
+  onCancel,
   trackingTypeLocked = false,
   onSubmit,
 }: {
@@ -166,11 +171,10 @@ export function CustomExerciseForm({
   existing: readonly ExerciseBase[]
   /** 編輯時排除動作自己 */
   excludeId?: string
-  cancelTo: string
   /** 動作已有紀錄時鎖定記錄類型，避免舊資料的欄位對不上 */
   trackingTypeLocked?: boolean
   onSubmit: (input: CustomExerciseInput) => Promise<void>
-}) {
+} & CancelAction) {
   const {
     register,
     control,
@@ -249,9 +253,15 @@ export function CustomExerciseForm({
         <Button type="submit" className="h-11 flex-1" disabled={isSubmitting}>
           儲存
         </Button>
-        <Button asChild variant="outline" className="h-11 flex-1">
-          <Link to={cancelTo}>取消</Link>
-        </Button>
+        {onCancel ? (
+          <Button type="button" variant="outline" className="h-11 flex-1" onClick={onCancel}>
+            取消
+          </Button>
+        ) : (
+          <Button asChild variant="outline" className="h-11 flex-1">
+            <Link to={cancelTo}>取消</Link>
+          </Button>
+        )}
       </div>
     </form>
   )

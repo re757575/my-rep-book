@@ -23,6 +23,9 @@
 - **斷言「沒有某個元素」前，先等相關資料載入完**：依非同步資料決定是否顯示的元素（例如動作詳情頁依「是否已有紀錄」顯示「封存」或「刪除」），載入中兩者都不在，直接 `queryBy*` 斷言不存在會在載入前就通過。先 `findBy*` 等一個載入後必定出現的元素，再斷言另一個不存在。
 - **需要「已有紀錄」的動作時，透過 UI 在今天的訓練加入它**：建立自訂動作後切到「今天」分頁，從加入動作選單加入即可，不用填組數值。範例見 `src/features/exercises/archiveCustomExercises.test.tsx` 的 `createCustomWithRecord`。
 - **加入動作選單是 `dialog`**，裡面的動作列是 `button`（動作庫分頁則是 `link`）。按鈕名稱是「中文名 英文名 · 器材」（例如「槓鈴臥推Barbell Bench Press · 槓鈴」），比對用 `{ name: /^槓鈴臥推/ }` 錨定開頭，避免名稱較短的關鍵字同時比到器材欄或其他動作。
+- **做過的動作會同時出現在「最近使用」與「動作清單」**：只要任何一天的訓練有這個動作（包含剛在今天加入的），加入動作選單裡就有兩個同名按鈕，`within(dialog).getByRole('button', { name: /^槓鈴臥推/ })` 會因為比到多個而失敗。從全部動作選，先取清單：`within(within(dialog).getByRole('list', { name: '動作清單' })).getByRole('button', …)`；「最近使用」是名稱為「最近使用」的 `region`，裡面的清單也叫「最近使用」。範例見 `src/features/workout/addExercisePicker.test.tsx`。
+- **在選單中「＋ 新增自訂動作」後，dialog 的名稱變成「新增自訂動作」**：表單在同一個 dialog 裡，`findByRole('dialog', { name: '新增自訂動作' })` 後用 `within` 填表；按「取消」回到名稱為「加入動作」的 dialog。
+- **連續加入同一個動作時，不能用 `findByRole('region', { name })` 等它出現**：第二次加入時已經有一個同名的訓練動作，會比到多個；改等訓練動作數（h2 數量）增加，範例見 `addExercisePicker.test.tsx` 的 `addExercise`。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
 - **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
@@ -34,6 +37,7 @@
 - **`test`、`expect` 一律從 `e2e/fixtures.ts` import**：它的 auto fixture 會固定「今天」，只固定 Date，計時器照跑。
 - **`page.goto` 用相對路徑**：`page.goto('settings')`、`page.goto('day/2026-10-20')`、`page.goto('./')`。`baseURL` 帶有 base path `/my-rep-book/`，寫成 `'/settings'` 會跳出 base path。
 - **每個測試都是新的 browser context**，IndexedDB 天生是空的。
+- **輸入組的數值後不要立刻 `page.reload()`／`page.goto()`**：每個按鍵都是一次 IndexedDB 寫入，整頁重新載入會中斷還沒完成的 transaction，剛打的值可能整個不見（偶發，兩個瀏覽器都會）。先做其他 App 內的操作或斷言（例如切到動作庫分頁搜尋），再重新載入驗證。不要用 `waitForTimeout` 硬等。範例見 `e2e/custom-exercise.spec.ts` 的 E2E-03。
 - **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
 - **Playwright 不計算 `definition` 角色的名稱**：E2E 改用 `getByRole('definition').filter({ hasText: … })`。
 - **尺寸類檢查放 E2E**：jsdom 量不到尺寸，觸控目標 ≥ 44×44 之類的檢查要在真實瀏覽器量。

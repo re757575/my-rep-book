@@ -30,16 +30,19 @@ function ExerciseRowContent({ exercise }: { exercise: LibraryExercise }) {
 export function ExerciseList({
   exercises,
   onSelect,
+  label = '動作清單',
 }: {
   exercises: readonly LibraryExercise[]
   onSelect?: (exercise: LibraryExercise) => void
+  /** 清單的無障礙名稱 */
+  label?: string
 }) {
   if (exercises.length === 0) {
     return <p className="py-8 text-center text-sm text-muted-foreground">找不到符合的動作</p>
   }
 
   return (
-    <ul aria-label="動作清單" className="divide-y">
+    <ul aria-label={label} className="divide-y">
       {exercises.map((exercise) => (
         <li key={exercise.id}>
           {onSelect ? (
