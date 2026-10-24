@@ -7,6 +7,7 @@ import {
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
   TRACKING_TYPE_LABELS,
+  type CustomExercise,
   type LibraryExercise,
   type Muscle,
 } from '@/domain'
@@ -33,13 +34,36 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 function PresetActions({ exercise }: { exercise: LibraryExercise & { source: 'preset' } }) {
   const { exercises } = useRepositories()
 
-  return exercise.hidden ? (
-    <Button variant="outline" className="h-11" onClick={() => exercises.unhidePreset(exercise.id)}>
-      取消隱藏
-    </Button>
-  ) : (
-    <Button variant="outline" className="h-11" onClick={() => exercises.hidePreset(exercise.id)}>
-      隱藏
+  return (
+    <>
+      <Button asChild variant="outline" className="h-11">
+        <Link to={`/exercises/new?copyFrom=${exercise.id}`}>複製為自訂動作</Link>
+      </Button>
+      {exercise.hidden ? (
+        <Button
+          variant="outline"
+          className="h-11"
+          onClick={() => exercises.unhidePreset(exercise.id)}
+        >
+          取消隱藏
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          className="h-11"
+          onClick={() => exercises.hidePreset(exercise.id)}
+        >
+          隱藏
+        </Button>
+      )}
+    </>
+  )
+}
+
+function CustomActions({ exercise }: { exercise: CustomExercise }) {
+  return (
+    <Button asChild variant="outline" className="h-11">
+      <Link to={`/exercises/${exercise.id}/edit`}>編輯</Link>
     </Button>
   )
 }
@@ -79,7 +103,11 @@ export function ExerciseDetailPage() {
             <DetailRow label="記錄類型">{TRACKING_TYPE_LABELS[exercise.trackingType]}</DetailRow>
           </dl>
 
-          {exercise.source === 'preset' && <PresetActions exercise={exercise} />}
+          {exercise.source === 'preset' ? (
+            <PresetActions exercise={exercise} />
+          ) : (
+            <CustomActions exercise={exercise} />
+          )}
         </>
       )}
     </div>

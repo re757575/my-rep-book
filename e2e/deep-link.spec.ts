@@ -10,9 +10,10 @@ test('建置產物的 404.html 與 index.html 相同', () => {
   expect(readDist('404.html')).toBe(readDist('index.html'))
 })
 
-for (const [route, heading] of [
+for (const [route, heading, tab = heading] of [
   ['history', '歷史'],
   ['exercises', '動作庫'],
+  ['exercises/new', '新增自訂動作', '動作庫'],
   ['settings', '設定'],
 ] as const) {
   test(`在 GitHub Pages 直接開啟深層連結 ${route} 時畫面正常顯示`, async ({ page }) => {
@@ -26,7 +27,7 @@ for (const [route, heading] of [
 
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
     await expect(
-      page.getByRole('navigation', { name: '主要分頁' }).getByRole('link', { name: heading }),
+      page.getByRole('navigation', { name: '主要分頁' }).getByRole('link', { name: tab }),
     ).toHaveAttribute('aria-current', 'page')
   })
 }

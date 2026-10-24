@@ -1,4 +1,7 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { filterExercises, isHiddenOrArchived, type CategoryFilter } from '@/domain'
@@ -17,7 +20,15 @@ export function ExercisesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">動作庫</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold">動作庫</h1>
+        <Button asChild variant="outline" className="h-11">
+          <Link to="/exercises/new">
+            <Plus aria-hidden="true" />
+            新增自訂動作
+          </Link>
+        </Button>
+      </div>
       <label htmlFor="exercise-search" className="sr-only">
         搜尋動作
       </label>

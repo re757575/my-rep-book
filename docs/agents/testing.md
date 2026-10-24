@@ -8,9 +8,13 @@
 - **驗證「重新整理後仍保留」用 `reload()`**：`const { user, reload } = renderApp(...)`。它會卸載 App、關閉 db，再以目前網址重新渲染。
 - **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。
 - **只有 `Date` 是假的**，固定在 2026-10-24（`src/test/fixedToday.ts`，E2E 共用）。`setTimeout` 等計時器是真的，所以 user-event、`findBy*`、toast 自動消失都照常運作。
-- **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。
+- **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
+- **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）與 `ResizeObserver`（Radix `Checkbox`、`RadioGroup`）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
+- **長字串用 `user.paste`**：測字數上限時 `user.type` 一字一字打很慢，先 `user.click(欄位)` 再 `user.paste('臥'.repeat(41))`。
 - **shadcn／Radix 元件的實際 role**：
   - `ToggleGroup type="single"` 是 `radiogroup`／`radio`：`getByRole('radio', { name: '肩' })`、`toBeChecked()`
+  - `RadioGroup` 同樣是 `radiogroup`／`radio`；`Checkbox` 是 `checkbox`，可用 `getAllByRole('checkbox', { checked: true })` 數勾選數
+  - 自訂動作表單的部位多選是 `fieldset`，role 為 `group`：`within(getByRole('group', { name: '主要部位' })).getByRole('checkbox', { name: '胸' })`
   - `Switch` 是 `switch`
   - `<dl>` 的 `dd` 以 `aria-labelledby` 指向 `dt`：`getByRole('definition', { name: '記錄類型' })`
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。

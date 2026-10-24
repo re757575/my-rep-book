@@ -10,3 +10,4 @@ export {
   TRACKING_TYPE_LABELS,
 } from './labels'
 export { isHiddenOrArchived } from './library'
+export { hasDuplicateName, normalizeExerciseName } from './naming'
