@@ -1,0 +1,91 @@
+# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build → e2e；
+# 只有 push 到 main 且全部通過才部署到 GitHub Pages（§8.4），PR 只跑 CI。
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # main 的每次 push 都要跑完並部署；其他分支與 PR 只保留最新一次
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  ci:
+    name: lint、typecheck、test、build、e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # Node 版本取自 package.json 的 volta.node
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: package.json
+          cache: npm
+
+      - name: 安裝 volta 指定的 npm 版本
+        run: npm install -g "npm@$(node -p "require('./package.json').volta.npm")"
+
+      - name: 安裝依賴
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: 單元測試（含覆蓋率）
+        run: npm test -- --coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: 安裝 Playwright 瀏覽器
+        run: npx playwright install --with-deps chromium webkit
+
+      # playwright.config.ts 的 webServer 會以正式 base path（/my-rep-book/）build 並啟動 vite preview
+      - name: E2E
+        id: e2e
+        run: npm run e2e
+
+      - name: 上傳 Playwright trace
+        if: failure() && steps.e2e.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+      - name: 上傳 Pages 產物
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/
+
+  deploy:
+    name: 部署到 GitHub Pages
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v5
