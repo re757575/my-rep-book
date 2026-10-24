@@ -1,12 +1,24 @@
 import { ChevronLeft } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { useRepositories } from '@/data'
+import { useLiveData, useRepositories } from '@/data'
 import {
   EQUIPMENT_LABELS,
   MUSCLE_LABELS,
   TRACKING_TYPE_LABELS,
+  isHiddenOrArchived,
   type CustomExercise,
   type LibraryExercise,
   type Muscle,
@@ -60,11 +72,75 @@ function PresetActions({ exercise }: { exercise: LibraryExercise & { source: 'pr
   )
 }
 
-function CustomActions({ exercise }: { exercise: CustomExercise }) {
+/** 刪除沒有紀錄的自訂動作：先跳出確認對話框，確認後永久刪除並回到動作庫 */
+function DeleteCustomButton({ exercise }: { exercise: CustomExercise }) {
+  const { exercises } = useRepositories()
+  const navigate = useNavigate()
+
   return (
-    <Button asChild variant="outline" className="h-11">
-      <Link to={`/exercises/${exercise.id}/edit`}>編輯</Link>
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive" className="h-11">
+          刪除
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>刪除「{exercise.nameZh}」？</AlertDialogTitle>
+          <AlertDialogDescription>刪除後無法復原。</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="h-11">取消</AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            className="h-11"
+            onClick={async () => {
+              await exercises.deleteCustom(exercise.id)
+              await navigate('/exercises', { replace: true })
+            }}
+          >
+            刪除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function CustomActions({ exercise }: { exercise: CustomExercise }) {
+  const { exercises } = useRepositories()
+  const hasRecords = useLiveData(
+    (repositories) => repositories.workouts.hasAnyWithExercise(exercise.id),
+    [exercise.id],
+  )
+
+  return (
+    <>
+      <Button asChild variant="outline" className="h-11">
+        <Link to={`/exercises/${exercise.id}/edit`}>編輯</Link>
+      </Button>
+      {exercise.archived ? (
+        <Button
+          variant="outline"
+          className="h-11"
+          onClick={() => exercises.unarchiveCustom(exercise.id)}
+        >
+          取消封存
+        </Button>
+      ) : (
+        hasRecords && (
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => exercises.archiveCustom(exercise.id)}
+          >
+            封存
+          </Button>
+        )
+      )}
+      {/* 已有紀錄的動作只能封存，不能刪除 */}
+      {hasRecords === false && <DeleteCustomButton exercise={exercise} />}
+    </>
   )
 }
 
@@ -90,8 +166,10 @@ export function ExerciseDetailPage() {
         <>
           <div className="flex flex-col gap-1">
             <h1 className="text-xl font-semibold">{exercise.nameZh}</h1>
-            {exercise.source === 'preset' && exercise.hidden && (
-              <p className="text-sm text-muted-foreground">已隱藏</p>
+            {isHiddenOrArchived(exercise) && (
+              <p className="text-sm text-muted-foreground">
+                {exercise.source === 'preset' ? '已隱藏' : '已封存'}
+              </p>
             )}
           </div>
 

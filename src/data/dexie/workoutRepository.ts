@@ -34,6 +34,9 @@ export function createDexieWorkoutRepository(db: MyRepBookDb): WorkoutRepository
     delete: notImplemented('WorkoutRepository.delete'),
     listByExercise: notImplemented('WorkoutRepository.listByExercise'),
     listDatesInRange: notImplemented('WorkoutRepository.listDatesInRange'),
-    hasAnyWithExercise: notImplemented('WorkoutRepository.hasAnyWithExercise'),
+
+    async hasAnyWithExercise(exerciseId) {
+      return (await db.workouts.where('exerciseIds').equals(exerciseId).count()) > 0
+    },
   }
 }

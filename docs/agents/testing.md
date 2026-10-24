@@ -19,6 +19,9 @@
   - `<dl>` 的 `dd` 以 `aria-labelledby` 指向 `dt`：`getByRole('definition', { name: '記錄類型' })`
 - **今天頁的 `h1` 是日期**（固定日期下為 `10/24（六）`），不是「今天」。要確認在今天頁，用 `getByRole('heading', { level: 1, name: '10/24（六）' })`。
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
+- **確認對話框（shadcn `AlertDialog`）是 `alertdialog`**，名稱是標題：`findByRole('alertdialog', { name: '刪除「Smith 臥推」？' })`。對話框裡的確認鍵常和觸發鍵同名（例如都叫「刪除」），要用 `within(dialog)` 取。
+- **斷言「沒有某個元素」前，先等相關資料載入完**：依非同步資料決定是否顯示的元素（例如動作詳情頁依「是否已有紀錄」顯示「封存」或「刪除」），載入中兩者都不在，直接 `queryBy*` 斷言不存在會在載入前就通過。先 `findBy*` 等一個載入後必定出現的元素，再斷言另一個不存在。
+- **需要「已有紀錄」的動作時，透過 UI 在今天的訓練加入它**：建立自訂動作後切到「今天」分頁，從加入動作選單加入即可，不用填組數值。範例見 `src/features/exercises/archiveCustomExercises.test.tsx` 的 `createCustomWithRecord`。
 - **加入動作選單是 `dialog`**，裡面的動作列是 `button`（動作庫分頁則是 `link`）。按鈕名稱是「中文名 英文名 · 器材」（例如「槓鈴臥推Barbell Bench Press · 槓鈴」），比對用 `{ name: /^槓鈴臥推/ }` 錨定開頭，避免名稱較短的關鍵字同時比到器材欄或其他動作。
 - **斷言目前網址時不要寫死 base path**：接縫 A 的 base 與正式環境不同，用 `` expect(window.location.pathname).toBe(`${import.meta.env.BASE_URL}day/2026-10-20`) ``；今天是 `import.meta.env.BASE_URL`（訓練頁切回今天時網址是 `/`，不是 `/day/<今天>`）。
 - **日期選擇器（shadcn `Calendar`，react-day-picker 繁中語系）的實際 role 與名稱**：
@@ -27,6 +30,9 @@
   - 星期標題列是 `aria-hidden`，查不到 `columnheader`。要驗證週一為一週第一天，看每個 `row` 裡第一個日期按鈕的名稱含「星期一」
 - **`src/components/ui/calendar.tsx` 改過 shadcn 原版**：原版每次渲染都產生新的 `components`，react-day-picker 會重新掛載所有日期按鈕；父元件在點選途中因 live query 更新而重新渲染時，點選會遺失，測試約一成機率失敗。現在以 `useMemo` 固定。用 shadcn CLI 覆寫這個檔案時要保留這段；傳給 `Calendar` 的 `components` 也要是穩定的參考（模組常數或 `useMemo`）。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
+- **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
+- **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
+- **欄位的驗證錯誤用 `toBeInvalid()` 與 `toHaveAccessibleDescription('錯誤訊息')` 斷言**：錯誤訊息以 `aria-describedby` 連到欄位，欄位帶 `aria-invalid`。`getByRole` 沒有 `invalid` 這個選項，傳了會被忽略。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。
 
 ## E2E（Playwright）
@@ -34,8 +40,9 @@
 - **`test`、`expect` 一律從 `e2e/fixtures.ts` import**：它的 auto fixture 會固定「今天」，只固定 Date，計時器照跑。
 - **`page.goto` 用相對路徑**：`page.goto('settings')`、`page.goto('day/2026-10-20')`、`page.goto('./')`。`baseURL` 帶有 base path `/my-rep-book/`，寫成 `'/settings'` 會跳出 base path。
 - **每個測試都是新的 browser context**，IndexedDB 天生是空的。
+- **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
 - **Playwright 不計算 `definition` 角色的名稱**：E2E 改用 `getByRole('definition').filter({ hasText: … })`。
 - **尺寸類檢查放 E2E**：jsdom 量不到尺寸，觸控目標 ≥ 44×44 之類的檢查要在真實瀏覽器量。
 - **vite preview 會自己 fallback 到 index.html**，直接開深層連結測不出 GitHub Pages 的 404.html 行為。要驗證新的深層路由，把它加進 `e2e/deep-link.spec.ts` 的路由清單，那裡用 `page.route` 以 404 回傳 `dist/404.html` 模擬 Pages。
-- **多個 worktree 同時跑 E2E 時會共用 port 4173**：本機 `reuseExistingServer` 為 true，若另一個 worktree 的 `vite preview` 還開著，Playwright 會直接拿它的建置產物來測，結果與自己的程式碼無關。跑之前先確認 `lsof -i :4173` 沒有其他程序；或用 `CI=1 npm run e2e`，port 被占用時會直接失敗而不是沿用。
+- **多個 worktree 平行跑 E2E 時，用 `E2E_PORT` 各自指定 port**：例如 `E2E_PORT=4181 npm run e2e`，請在 4181–4189 之間挑。不要用 4190：它在瀏覽器禁止連線的 port 清單上，Mobile Safari（WebKit）會連不上而逾時，Mobile Chrome 卻正常，很容易誤判成程式問題。預設 port 是 4173，而本機 `reuseExistingServer` 為 true：若另一個 worktree 的 `vite preview` 正占用同一個 port，Playwright 會直接拿它的建置產物來測，結果與自己的程式碼無關。
 - **新增 Playwright project（瀏覽器）時**，同步修改 `.github/workflows/ci.yml` 的 `playwright install` 參數。
