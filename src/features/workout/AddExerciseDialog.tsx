@@ -11,9 +11,9 @@ import { CategoryFilterBar } from '@/features/exercises/CategoryFilterBar'
 import { ExerciseList } from '@/features/exercises/ExerciseList'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 
-/** 選單中可加入的動作：排除已隱藏、已封存；目前只開放「重量×次數」 */
+/** 選單中可加入的動作：排除已隱藏、已封存 */
 function isSelectable(exercise: LibraryExercise) {
-  return !isHiddenOrArchived(exercise) && exercise.trackingType === 'weight_reps'
+  return !isHiddenOrArchived(exercise)
 }
 
 /** 加入動作選單：全螢幕 Dialog，不改變路由，一次加入一個動作 */
