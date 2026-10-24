@@ -60,6 +60,20 @@ describe('加入動作選單的「最近使用」', () => {
     expect(within(dialog).queryByRole('region', { name: '最近使用' })).not.toBeInTheDocument()
   })
 
+  it('依最近一次使用的日期排序，不是依加入的先後：今天做的排在補記的前一天之前', async () => {
+    const { user } = renderApp()
+    await addExercise(user, '引體向上')
+    await user.click(screen.getByRole('button', { name: '前一天' }))
+    await screen.findByRole('heading', { level: 1, name: '10/23（五）' })
+    await addExercise(user, '槓鈴臥推')
+
+    const dialog = await openPicker(user)
+
+    expect(recentRows(dialog).map((row) => row.textContent)).toEqual(
+      startsWith('引體向上', '槓鈴臥推'),
+    )
+  })
+
   it('列出做過的動作，最近做的在前面，重複的只出現一次', async () => {
     const { user } = renderApp()
     await addExercise(user, '槓鈴臥推')
