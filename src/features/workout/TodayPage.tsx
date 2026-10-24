@@ -5,22 +5,26 @@ import { useLiveData, useRepositories } from '@/data'
 import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
-  formatDateTitle,
-  toLocalDate,
+  moveWorkoutExercise,
   updateSetValues,
+  updateWorkoutExerciseNote,
   type EditContext,
+  type LocalDate,
   type Workout,
 } from '@/domain'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { AddExerciseDialog } from './AddExerciseDialog'
+import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
+import { ExerciseNoteField } from './ExerciseNoteField'
+import { WorkoutDateHeader } from './WorkoutDateHeader'
+import { WorkoutExerciseActions } from './WorkoutExerciseActions'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
 
 function editContext(): EditContext {
   return { now: new Date().toISOString(), createId: () => crypto.randomUUID() }
 }
 
-export function TodayPage() {
-  const date = toLocalDate(new Date())
+export function TodayPage({ date }: { date: LocalDate }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const { workouts } = useRepositories()
   const workout = useLiveData(
@@ -40,20 +44,37 @@ export function TodayPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-baseline gap-2">
-        <h1 className="text-xl font-semibold">{formatDateTitle(date)}</h1>
-        <span className="text-sm text-muted-foreground">今天</span>
-      </header>
+      <WorkoutDateHeader date={date} />
 
       {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
       {library &&
-        workout?.exercises.map((workoutExercise) => {
+        workout?.exercises.map((workoutExercise, index, all) => {
           const exercise = exercisesById.get(workoutExercise.exerciseId)
+          const exerciseName = exercise?.nameZh ?? workoutExercise.exerciseId
           return (
             <WorkoutExerciseCard
               key={workoutExercise.id}
               workoutExercise={workoutExercise}
-              exerciseName={exercise?.nameZh ?? workoutExercise.exerciseId}
+              exerciseName={exerciseName}
+              actions={
+                <WorkoutExerciseActions
+                  isFirst={index === 0}
+                  isLast={index === all.length - 1}
+                  onMove={(direction) =>
+                    editWorkout((current) =>
+                      moveWorkoutExercise(
+                        current,
+                        workoutExercise.id,
+                        direction,
+                        editContext().now,
+                      ),
+                    )
+                  }
+                  onDelete={() =>
+                    deleteWorkoutExerciseWithUndo(workouts, date, workoutExercise.id, exerciseName)
+                  }
+                />
+              }
               onAddSet={() =>
                 exercise &&
                 editWorkout((current) =>
@@ -70,7 +91,17 @@ export function TodayPage() {
                   updateSetValues(current, workoutExercise.id, setId, change, editContext().now),
                 )
               }
-            />
+              onDeleteSet={(setId) => deleteSetWithUndo(workouts, date, workoutExercise.id, setId)}
+            >
+              <ExerciseNoteField
+                note={workoutExercise.note}
+                onChange={(note) =>
+                  editWorkout((current) =>
+                    updateWorkoutExerciseNote(current, workoutExercise.id, note, editContext().now),
+                  )
+                }
+              />
+            </WorkoutExerciseCard>
           )
         })}
 

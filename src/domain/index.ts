@@ -10,7 +10,7 @@ export {
   TRACKING_TYPE_LABELS,
 } from './labels'
 export { isHiddenOrArchived } from './library'
-export { formatDateTitle, toLocalDate } from './dates'
+export { addDays, formatDateTitle, fromLocalDate, isValidLocalDate, toLocalDate } from './dates'
 export { formatDuration, parseDuration } from './duration'
 export {
   isCompleteSet,
@@ -24,8 +24,16 @@ export {
   addSetToWorkoutExercise,
   cloneSetForNext,
   emptySetValues,
+  moveWorkoutExercise,
+  removeSet,
+  removeWorkoutExercise,
+  restoreSet,
+  restoreWorkoutExercise,
   updateSetValues,
+  updateWorkoutExerciseNote,
   type EditContext,
+  type RemovedSet,
+  type RemovedWorkoutExercise,
 } from './workoutEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'

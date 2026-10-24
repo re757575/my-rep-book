@@ -27,7 +27,9 @@ export function createDexieWorkoutRepository(db: MyRepBookDb): WorkoutRepository
     async update(date, change) {
       await db.transaction('rw', db.workouts, async () => {
         const row = await db.workouts.get(date)
-        await db.workouts.put(toRow(change(row && toWorkout(row))))
+        const next = change(row && toWorkout(row))
+        if (next) await db.workouts.put(toRow(next))
+        else await db.workouts.delete(date)
       })
     },
 
