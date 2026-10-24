@@ -547,7 +547,7 @@ export interface ExportFile {
 | 表單 | react-hook-form（僅自訂動作表單） |
 | 驗證 | zod（匯入 JSON、自訂動作表單） |
 | PWA | vite-plugin-pwa |
-| 單元／元件測試 | Vitest + React Testing Library + `fake-indexeddb` |
+| 單元／App 測試 | Vitest + React Testing Library + user-event + `fake-indexeddb`（測試接縫見 §9） |
 | E2E | Playwright |
 | Lint／格式 | ESLint + Prettier |
 | CI | GitHub Actions |
@@ -615,16 +615,64 @@ export interface WorkoutRepository {
 
 ## 9. 測試策略
 
-### 9.1 測試層級
+### 9.1 測試接縫
 
-| 層級 | 工具 | 範圍 | 門檻 |
+測試只放在兩個接縫，再加上 E2E。接縫越少越好，而且盡量放在最高層。
+
+| 接縫 | 工具 | 範圍 | 門檻 |
 | --- | --- | --- | --- |
-| 單元 | Vitest | `src/domain` 全部函式（§5.8）、匯入遷移 | `src/domain` 行覆蓋率 ≥ 80%，CI 強制 |
-| Repository | Vitest + fake-indexeddb | Dexie 實作：CRUD、`exerciseIds` 衍生、上次紀錄查詢、整份取代 | 每個介面方法至少一個測試 |
-| 元件 | Vitest + RTL | 組輸入列（各記錄類型）、加入動作選單、自訂動作表單、刪除與復原、匯入錯誤訊息 | 主要互動皆有測試 |
-| E2E | Playwright | 5 條關鍵流程 | 全數通過 |
+| **A（主要）：整個 App** | Vitest + React Testing Library + user-event + `fake-indexeddb` | 大多數 user story（見 §9.2） | 主要互動皆有測試 |
+| **B（輔助）：domain 公開函式** | Vitest | 組合情境多的規則（見 §9.3）、預設動作庫完整性 | `src/domain` 行覆蓋率 ≥ 80%，CI 強制 |
+| **E2E** | Playwright | 和接縫 A 相同的行為，在真實瀏覽器中跑 5 條關鍵流程（見 §9.4） | 全數通過 |
 
-### 9.2 E2E 關鍵流程
+**不另外設的接縫**
+- Repository 介面不另外寫測試，Dexie 實作透過接縫 A 間接驗證。
+- 個別元件不單獨測試。
+
+**好測試的定義**
+- 只透過公開介面驗證外部行為：在接縫 A，就是使用者能操作、能看到的東西；在接縫 B，就是函式的輸入與輸出。
+- 不 mock 內部模組，不斷言 Dexie table 的內容、元件 state 或 hook 的呼叫次數。
+- 只要重構沒有改變行為，測試就不應該壞掉。
+- 選取元素優先用 `getByRole`、`getByLabel`，不依賴 CSS class 或 test id。這也順便驗證了無障礙的 label 是否齊全。
+- 測試名稱使用 §3 的名詞：上次紀錄、正式組、熱身組、完整的組、訓練量。
+
+### 9.2 接縫 A：整個 App
+
+- 渲染整個 App 的根元件。IndexedDB 換成 `fake-indexeddb`，「今天」固定在 2026-10-24，用 React Testing Library 搭配 user-event，像真實使用者一樣操作。
+- 涵蓋範圍：
+  - 記錄與自動儲存
+  - 四種記錄類型的欄位與驗證
+  - 新增一組、熱身組、備註、排序
+  - 刪除與復原
+  - 上次紀錄與預填，包含補記時的日期邊界
+  - 日期切換與禁止未來日期
+  - 每日摘要
+  - 搜尋與分類
+  - 隱藏、複製、自訂動作的完整生命週期
+  - 月曆與動作歷史
+  - 單位與主題
+  - 匯出入，包含各種拒絕匯入的情況
+- 每個測試開始前都重置資料庫。
+- 測試資料透過 App 本身的行為建立：匯入功能（US-17）完成前用 UI 操作，完成後改走匯入 fixture JSON 的流程。不直接寫 table。
+- M0 會建立這一層的測試架構（App 渲染 helper、資料庫重置、時間固定），作為之後所有測試的範本。
+
+### 9.3 接縫 B：domain 公開函式
+
+- 只用在組合情境多、在 UI 層測會很冗長的規則，對應 §5.8 的函式：
+  - 單位換算與四捨五入
+  - `mm:ss` 的解析與邊界值
+  - 組數值驗證，以及完整的組的判斷
+  - 上次紀錄：熱身組排除、不完整組排除、早於檢視日期、同日排除
+  - 第一組預填與複製上一組
+  - 每日摘要的各項計算
+  - 搜尋比對與分類映射
+  - 最近使用的排序、去重與上限
+  - 名稱正規化與重名檢查
+  - 匯出檔解析、驗證錯誤的位置、逐版遷移
+- 預設動作庫完整性（見附錄 A.11）也在這一層測。
+- 情境多的規則優先寫成 table-driven 測試。
+
+### 9.4 E2E 關鍵流程
 
 | ID | 流程 | 對應 |
 | --- | --- | --- |
@@ -634,14 +682,15 @@ export interface WorkoutRepository {
 | E2E-04 | 切到昨天補記一個動作 → 月曆昨天出現標點 → 明細正確；嘗試前往未來日期被導回 | US-08、US-14 |
 | E2E-05 | 記錄資料 → 匯出 → 清空 → 匯入 → 資料一致；匯入格式錯誤檔案顯示錯誤且資料不變 | US-16、US-17 |
 
-### 9.3 E2E 設定
+### 9.5 E2E 設定
 
 - Playwright projects：`Mobile Chrome`（Pixel 7）、`Mobile Safari`（iPhone 14）
-- 選取元素優先使用 `getByRole`、`getByLabel`，避免依賴 CSS class
-- 每個測試開始前清空 IndexedDB；需要歷史資料的測試透過匯入 fixture JSON 建立
+- 選取元素的原則和接縫 A 相同
+- 每個測試開始前清空 IndexedDB。需要歷史資料的測試，在匯入功能完成前透過 UI 補記建立，完成後改用匯入 fixture JSON
 - 測試中以 Playwright Clock API 固定「今天」為 2026-10-24
+- M4 加入 axe 無障礙檢查，以及在 1,000 筆訓練下的效能量測（§7）
 
-### 9.4 CI（GitHub Actions）
+### 9.6 CI（GitHub Actions）
 
 每次 push 與 PR 依序執行：`pnpm lint` → `pnpm typecheck` → `pnpm test --coverage` → `pnpm build` → `pnpm e2e`。任一步失敗即失敗；E2E 失敗時上傳 Playwright trace 作為 artifact。
 
