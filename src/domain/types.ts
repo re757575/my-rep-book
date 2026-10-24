@@ -97,6 +97,12 @@ export type SetValues =
   | { type: 'duration'; durationSec: number | null }
   | { type: 'distance_duration'; distanceKm: number | null; durationSec: number | null }
 
+/**
+ * 解析使用者在組的欄位輸入的文字：空白為 null（尚未填寫）；
+ * 不合法時帶錯誤訊息，呼叫端不寫入，保留上一個合法值。
+ */
+export type ParsedInput = { ok: true; value: number | null } | { ok: false; error: string }
+
 /** 組 */
 export interface WorkoutSet {
   /** UUID */

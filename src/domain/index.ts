@@ -11,6 +11,14 @@ export {
 } from './labels'
 export { isHiddenOrArchived } from './library'
 export { formatDateTitle, toLocalDate } from './dates'
+export { formatDuration, parseDuration } from './duration'
+export {
+  isCompleteSet,
+  parseSetInput,
+  validateSetValues,
+  type SetField,
+  type SetFieldErrors,
+} from './setValues'
 export {
   addExerciseToWorkout,
   addSetToWorkoutExercise,

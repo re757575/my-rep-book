@@ -144,7 +144,7 @@ describe('加入動作選單', () => {
     expect(within(list).getByText('啞鈴臥推')).toBeInTheDocument()
   })
 
-  it('目前只列出「重量×次數」的動作，次數、時間、距離＋時間類型的動作不出現', async () => {
+  it('列出所有記錄類型的動作', async () => {
     const { user } = renderApp()
 
     await user.click(screen.getByRole('button', { name: '加入動作' }))
@@ -153,9 +153,9 @@ describe('加入動作選單', () => {
       name: '動作清單',
     })
     expect(within(list).getByText('槓鈴深蹲')).toBeInTheDocument()
-    expect(within(list).queryByText('引體向上')).not.toBeInTheDocument()
-    expect(within(list).queryByText('平板支撐')).not.toBeInTheDocument()
-    expect(within(list).queryByText('跑步機')).not.toBeInTheDocument()
+    expect(within(list).getByText('引體向上')).toBeInTheDocument()
+    expect(within(list).getByText('平板支撐')).toBeInTheDocument()
+    expect(within(list).getByText('跑步機')).toBeInTheDocument()
   })
 
   it('可以搜尋與依分類篩選', async () => {
@@ -167,7 +167,8 @@ describe('加入動作選單', () => {
     await user.click(within(dialog).getByRole('radio', { name: '手臂：三頭' }))
 
     const list = await within(dialog).findByRole('list', { name: '動作清單' })
-    expect(within(list).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
     expect(within(list).getByText('窄握臥推')).toBeInTheDocument()
+    expect(within(list).getByText('椅上撐體')).toBeInTheDocument()
   })
 })

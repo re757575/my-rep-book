@@ -21,6 +21,9 @@
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
 - **加入動作選單是 `dialog`**，裡面的動作列是 `button`（動作庫分頁則是 `link`）。按鈕名稱是「中文名 英文名 · 器材」（例如「槓鈴臥推Barbell Bench Press · 槓鈴」），比對用 `{ name: /^槓鈴臥推/ }` 錨定開頭，避免名稱較短的關鍵字同時比到器材欄或其他動作。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
+- **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
+- **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
+- **欄位的驗證錯誤用 `toBeInvalid()` 與 `toHaveAccessibleDescription('錯誤訊息')` 斷言**：錯誤訊息以 `aria-describedby` 連到欄位，欄位帶 `aria-invalid`。`getByRole` 沒有 `invalid` 這個選項，傳了會被忽略。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。
 
 ## E2E（Playwright）
