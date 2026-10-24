@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+寫測試或 E2E 前，先讀 `docs/agents/testing.md`。
+
 ## Agent skills
 
 ### Issue tracker
