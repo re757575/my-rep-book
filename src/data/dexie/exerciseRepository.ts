@@ -1,7 +1,16 @@
-import { PRESET_EXERCISES, type CustomExercise, type LibraryExercise } from '@/domain'
+import {
+  PRESET_EXERCISES,
+  normalizeExerciseName,
+  type CustomExercise,
+  type LibraryExercise,
+} from '@/domain'
 import type { ExerciseRepository } from '../repositories'
 import type { CustomExerciseRow, MyRepBookDb } from './db'
 import { notImplemented } from './notImplemented'
+
+function toRow(exercise: CustomExercise): CustomExerciseRow {
+  return { ...exercise, nameKey: normalizeExerciseName(exercise.nameZh) }
+}
 
 function toCustomExercise({ nameKey: _nameKey, ...exercise }: CustomExerciseRow): CustomExercise {
   return exercise
@@ -33,8 +42,30 @@ export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseReposito
       await db.transaction('rw', db.hiddenPresets, () => db.hiddenPresets.delete(presetId))
     },
 
-    createCustom: notImplemented('ExerciseRepository.createCustom'),
-    updateCustom: notImplemented('ExerciseRepository.updateCustom'),
+    async createCustom(input) {
+      const now = new Date().toISOString()
+      const exercise: CustomExercise = {
+        ...input,
+        id: `custom-${crypto.randomUUID()}`,
+        source: 'custom',
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+      }
+      await db.transaction('rw', db.customExercises, () => db.customExercises.add(toRow(exercise)))
+      return exercise
+    },
+
+    async updateCustom(id, input) {
+      await db.transaction('rw', db.customExercises, async () => {
+        const row = await db.customExercises.get(id)
+        if (!row) throw new Error(`找不到自訂動作 ${id}`)
+        await db.customExercises.put(
+          toRow({ ...toCustomExercise(row), ...input, updatedAt: new Date().toISOString() }),
+        )
+      })
+    },
+
     archiveCustom: notImplemented('ExerciseRepository.archiveCustom'),
     unarchiveCustom: notImplemented('ExerciseRepository.unarchiveCustom'),
     deleteCustom: notImplemented('ExerciseRepository.deleteCustom'),

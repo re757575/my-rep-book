@@ -19,3 +19,4 @@ export {
   updateSetValues,
   type EditContext,
 } from './workoutEdits'
+export { hasDuplicateName, normalizeExerciseName } from './naming'

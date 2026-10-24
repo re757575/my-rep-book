@@ -19,6 +19,13 @@ window.matchMedia ??= (query: string) =>
     dispatchEvent: () => false,
   }) satisfies MediaQueryList
 
+// jsdom 沒有 ResizeObserver（Radix 的 Checkbox、RadioGroup 會用到），補一個什麼都不做的版本
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 beforeEach(async () => {
   // 每個測試都從空的資料庫開始。App 共用模組層級的 Dexie 單例，它在建立時就固定了 indexedDB，
   // 所以只替換 globalThis.indexedDB 沒有用；改為刪除整個資料庫，並允許下一次查詢時自動重新開啟。
