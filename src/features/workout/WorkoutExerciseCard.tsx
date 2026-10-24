@@ -1,28 +1,40 @@
-import { Plus } from 'lucide-react'
-import { useId } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
+import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import type { SetValues, WorkoutExercise } from '@/domain'
 import { SetFields } from './SetFields'
 
-/** 訓練動作：動作名稱、各組的輸入欄位與「新增一組」 */
+/**
+ * 訓練動作：動作名稱、各組的輸入欄位與「新增一組」。
+ * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
+ */
 export function WorkoutExerciseCard({
   workoutExercise,
   exerciseName,
+  actions,
+  children,
   onAddSet,
   onChangeSet,
+  onDeleteSet,
 }: {
   workoutExercise: WorkoutExercise
   exerciseName: string
+  actions?: ReactNode
+  children?: ReactNode
   onAddSet: () => void
   onChangeSet: (setId: string, change: (values: SetValues) => SetValues) => void
+  onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2 border-b pb-4">
-      <h2 id={headingId} className="font-semibold">
-        {exerciseName}
-      </h2>
+      <header className="flex items-center gap-2">
+        <h2 id={headingId} className="flex-1 font-semibold">
+          {exerciseName}
+        </h2>
+        {actions}
+      </header>
       <ol className="flex flex-col gap-2">
         {workoutExercise.sets.map((set, index) => (
           <li key={set.id} className="flex items-center gap-2">
@@ -32,6 +44,15 @@ export function WorkoutExerciseCard({
               setNumber={index + 1}
               onChange={(change) => onChangeSet(set.id, change)}
             />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto size-11 text-muted-foreground"
+              aria-label={`刪除第 ${index + 1} 組`}
+              onClick={() => onDeleteSet(set.id)}
+            >
+              <Trash2 aria-hidden="true" />
+            </Button>
           </li>
         ))}
       </ol>
@@ -39,6 +60,7 @@ export function WorkoutExerciseCard({
         <Plus aria-hidden="true" />
         新增一組
       </Button>
+      {children}
     </section>
   )
 }

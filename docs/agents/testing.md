@@ -9,7 +9,10 @@
 - **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。
 - **只有 `Date` 是假的**，固定在 2026-10-24（`src/test/fixedToday.ts`，E2E 共用）。`setTimeout` 等計時器是真的，所以 user-event、`findBy*`、toast 自動消失都照常運作。
 - **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
-- **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）與 `ResizeObserver`（Radix `Checkbox`、`RadioGroup`）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
+- **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）、`ResizeObserver`（Radix `Checkbox`、`RadioGroup`）與 `Element.prototype.setPointerCapture` 等 pointer capture 方法（點 sonner toast 上的按鈕）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
+- **sonner toast 跨測試殘留**：toast 存在 sonner 的模組層級狀態，`<Toaster />` 掛載時會重播還沒消失的 toast，所以上一個測試的「復原」按鈕會跑到下一個測試。`src/test/setup.ts` 的 `afterEach` 已呼叫 `toast.dismiss()`，新增 toast 不用再處理；但同一個測試裡連續刪除兩次，畫面上會同時有兩個「復原」，要先等前一個消失或改用 `getAllByRole`。
+- **toast 的按鈕用 role 取**：`await screen.findByRole('button', { name: '復原' })`；訊息用 `findByText('已刪除一組')`。自動消失靠真實計時器，要驗證「約 5 秒後消失」只能真的等，測試要調高 timeout（例如 `it(..., 10_000)`），這類測試只寫一個。
+- **刪除、排序後畫面是非同步更新**：寫入 IndexedDB 後由 live query 重新渲染，點完「刪除第 2 組」「上移」後用 `waitFor` 斷言結果，不要立刻 `getBy*`。
 - **長字串用 `user.paste`**：測字數上限時 `user.type` 一字一字打很慢，先 `user.click(欄位)` 再 `user.paste('臥'.repeat(41))`。
 - **shadcn／Radix 元件的實際 role**：
   - `ToggleGroup type="single"` 是 `radiogroup`／`radio`：`getByRole('radio', { name: '肩' })`、`toBeChecked()`
@@ -29,6 +32,7 @@
   - 日期按鈕名稱是「2026年10月20日 星期二」，今天會加上「今天，」前綴，選取的日期加上「，已選取」後綴，所以用 `{ name: /10月20日/ }` 比對；未來日期用 `toBeDisabled()`
   - 星期標題列是 `aria-hidden`，查不到 `columnheader`。要驗證週一為一週第一天，看每個 `row` 裡第一個日期按鈕的名稱含「星期一」
 - **`src/components/ui/calendar.tsx` 改過 shadcn 原版**：原版每次渲染都產生新的 `components`，react-day-picker 會重新掛載所有日期按鈕；父元件在點選途中因 live query 更新而重新渲染時，點選會遺失，測試約一成機率失敗。現在以 `useMemo` 固定。用 shadcn CLI 覆寫這個檔案時要保留這段；傳給 `Calendar` 的 `components` 也要是穩定的參考（模組常數或 `useMemo`）。
+- **訓練動作區塊裡除了組的欄位，還有「備註」textbox**：要列出組的欄位時用 `getAllByRole('textbox', { name: /^第 \d+ 組/ })`，不要用沒有 name 的 `getAllByRole('textbox')`。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
 - **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。

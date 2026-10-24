@@ -16,9 +16,13 @@ export interface WorkoutRepository {
   save(workout: Workout): Promise<void>
   /**
    * 在單一 transaction 中讀取該日期的訓練（沒有時為 undefined）、套用 `change` 後寫回；
+   * `change` 回傳 undefined 時刪除該日的訓練（例如最後一個動作被刪除）。
    * 衍生欄位由實作自動推導。連續快速編輯時用這個方法，才不會以過時的資料覆寫掉前一次的變更。
    */
-  update(date: LocalDate, change: (current: Workout | undefined) => Workout): Promise<void>
+  update(
+    date: LocalDate,
+    change: (current: Workout | undefined) => Workout | undefined,
+  ): Promise<void>
   delete(date: LocalDate): Promise<void>
   /** 列出包含該動作的訓練，由新到舊；`before` 不含當天 */
   listByExercise(

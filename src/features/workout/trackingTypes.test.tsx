@@ -12,8 +12,9 @@ async function addExercise(user: UserEvent, name: string) {
 }
 
 function fieldNames(card: HTMLElement) {
+  // 只看組的欄位（「第 N 組…」），不含訓練動作的備註欄
   return within(card)
-    .getAllByRole('textbox')
+    .getAllByRole('textbox', { name: /^第 \d+ 組/ })
     .map((input) => input.getAttribute('aria-label'))
 }
 
