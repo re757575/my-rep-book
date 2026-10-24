@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router'
+import { ExerciseDetailPage } from '@/features/exercises/ExerciseDetailPage'
 import { ExercisesPage } from '@/features/exercises/ExercisesPage'
 import { HistoryPage } from '@/features/history/HistoryPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
@@ -12,6 +13,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <TodayPage /> },
       { path: 'history', element: <HistoryPage /> },
       { path: 'exercises', element: <ExercisesPage /> },
+      { path: 'exercises/:id', element: <ExerciseDetailPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

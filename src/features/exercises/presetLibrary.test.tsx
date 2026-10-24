@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
 
 function exerciseList() {
-  return screen.getByRole('list', { name: '動作清單' })
+  return screen.findByRole('list', { name: '動作清單' })
 }
 
 describe('動作庫分頁：預設動作庫', () => {
@@ -12,7 +12,7 @@ describe('動作庫分頁：預設動作庫', () => {
 
     await user.type(screen.getByRole('searchbox', { name: '搜尋動作' }), 'bench')
 
-    const list = exerciseList()
+    const list = await exerciseList()
     expect(within(list).getByText('槓鈴臥推')).toBeInTheDocument()
     expect(within(list).getByText('啞鈴臥推')).toBeInTheDocument()
     expect(within(list).getByText('窄握臥推')).toBeInTheDocument()
@@ -25,7 +25,7 @@ describe('動作庫分頁：預設動作庫', () => {
     await user.click(screen.getByRole('radio', { name: '肩' }))
 
     expect(screen.getByRole('radio', { name: '肩' })).toBeChecked()
-    const list = exerciseList()
+    const list = await exerciseList()
     expect(within(list).getByText('聳肩')).toBeInTheDocument()
     expect(within(list).queryByText('槓鈴臥推')).not.toBeInTheDocument()
   })
@@ -35,7 +35,7 @@ describe('動作庫分頁：預設動作庫', () => {
 
     await user.click(screen.getByRole('radio', { name: '腿：股四頭／臀' }))
 
-    const list = exerciseList()
+    const list = await exerciseList()
     expect(within(list).getByText('槓鈴深蹲')).toBeInTheDocument()
     expect(within(list).getByText('臀推')).toBeInTheDocument()
     expect(within(list).queryByText('聳肩')).not.toBeInTheDocument()
@@ -47,15 +47,15 @@ describe('動作庫分頁：預設動作庫', () => {
     await user.type(screen.getByRole('searchbox', { name: '搜尋動作' }), 'bench')
     await user.click(screen.getByRole('radio', { name: '手臂：三頭' }))
 
-    expect(within(exerciseList()).getAllByRole('listitem')).toHaveLength(2)
-    expect(within(exerciseList()).getByText('窄握臥推')).toBeInTheDocument()
-    expect(within(exerciseList()).getByText('椅上撐體')).toBeInTheDocument()
+    expect(within(await exerciseList()).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(await exerciseList()).getByText('窄握臥推')).toBeInTheDocument()
+    expect(within(await exerciseList()).getByText('椅上撐體')).toBeInTheDocument()
 
     await user.clear(screen.getByRole('searchbox', { name: '搜尋動作' }))
     await user.click(screen.getByRole('radio', { name: '全部' }))
 
     expect(screen.getByRole('radio', { name: '全部' })).toBeChecked()
-    expect(within(exerciseList()).getAllByRole('listitem')).toHaveLength(66)
+    expect(within(await exerciseList()).getAllByRole('listitem')).toHaveLength(66)
   })
 
   it('沒有符合的動作時顯示提示', async () => {
@@ -67,12 +67,12 @@ describe('動作庫分頁：預設動作庫', () => {
     expect(screen.getByText('找不到符合的動作')).toBeInTheDocument()
   })
 
-  it('由上到下是搜尋框、分類列、動作清單；每一列顯示中文名、英文名和器材', () => {
+  it('由上到下是搜尋框、分類列、動作清單；每一列顯示中文名、英文名和器材', async () => {
     renderApp('/exercises')
 
     const search = screen.getByRole('searchbox', { name: '搜尋動作' })
     const categories = screen.getByRole('radiogroup', { name: '篩選分類' })
-    const list = exerciseList()
+    const list = await exerciseList()
     expect(search.compareDocumentPosition(categories)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     expect(categories.compareDocumentPosition(list)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
 

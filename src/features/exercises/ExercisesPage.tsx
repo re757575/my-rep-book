@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import { PRESET_EXERCISES, filterExercises, type CategoryFilter } from '@/domain'
+import { Switch } from '@/components/ui/switch'
+import { filterExercises, isHiddenOrArchived, type CategoryFilter } from '@/domain'
 import { CategoryFilterBar } from './CategoryFilterBar'
 import { ExerciseList } from './ExerciseList'
+import { useLibraryExercises } from './useLibraryExercises'
 
 export function ExercisesPage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>('all')
-  const exercises = filterExercises(PRESET_EXERCISES, { query, category })
+  const [showHiddenOrArchived, setShowHiddenOrArchived] = useState(false)
+  const library = useLibraryExercises()
+  const listed = showHiddenOrArchived
+    ? library
+    : library?.filter((exercise) => !isHiddenOrArchived(exercise))
 
   return (
     <div className="flex flex-col gap-4">
@@ -24,7 +30,18 @@ export function ExercisesPage() {
         className="h-11"
       />
       <CategoryFilterBar value={category} onChange={setCategory} />
-      <ExerciseList exercises={exercises} />
+      <label
+        htmlFor="show-hidden-or-archived"
+        className="flex min-h-11 items-center justify-between gap-4 text-sm"
+      >
+        顯示已隱藏／已封存
+        <Switch
+          id="show-hidden-or-archived"
+          checked={showHiddenOrArchived}
+          onCheckedChange={setShowHiddenOrArchived}
+        />
+      </label>
+      {listed && <ExerciseList exercises={filterExercises(listed, { query, category })} />}
     </div>
   )
 }

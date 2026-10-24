@@ -3,4 +3,10 @@ export * from './types'
 export { PRESET_EXERCISES } from './presets'
 export { CATEGORY_MUSCLES, exercisesInCategory } from './categories'
 export { filterExercises, matchesSearch, type CategoryFilter } from './search'
-export { BROWSE_CATEGORY_LABELS, EQUIPMENT_LABELS } from './labels'
+export {
+  BROWSE_CATEGORY_LABELS,
+  EQUIPMENT_LABELS,
+  MUSCLE_LABELS,
+  TRACKING_TYPE_LABELS,
+} from './labels'
+export { isHiddenOrArchived } from './library'

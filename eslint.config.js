@@ -15,6 +15,13 @@ export default defineConfig(
       ecmaVersion: 2023,
       globals: globals.browser,
     },
+    rules: {
+      // 底線開頭表示刻意不使用（與 TS noUnusedParameters 一致）；rest 解構可用來排除欄位
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
+    },
   },
   {
     files: ['src/**/*.{ts,tsx}'],
@@ -44,6 +51,27 @@ export default defineConfig(
             {
               regex: '(^@/features|/features)(/|$)',
               message: 'domain 模組不可 import feature 模組。',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // 分層規則（PRD §8.3）：feature 與 app 只透過 `@/data` 的 Repository 介面與 hook 存取資料
+    files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '^dexie(-.*)?(/.*)?$',
+              message: '請改用 `@/data` 的 Repository 介面與 useLiveData，不要直接 import Dexie。',
+            },
+            {
+              regex: '(^@/data|/data)/dexie(/|$)',
+              message: '請改用 `@/data` 的 Repository 介面，不要直接操作 Dexie 實作。',
             },
           ],
         },
