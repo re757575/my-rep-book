@@ -104,6 +104,7 @@ function SingleChoiceGroup<T extends string>({
   value,
   onChange,
   error,
+  disabledHint,
 }: {
   legend: string
   options: readonly T[]
@@ -111,18 +112,28 @@ function SingleChoiceGroup<T extends string>({
   value: string
   onChange: (value: string) => void
   error: string | undefined
+  /** 有值時停用整組選項，並顯示這段說明 */
+  disabledHint?: string
 }) {
   const id = useId()
   const errorId = `${id}-error`
+  const hintId = `${id}-hint`
+  const describedBy = [disabledHint && hintId, error && errorId].filter(Boolean).join(' ')
   return (
     <div className="flex flex-col gap-2">
       <span id={`${id}-legend`} className="mb-2 text-sm font-medium">
         {legend}
       </span>
+      {disabledHint && (
+        <p id={hintId} className="text-sm text-muted-foreground">
+          {disabledHint}
+        </p>
+      )}
       <RadioGroup
         aria-labelledby={`${id}-legend`}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedBy || undefined}
         aria-invalid={error !== undefined}
+        disabled={disabledHint !== undefined}
         value={value}
         onValueChange={onChange}
         className="grid grid-cols-2 gap-x-2 gap-y-0"
@@ -147,6 +158,7 @@ export function CustomExerciseForm({
   existing,
   excludeId,
   cancelTo,
+  trackingTypeLocked = false,
   onSubmit,
 }: {
   defaultValues: CustomExerciseFormValues
@@ -155,6 +167,8 @@ export function CustomExerciseForm({
   /** 編輯時排除動作自己 */
   excludeId?: string
   cancelTo: string
+  /** 動作已有紀錄時鎖定記錄類型，避免舊資料的欄位對不上 */
+  trackingTypeLocked?: boolean
   onSubmit: (input: CustomExerciseInput) => Promise<void>
 }) {
   const {
@@ -226,6 +240,7 @@ export function CustomExerciseForm({
             value={field.value}
             onChange={field.onChange}
             error={errors.trackingType?.message}
+            disabledHint={trackingTypeLocked ? '已有紀錄，無法變更記錄類型' : undefined}
           />
         )}
       />
