@@ -540,7 +540,7 @@ export interface ExportFile {
 | --- | --- |
 | 框架 | React 19 + TypeScript（strict） |
 | 建置 | Vite |
-| 套件管理 | pnpm |
+| 套件管理 | npm。所有套件固定精確版本（不使用 `^`／`~`，以 `.npmrc` 的 `save-exact=true` 確保之後新增的套件也是）；Node 與 npm 版本由 Volta 固定 |
 | 路由 | React Router |
 | 樣式與 UI | Tailwind CSS + shadcn/ui |
 | 本地資料庫 | Dexie.js（IndexedDB）+ `dexie-react-hooks`（`useLiveQuery`） |
@@ -692,7 +692,7 @@ export interface WorkoutRepository {
 
 ### 9.6 CI（GitHub Actions）
 
-每次 push 與 PR 依序執行：`pnpm lint` → `pnpm typecheck` → `pnpm test --coverage` → `pnpm build` → `pnpm e2e`。任一步失敗即失敗；E2E 失敗時上傳 Playwright trace 作為 artifact。
+每次 push 與 PR 依序執行：`npm run lint` → `npm run typecheck` → `npm test -- --coverage` → `npm run build` → `npm run e2e`（安裝依賴用 `npm ci`）。任一步失敗即失敗；E2E 失敗時上傳 Playwright trace 作為 artifact。
 
 push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artifact` 上傳 `dist/`，再以 `actions/deploy-pages` 部署到 GitHub Pages。E2E 在與正式環境相同的 `base` 路徑（`/my-rep-book/`）下對 `vite preview` 執行，確保路徑設定錯誤能在 CI 中被發現。
 
