@@ -15,6 +15,7 @@ for (const [route, heading, tab = heading] of [
   ['exercises', '動作庫'],
   ['exercises/new', '新增自訂動作', '動作庫'],
   ['settings', '設定'],
+  ['day/2026-10-20', '10/20（二）', '今天'],
 ] as const) {
   test(`在 GitHub Pages 直接開啟深層連結 ${route} 時畫面正常顯示`, async ({ page }) => {
     // GitHub Pages 沒有 rewrite：找不到檔案的路徑會以 404 狀態碼回傳 404.html。

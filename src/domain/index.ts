@@ -10,7 +10,7 @@ export {
   TRACKING_TYPE_LABELS,
 } from './labels'
 export { isHiddenOrArchived } from './library'
-export { formatDateTitle, toLocalDate } from './dates'
+export { addDays, formatDateTitle, fromLocalDate, isValidLocalDate, toLocalDate } from './dates'
 export {
   addExerciseToWorkout,
   addSetToWorkoutExercise,

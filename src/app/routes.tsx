@@ -5,14 +5,15 @@ import { ExercisesPage } from '@/features/exercises/ExercisesPage'
 import { NewCustomExercisePage } from '@/features/exercises/NewCustomExercisePage'
 import { HistoryPage } from '@/features/history/HistoryPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
-import { TodayPage } from '@/features/workout/TodayPage'
+import { WorkoutDayRoute } from '@/features/workout/WorkoutDayRoute'
 import { AppLayout } from './AppLayout'
 
 export const routes: RouteObject[] = [
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <TodayPage /> },
+      { index: true, element: <WorkoutDayRoute /> },
+      { path: 'day/:date', element: <WorkoutDayRoute /> },
       { path: 'history', element: <HistoryPage /> },
       { path: 'exercises', element: <ExercisesPage /> },
       { path: 'exercises/new', element: <NewCustomExercisePage /> },

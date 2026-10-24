@@ -8,9 +8,27 @@ export function toLocalDate(date: Date): LocalDate {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+/** 把 `YYYY-MM-DD` 轉成本地時區當天中午的時間點（避開日光節約時間的跨日邊界） */
+export function fromLocalDate(date: LocalDate): Date {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(year, month - 1, day, 12)
+}
+
+/** 是否為真實存在的 `YYYY-MM-DD` 日期（例如 `2026-02-30` 不合法） */
+export function isValidLocalDate(value: string): value is LocalDate {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && toLocalDate(fromLocalDate(value)) === value
+}
+
+/** 日期加減天數，例如 `addDays('2026-10-24', -1)` → `2026-10-23` */
+export function addDays(date: LocalDate, days: number): LocalDate {
+  const result = fromLocalDate(date)
+  result.setDate(result.getDate() + days)
+  return toLocalDate(result)
+}
+
 /** 日期標題：`M/D（週）`，例如 2026-10-24 → `10/24（六）` */
 export function formatDateTitle(date: LocalDate): string {
-  const [year, month, day] = date.split('-').map(Number)
-  const weekday = new Date(year, month - 1, day).getDay()
+  const [, month, day] = date.split('-').map(Number)
+  const weekday = fromLocalDate(date).getDay()
   return `${month}/${day}（${WEEKDAY_LABELS[weekday]}）`
 }

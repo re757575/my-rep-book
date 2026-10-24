@@ -5,22 +5,21 @@ import { useLiveData, useRepositories } from '@/data'
 import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
-  formatDateTitle,
-  toLocalDate,
   updateSetValues,
   type EditContext,
+  type LocalDate,
   type Workout,
 } from '@/domain'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { AddExerciseDialog } from './AddExerciseDialog'
+import { WorkoutDateHeader } from './WorkoutDateHeader'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
 
 function editContext(): EditContext {
   return { now: new Date().toISOString(), createId: () => crypto.randomUUID() }
 }
 
-export function TodayPage() {
-  const date = toLocalDate(new Date())
+export function TodayPage({ date }: { date: LocalDate }) {
   const [pickerOpen, setPickerOpen] = useState(false)
   const { workouts } = useRepositories()
   const workout = useLiveData(
@@ -40,10 +39,7 @@ export function TodayPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-baseline gap-2">
-        <h1 className="text-xl font-semibold">{formatDateTitle(date)}</h1>
-        <span className="text-sm text-muted-foreground">今天</span>
-      </header>
+      <WorkoutDateHeader date={date} />
 
       {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
       {library &&

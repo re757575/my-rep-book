@@ -20,6 +20,12 @@
 - **今天頁的 `h1` 是日期**（固定日期下為 `10/24（六）`），不是「今天」。要確認在今天頁，用 `getByRole('heading', { level: 1, name: '10/24（六）' })`。
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
 - **加入動作選單是 `dialog`**，裡面的動作列是 `button`（動作庫分頁則是 `link`）。按鈕名稱是「中文名 英文名 · 器材」（例如「槓鈴臥推Barbell Bench Press · 槓鈴」），比對用 `{ name: /^槓鈴臥推/ }` 錨定開頭，避免名稱較短的關鍵字同時比到器材欄或其他動作。
+- **斷言目前網址時不要寫死 base path**：接縫 A 的 base 與正式環境不同，用 `` expect(window.location.pathname).toBe(`${import.meta.env.BASE_URL}day/2026-10-20`) ``；今天是 `import.meta.env.BASE_URL`（訓練頁切回今天時網址是 `/`，不是 `/day/<今天>`）。
+- **日期選擇器（shadcn `Calendar`，react-day-picker 繁中語系）的實際 role 與名稱**：
+  - 訓練頁的選擇器是 `Popover`，role 為 `dialog`：`findByRole('dialog', { name: '選擇日期' })`
+  - 日期按鈕名稱是「2026年10月20日 星期二」，今天會加上「今天，」前綴，選取的日期加上「，已選取」後綴，所以用 `{ name: /10月20日/ }` 比對；未來日期用 `toBeDisabled()`
+  - 星期標題列是 `aria-hidden`，查不到 `columnheader`。要驗證週一為一週第一天，看每個 `row` 裡第一個日期按鈕的名稱含「星期一」
+- **`src/components/ui/calendar.tsx` 改過 shadcn 原版**：原版每次渲染都產生新的 `components`，react-day-picker 會重新掛載所有日期按鈕；父元件在點選途中因 live query 更新而重新渲染時，點選會遺失，測試約一成機率失敗。現在以 `useMemo` 固定。用 shadcn CLI 覆寫這個檔案時要保留這段；傳給 `Calendar` 的 `components` 也要是穩定的參考（模組常數或 `useMemo`）。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。
 
