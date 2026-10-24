@@ -6,7 +6,7 @@
 
 - **一律用 `renderApp(route?)` 起手**（`src/test/renderApp.tsx`），它渲染真正的 `<App />`。`route` 不含 base path，例如 `renderApp('/exercises')`。
 - **驗證「重新整理後仍保留」用 `reload()`**：`const { user, reload } = renderApp(...)`。它會卸載 App、關閉 db，再以目前網址重新渲染。
-- **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。
+- **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。待寫的欄位編輯存在 localStorage，setup 也會一併 `localStorage.clear()`；新增其他存在 localStorage 的資料時不用另外清。
 - **只有 `Date` 是假的**，固定在 2026-10-24（`src/test/fixedToday.ts`，E2E 共用）。`setTimeout` 等計時器是真的，所以 user-event、`findBy*`、toast 自動消失都照常運作。
 - **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
 - **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）、`ResizeObserver`（Radix `Checkbox`、`RadioGroup`）與 `Element.prototype.setPointerCapture` 等 pointer capture 方法（點 sonner toast 上的按鈕）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
@@ -47,7 +47,8 @@
 - **`test`、`expect` 一律從 `e2e/fixtures.ts` import**：它的 auto fixture 會固定「今天」，只固定 Date，計時器照跑。
 - **`page.goto` 用相對路徑**：`page.goto('settings')`、`page.goto('day/2026-10-20')`、`page.goto('./')`。`baseURL` 帶有 base path `/my-rep-book/`，寫成 `'/settings'` 會跳出 base path。
 - **每個測試都是新的 browser context**，IndexedDB 天生是空的。
-- **輸入組的數值後不要立刻 `page.reload()`／`page.goto()`**：每個按鍵都是一次 IndexedDB 寫入，整頁重新載入會中斷還沒完成的 transaction，剛打的值可能整個不見（偶發，兩個瀏覽器都會）。先做其他 App 內的操作或斷言（例如切到動作庫分頁搜尋），再重新載入驗證。不要用 `waitForTimeout` 硬等。範例見 `e2e/custom-exercise.spec.ts` 的 E2E-03。
+- **輸入組的數值或備註後可以直接 `page.reload()`／`page.goto()`／關閉分頁**：欄位編輯走 `WorkoutRepository.editField`，輸入當下就同步記進 localStorage 的待寫清單，下次開啟資料庫時會在任何讀取之前補寫，所以不用先做別的操作、也不用 `waitForTimeout` 等寫入完成。保證範圍見 `e2e/durable-writes.spec.ts`。新增「輸入即儲存」的欄位時也要走 `editField`（在 `src/domain/fieldEdits.ts` 的 `FieldEdit` 加一種 kind）；若改用 `update` 每次按鍵寫一次，這個保證就不成立。
+- **E2E 中開新分頁要自己固定「今天」**：`e2e/fixtures.ts` 的 auto fixture 只作用在預設的 `page`。用 `context.newPage()` 開的頁面要先 `await newPage.clock.setFixedTime(FIXED_TODAY)`（從 `src/test/fixedToday.ts` import）再 `goto`。
 - **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
 - **Playwright 不計算 `definition` 角色的名稱**：E2E 改用 `getByRole('definition').filter({ hasText: … })`。
 - **尺寸類檢查放 E2E**：jsdom 量不到尺寸，觸控目標 ≥ 44×44 之類的檢查要在真實瀏覽器量。

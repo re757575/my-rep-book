@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import type { SetValues, WorkoutExercise } from '@/domain'
+import type { SetField, WorkoutExercise } from '@/domain'
 import { SetFields } from './SetFields'
 
 /**
@@ -14,7 +14,7 @@ export function WorkoutExerciseCard({
   actions,
   children,
   onAddSet,
-  onChangeSet,
+  onChangeSetField,
   onDeleteSet,
 }: {
   workoutExercise: WorkoutExercise
@@ -22,7 +22,7 @@ export function WorkoutExerciseCard({
   actions?: ReactNode
   children?: ReactNode
   onAddSet: () => void
-  onChangeSet: (setId: string, change: (values: SetValues) => SetValues) => void
+  onChangeSetField: (setId: string, field: SetField, value: number | null) => void
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
@@ -42,7 +42,7 @@ export function WorkoutExerciseCard({
             <SetFields
               values={set.values}
               setNumber={index + 1}
-              onChange={(change) => onChangeSet(set.id, change)}
+              onChange={(field, value) => onChangeSetField(set.id, field, value)}
             />
             <Button
               variant="ghost"

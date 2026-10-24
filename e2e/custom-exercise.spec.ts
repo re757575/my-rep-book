@@ -30,6 +30,18 @@ test('從加入動作選單新增 distance_duration 類型的自訂動作，記�
   await card.getByRole('textbox', { name: '第 1 組距離（km）' }).pressSequentially('5.2')
   await card.getByRole('textbox', { name: '第 1 組時間（mm:ss）' }).pressSequentially('2830')
 
+  await page.reload()
+  await expect(card.getByRole('textbox', { name: '第 1 組距離（km）' })).toHaveValue('5.2')
+  await expect(card.getByRole('textbox', { name: '第 1 組時間（mm:ss）' })).toHaveValue('28:30')
+
+  await page.getByRole('button', { name: '加入動作' }).click()
+  const dialog = page.getByRole('dialog', { name: '加入動作' })
+  await expect(dialog.getByRole('region', { name: '最近使用' }).getByRole('button')).toHaveText([
+    /^戶外跑步/,
+  ])
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
+
   await page
     .getByRole('navigation', { name: '主要分頁' })
     .getByRole('link', { name: '動作庫' })
@@ -40,19 +52,6 @@ test('從加入動作選單新增 distance_duration 類型的自訂動作，記�
   await list.getByRole('link', { name: /戶外跑步/ }).click()
   await expect(page.getByRole('heading', { name: '戶外跑步' })).toBeVisible()
   await expect(page.getByRole('definition').filter({ hasText: '距離＋時間' })).toBeVisible()
-
-  // 重新載入今天頁，確認記錄的一組已經存下來
-  await page.goto('./')
-  await expect(card.getByRole('textbox', { name: '第 1 組距離（km）' })).toHaveValue('5.2')
-  await expect(card.getByRole('textbox', { name: '第 1 組時間（mm:ss）' })).toHaveValue('28:30')
-
-  await page.getByRole('button', { name: '加入動作' }).click()
-  await expect(
-    page
-      .getByRole('dialog', { name: '加入動作' })
-      .getByRole('region', { name: '最近使用' })
-      .getByRole('button'),
-  ).toHaveText([/^戶外跑步/])
 })
 
 test('同名動作無法送出；複製預設動作後以「{原名}（自訂）」建立並可編輯', async ({ page }) => {

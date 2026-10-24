@@ -6,8 +6,6 @@ import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
   moveWorkoutExercise,
-  updateSetValues,
-  updateWorkoutExerciseNote,
   type EditContext,
   type LocalDate,
   type Workout,
@@ -86,19 +84,27 @@ export function TodayPage({ date }: { date: LocalDate }) {
                   ),
                 )
               }
-              onChangeSet={(setId, change) =>
-                editWorkout((current) =>
-                  updateSetValues(current, workoutExercise.id, setId, change, editContext().now),
-                )
+              onChangeSetField={(setId, field, value) =>
+                workouts.editField({
+                  kind: 'setValue',
+                  date,
+                  workoutExerciseId: workoutExercise.id,
+                  setId,
+                  field,
+                  value,
+                })
               }
               onDeleteSet={(setId) => deleteSetWithUndo(workouts, date, workoutExercise.id, setId)}
             >
               <ExerciseNoteField
                 note={workoutExercise.note}
                 onChange={(note) =>
-                  editWorkout((current) =>
-                    updateWorkoutExerciseNote(current, workoutExercise.id, note, editContext().now),
-                  )
+                  workouts.editField({
+                    kind: 'note',
+                    date,
+                    workoutExerciseId: workoutExercise.id,
+                    note,
+                  })
                 }
               />
             </WorkoutExerciseCard>

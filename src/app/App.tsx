@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Toaster } from '@/components/ui/sonner'
+import { useFlushFieldEditsOnHide } from '@/data'
 import { routes } from './routes'
 
 export default function App() {
@@ -8,6 +9,7 @@ export default function App() {
   const [router] = useState(() =>
     createBrowserRouter(routes, { basename: import.meta.env.BASE_URL }),
   )
+  useFlushFieldEditsOnHide()
 
   return (
     <>

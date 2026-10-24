@@ -4,6 +4,7 @@ import type {
   BackupData,
   CustomExercise,
   ExerciseBase,
+  FieldEdit,
   LibraryExercise,
   LocalDate,
   Settings,
@@ -18,11 +19,22 @@ export interface WorkoutRepository {
    * 在單一 transaction 中讀取該日期的訓練（沒有時為 undefined）、套用 `change` 後寫回；
    * `change` 回傳 undefined 時刪除該日的訓練（例如最後一個動作被刪除）。
    * 衍生欄位由實作自動推導。連續快速編輯時用這個方法，才不會以過時的資料覆寫掉前一次的變更。
+   * `change` 收到的訓練已套用所有待寫的欄位編輯（見 `editField`）。
    */
   update(
     date: LocalDate,
     change: (current: Workout | undefined) => Workout | undefined,
   ): Promise<void>
+  /**
+   * 「輸入即儲存」的欄位編輯（組的數值、備註），每次輸入都呼叫，不用等它完成。
+   * - 呼叫當下就同步記進本機的待寫清單：寫入完成前頁面被重新整理、關閉或結束，
+   *   下次開啟時會在任何讀取之前補寫，讀到的一定是最後輸入的值
+   * - 同一個欄位快速連續編輯時合併，以最後的值為準；所有寫入排成一列，同一時間最多只有一筆在進行
+   * - 之後的 `update`、`save` 會先寫入這些編輯，例如「新增一組」複製的是最後輸入的值
+   */
+  editField(edit: FieldEdit): void
+  /** 立即寫入所有待寫的欄位編輯；頁面切到背景或即將關閉時呼叫 */
+  flushFieldEdits(): Promise<void>
   delete(date: LocalDate): Promise<void>
   /** 列出包含該動作的訓練，由新到舊；`before` 不含當天 */
   listByExercise(

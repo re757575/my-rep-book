@@ -35,5 +35,6 @@ export {
   type RemovedSet,
   type RemovedWorkoutExercise,
 } from './workoutEdits'
+export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } from './fieldEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'

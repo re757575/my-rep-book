@@ -1,15 +1,15 @@
-import type { SetValues } from '@/domain'
+import type { SetField, SetValues } from '@/domain'
 import { SetValueInput } from './SetValueInput'
 
 type ValuesOf<T extends SetValues['type']> = Extract<SetValues, { type: T }>
 
-/** 只改傳入的欄位；其他欄位以儲存中的最新值為準，才不會蓋掉剛寫入的值 */
-type ChangeValues = (change: (current: SetValues) => SetValues) => void
+/** 某個欄位輸入了合法的值；只改這個欄位，其他欄位不受影響 */
+export type ChangeSetField = (field: SetField, value: number | null) => void
 
 interface FieldsProps<T extends SetValues['type']> {
   values: ValuesOf<T>
   setNumber: number
-  onChange: (patch: Partial<Omit<ValuesOf<T>, 'type'>>) => void
+  onChange: ChangeSetField
 }
 
 /** 依記錄類型顯示該組需要的欄位；重量一律以 kg 顯示 */
@@ -20,7 +20,7 @@ export function SetFields({
 }: {
   values: SetValues
   setNumber: number
-  onChange: ChangeValues
+  onChange: ChangeSetField
 }) {
   return (
     <div className="flex items-start gap-2">
@@ -36,30 +36,17 @@ function FieldsByType({
 }: {
   values: SetValues
   setNumber: number
-  onChange: ChangeValues
+  onChange: ChangeSetField
 }) {
-  function patch<T extends SetValues['type']>(type: T) {
-    return (fields: Partial<Omit<ValuesOf<T>, 'type'>>) =>
-      onChange((current) => (current.type === type ? { ...current, ...fields } : current))
-  }
-
   switch (values.type) {
     case 'weight_reps':
-      return (
-        <WeightRepsFields values={values} setNumber={setNumber} onChange={patch(values.type)} />
-      )
+      return <WeightRepsFields values={values} setNumber={setNumber} onChange={onChange} />
     case 'reps':
-      return <RepsFields values={values} setNumber={setNumber} onChange={patch(values.type)} />
+      return <RepsFields values={values} setNumber={setNumber} onChange={onChange} />
     case 'duration':
-      return <DurationFields values={values} setNumber={setNumber} onChange={patch(values.type)} />
+      return <DurationFields values={values} setNumber={setNumber} onChange={onChange} />
     case 'distance_duration':
-      return (
-        <DistanceDurationFields
-          values={values}
-          setNumber={setNumber}
-          onChange={patch(values.type)}
-        />
-      )
+      return <DistanceDurationFields values={values} setNumber={setNumber} onChange={onChange} />
   }
 }
 
@@ -75,14 +62,14 @@ function WeightRepsFields({ values, setNumber, onChange }: FieldsProps<'weight_r
         field="weightKg"
         label={`第 ${setNumber} 組重量（kg）`}
         value={values.weightKg}
-        onChange={(weightKg) => onChange({ weightKg })}
+        onChange={onChange}
       />
       <Unit>kg ×</Unit>
       <SetValueInput
         field="reps"
         label={`第 ${setNumber} 組次數`}
         value={values.reps}
-        onChange={(reps) => onChange({ reps })}
+        onChange={onChange}
       />
     </>
   )
@@ -96,7 +83,7 @@ function RepsFields({ values, setNumber, onChange }: FieldsProps<'reps'>) {
         field="reps"
         label={`第 ${setNumber} 組次數`}
         value={values.reps}
-        onChange={(reps) => onChange({ reps })}
+        onChange={onChange}
       />
       <Unit>下 ＋</Unit>
       <SetValueInput
@@ -104,7 +91,7 @@ function RepsFields({ values, setNumber, onChange }: FieldsProps<'reps'>) {
         label={`第 ${setNumber} 組額外負重（kg）`}
         placeholder="選填"
         value={values.addedWeightKg}
-        onChange={(addedWeightKg) => onChange({ addedWeightKg })}
+        onChange={onChange}
       />
       <Unit>kg</Unit>
     </>
@@ -119,7 +106,7 @@ function DurationFields({ values, setNumber, onChange }: FieldsProps<'duration'>
       label={`第 ${setNumber} 組時間（mm:ss）`}
       placeholder="mm:ss"
       value={values.durationSec}
-      onChange={(durationSec) => onChange({ durationSec })}
+      onChange={onChange}
     />
   )
 }
@@ -132,7 +119,7 @@ function DistanceDurationFields({ values, setNumber, onChange }: FieldsProps<'di
         field="distanceKm"
         label={`第 ${setNumber} 組距離（km）`}
         value={values.distanceKm}
-        onChange={(distanceKm) => onChange({ distanceKm })}
+        onChange={onChange}
       />
       <Unit>km</Unit>
       <SetValueInput
@@ -140,7 +127,7 @@ function DistanceDurationFields({ values, setNumber, onChange }: FieldsProps<'di
         label={`第 ${setNumber} 組時間（mm:ss）`}
         placeholder="mm:ss"
         value={values.durationSec}
-        onChange={(durationSec) => onChange({ durationSec })}
+        onChange={onChange}
       />
     </>
   )

@@ -33,6 +33,8 @@ Element.prototype.releasePointerCapture ??= () => {}
 Element.prototype.hasPointerCapture ??= () => false
 
 beforeEach(async () => {
+  // 待寫的欄位編輯存在 localStorage，jsdom 的 localStorage 會跨測試保留，要和資料庫一起清空
+  localStorage.clear()
   // 每個測試都從空的資料庫開始。App 共用模組層級的 Dexie 單例，它在建立時就固定了 indexedDB，
   // 所以只替換 globalThis.indexedDB 沒有用；改為刪除整個資料庫，並允許下一次查詢時自動重新開啟。
   await db.delete({ disableAutoOpen: false })

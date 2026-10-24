@@ -16,7 +16,7 @@ function formatValue(field: SetField, value: number | null) {
 }
 
 /**
- * 組的一個數值欄位：每次輸入就把合法的值交給 `onChange`，沒有儲存按鈕。
+ * 組的一個數值欄位：每次輸入就把欄位與合法的值交給 `onChange`，沒有儲存按鈕。
  * 不合法時在欄位下方顯示錯誤且不寫入，儲存的仍是上一個合法值或 null。
  * 畫面上的文字由欄位自己保存，避免輸入到一半（例如「62.」）被儲存後的數值蓋掉。
  */
@@ -31,7 +31,7 @@ export function SetValueInput({
   label: string
   placeholder?: string
   value: number | null
-  onChange: (value: number | null) => void
+  onChange: (field: SetField, value: number | null) => void
 }) {
   const errorId = useId()
   const [text, setText] = useState(() => formatValue(field, value))
@@ -51,7 +51,7 @@ export function SetValueInput({
           setText(event.target.value)
           const parsed = parseSetInput(field, event.target.value)
           setError(parsed.ok ? undefined : parsed.error)
-          if (parsed.ok) onChange(parsed.value)
+          if (parsed.ok) onChange(field, parsed.value)
         }}
         className="h-11 w-20 text-center"
       />
