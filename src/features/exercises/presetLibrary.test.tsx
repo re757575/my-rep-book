@@ -63,8 +63,9 @@ describe('動作庫分頁：預設動作庫', () => {
 
     await user.type(screen.getByRole('searchbox', { name: '搜尋動作' }), '不存在的動作')
 
+    // 動作庫非同步載入：先等提示出現，再斷言沒有清單
+    expect(await screen.findByText('找不到符合的動作')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: '動作清單' })).not.toBeInTheDocument()
-    expect(screen.getByText('找不到符合的動作')).toBeInTheDocument()
   })
 
   it('由上到下是搜尋框、分類列、動作清單；每一列顯示中文名、英文名和器材', async () => {
