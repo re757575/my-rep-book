@@ -126,7 +126,10 @@ export function createDexieWorkoutRepository(
       const rows = await db.workouts.bulkGet(page)
       return rows.filter((row) => row !== undefined).map(toWorkout)
     },
-    listDatesInRange: notImplemented('WorkoutRepository.listDatesInRange'),
+
+    async listDatesInRange(from, to) {
+      return db.workouts.where('date').between(from, to, true, true).primaryKeys()
+    },
 
     async hasAnyWithExercise(exerciseId) {
       return (await db.workouts.where('exerciseIds').equals(exerciseId).count()) > 0

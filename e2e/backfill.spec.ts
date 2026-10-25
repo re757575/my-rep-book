@@ -1,8 +1,8 @@
 import { expect, test } from './fixtures.ts'
 
-// E2E-04（前半）：切到昨天補記一個動作，重新整理後仍在；嘗試前往未來日期被導回今天。
-// 月曆標點與日明細的斷言由歷史 ticket 補上。
-test('E2E-04 切到昨天補記槓鈴臥推，重新整理後仍在', async ({ page }) => {
+// E2E-04：切到昨天補記一個動作，重新整理後仍在，月曆上昨天出現標點且明細正確；
+// 嘗試前往未來日期被導回今天。
+test('E2E-04 切到昨天補記槓鈴臥推，重新整理後仍在，月曆標點且明細正確', async ({ page }) => {
   await page.goto('./')
   await expect(page.getByRole('heading', { level: 1, name: '10/24（六）' })).toBeVisible()
   await expect(page.getByRole('button', { name: '後一天' })).toBeDisabled()
@@ -30,6 +30,31 @@ test('E2E-04 切到昨天補記槓鈴臥推，重新整理後仍在', async ({ p
   await expect(page).toHaveURL(/\/my-rep-book\/$/)
   await expect(page.getByRole('button', { name: '加入動作' })).toBeVisible()
   await expect(card).toHaveCount(0)
+
+  await page
+    .getByRole('navigation', { name: '主要分頁' })
+    .getByRole('link', { name: '歷史', exact: true })
+    .click()
+  const calendar = page.getByRole('grid', { name: '2026年10月' })
+  const yesterday = calendar.getByRole('button', { name: /10月23日/ })
+  await expect(yesterday).toHaveAccessibleName(/有訓練/)
+  await expect(calendar.getByRole('button', { name: /10月22日/ })).not.toHaveAccessibleName(
+    /有訓練/,
+  )
+
+  await yesterday.click()
+  const detail = page.getByRole('region', { name: '10/23（五）' })
+  const exercise = detail.getByRole('article', { name: '槓鈴臥推' })
+  await expect(exercise.getByRole('list', { name: '組' }).getByRole('listitem')).toHaveText([
+    '60kg×8',
+  ])
+  await expect(detail.getByRole('region', { name: '每日摘要' }).getByLabel('總訓練量')).toHaveText(
+    '480 kg',
+  )
+
+  await detail.getByRole('link', { name: '編輯' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: '10/23（五）' })).toBeVisible()
+  await expect(page).toHaveURL(/\/my-rep-book\/day\/2026-10-23$/)
 })
 
 test('E2E-04 從日期選擇器跳到過去的日期，未來日期不能選', async ({ page }) => {

@@ -2,14 +2,9 @@ import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useLiveData } from '@/data'
-import {
-  buildExerciseHistory,
-  formatDateWithYear,
-  formatSetValues,
-  type ExerciseHistoryEntry,
-} from '@/domain'
-import { cn } from '@/lib/utils'
+import { buildExerciseHistory, formatDateWithYear, type ExerciseHistoryEntry } from '@/domain'
 import { dayPath } from '@/features/workout/dayPath'
+import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
 
 /** 首批與每次「載入更多」的筆數 */
 const HISTORY_PAGE_SIZE = 20
@@ -26,19 +21,7 @@ function HistoryEntry({ entry }: { entry: ExerciseHistoryEntry }) {
       >
         {formatDateWithYear(entry.date)}
       </Link>
-      <ol aria-label="組" className="flex flex-col gap-1">
-        {entry.sets.map((set) => (
-          <li
-            key={set.id}
-            className={cn('flex items-center gap-2', set.isWarmup && 'text-muted-foreground')}
-          >
-            {set.isWarmup && (
-              <span className="rounded-sm bg-muted px-1.5 text-xs text-muted-foreground">熱身</span>
-            )}
-            <span>{formatSetValues(set.values)}</span>
-          </li>
-        ))}
-      </ol>
+      <WorkoutSetList sets={entry.sets} />
       {entry.notes.map((note, index) => (
         <p key={index} className="text-sm whitespace-pre-wrap text-muted-foreground">
           {note}

@@ -36,7 +36,13 @@
   - 訓練頁的選擇器是 `Popover`，role 為 `dialog`：`findByRole('dialog', { name: '選擇日期' })`
   - 日期按鈕名稱是「2026年10月20日 星期二」，今天會加上「今天，」前綴，選取的日期加上「，已選取」後綴，所以用 `{ name: /10月20日/ }` 比對；未來日期用 `toBeDisabled()`
   - 星期標題列是 `aria-hidden`，查不到 `columnheader`。要驗證週一為一週第一天，看每個 `row` 裡第一個日期按鈕的名稱含「星期一」
-- **`src/components/ui/calendar.tsx` 改過 shadcn 原版**：原版每次渲染都產生新的 `components`，react-day-picker 會重新掛載所有日期按鈕；父元件在點選途中因 live query 更新而重新渲染時，點選會遺失，測試約一成機率失敗。現在以 `useMemo` 固定。用 shadcn CLI 覆寫這個檔案時要保留這段；傳給 `Calendar` 的 `components` 也要是穩定的參考（模組常數或 `useMemo`）。
+  - 月曆本身是 `grid`，名稱是月份：`findByRole('grid', { name: '2026年10月' })`
+  - 切換月份的按鈕是「前往上個月」「前往下個月」。不能再往後時是 `aria-disabled="true"`，**不是** `disabled`，`toBeDisabled()` 不會通過，要用 `toHaveAttribute('aria-disabled', 'true')`
+  - 沒有設 `mode`（也沒有 `onDayClick`）時，日期只是 `gridcell`，不會渲染成 `button`；只拿來顯示的月曆也要設 `mode` 才查得到日期按鈕
+- **歷史月曆（`/history`）的標點在日期按鈕的名稱上**：有訓練的日期名稱多了「，有訓練」後綴（例如「2026年10月20日 星期二，有訓練」），斷言用 `toHaveAccessibleName(/有訓練/)`。日期由 live query 載入，要用 `waitFor`；斷言某天「沒有標點」前，先 `waitFor` 另一個有訓練的日期出現標點，否則載入前就會通過。範例見 `src/features/history/historyCalendar.test.tsx`。
+- **歷史的日明細是以 `M/D（週）` 命名的 `region`**（`findByRole('region', { name: '10/20（二）' })`），裡面有「每日摘要」、以動作名稱命名的 `article`（各組是名稱為「組」的 `list`，熱身組文字前面多了「熱身」，與動作歷史相同），以及 `link`「編輯」。
+- **toast 在換頁後仍在**：sonner 的 `<Toaster />` 掛在 App 上，在訓練頁刪除後切到別的分頁，「復原」還按得到；先把 `findByRole('button', { name: '復原' })` 的結果存起來，換頁後再點。
+- **`src/components/ui/calendar.tsx` 改過 shadcn 原版**：原版每次渲染都產生新的 `components`，react-day-picker 會重新掛載所有日期按鈕；父元件在點選途中因 live query 更新而重新渲染時，點選會遺失，測試約一成機率失敗。現在以 `useMemo` 固定。用 shadcn CLI 覆寫這個檔案時要保留這段；傳給 `Calendar` 的 `components` 也要是穩定的參考（模組常數或 `useMemo`）。自訂 `DayButton`（例如歷史月曆的標點）時，在模組層級定義元件與 `components` 物件，範例見 `src/features/history/HistoryPage.tsx`。
 - **訓練動作區塊裡除了組的欄位，還有「備註」textbox**：要列出組的欄位時用 `getAllByRole('textbox', { name: /^第 \d+ 組/ })`，不要用沒有 name 的 `getAllByRole('textbox')`。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
