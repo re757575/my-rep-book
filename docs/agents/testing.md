@@ -61,6 +61,8 @@
 - **驗證下載的檔案用 `waitForDownloads(n)`**（`src/test/downloads.ts`）：setup 補了 `URL.createObjectURL` 並攔下 `<a download>` 的點擊，回傳依下載順序排列的 `{ fileName, text }`；沒下載用 `downloadCount()` 斷言為 0。新增下載功能時，連結要先加入 `document` 再 `click()`（見 `src/features/settings/downloadFile.ts`），否則點擊事件不會冒泡到 document，攔不到。
 - **選擇檔案用 `user.upload`**：匯入的 `<input type="file">` 是隱藏的，用 `findByLabelText('選擇備份檔')` 取；`chooseBackupFile(user, 內容)` 已包好，字串會原樣當作檔案內容（用來測非 JSON 的檔案）。
 - **模擬「剛輸入、還沒寫進資料庫」的欄位編輯時，要等資料庫開啟後才寫入 localStorage 的待寫清單**（`my-rep-book:pending-field-edits`）：透過 UI 輸入的話寫入幾乎立刻完成，測不出待寫清單的處理；但若在 `reload()` 或 `renderApp` 之後立刻寫入，資料庫開啟時的 `on('ready')` 會先把它補寫掉，測試就失去意義。先 `findBy*` 等一個依資料載入的元素出現再寫入，範例見 `backup.test.tsx` 的 `leavePendingEdit`。
+- **jsdom 沒有 `navigator.storage`**：App 啟動時申請持久儲存，沒有它就當成「未啟用」。要模擬瀏覽器同意或拒絕，在 `renderApp` 之前呼叫 `fakeStorageManager({ grantsPersistence })`（`src/test/fakeStorageManager.ts`），測試結束自動移除。範例見 `src/features/settings/persistentStorage.test.tsx`。
+- **接縫 A 不會註冊 Service Worker**：`virtual:pwa-register/react` 在 Vitest 中是 vite-plugin-pwa 提供的空實作，「有新版本」提示、離線都只能在 E2E 驗證。
 
 ## E2E（Playwright）
 
@@ -76,4 +78,8 @@
 - **尺寸類檢查放 E2E**：jsdom 量不到尺寸，觸控目標 ≥ 44×44 之類的檢查要在真實瀏覽器量。
 - **vite preview 會自己 fallback 到 index.html**，直接開深層連結測不出 GitHub Pages 的 404.html 行為。要驗證新的深層路由，把它加進 `e2e/deep-link.spec.ts` 的路由清單，那裡用 `page.route` 以 404 回傳 `dist/404.html` 模擬 Pages。
 - **多個 worktree 平行跑 E2E 時，用 `E2E_PORT` 各自指定 port**：例如 `E2E_PORT=4181 npm run e2e`，請在 4181–4189 之間挑。不要用 4190：它在瀏覽器禁止連線的 port 清單上，Mobile Safari（WebKit）會連不上而逾時，Mobile Chrome 卻正常，很容易誤判成程式問題。預設 port 是 4173，而本機 `reuseExistingServer` 為 true：若另一個 worktree 的 `vite preview` 正占用同一個 port，Playwright 會直接拿它的建置產物來測，結果與自己的程式碼無關。
+- **E2E 測的是建置後的 App，每個測試第一次載入就會註冊 Service Worker**：之後的 `page.reload()`／`page.goto()` 改由 Service Worker 從預先快取回應，`page.route` 攔不到這些請求。要用 `page.route` 改寫回應時，在第一次 `goto` 之前設好（如 `e2e/deep-link.spec.ts`），或在該檔加 `test.use({ serviceWorkers: 'block' })`。
+- **離線測試要先等 Service Worker 啟用**：`await page.evaluate(async () => { await navigator.serviceWorker.ready })` 之後再 `context.setOffline(true)`，否則預先快取還沒完成，重新整理會失敗。範例見 `e2e/pwa.spec.ts`。
+- **Playwright 的 route 攔不到 Service Worker 本身（`sw.js`）的請求**：要模擬「部署了新版本」，對該 context 加 cookie `e2e-sw-version`（`context.addCookies([{ name: 'e2e-sw-version', value: '2', url: page.url() }])`）再 `page.reload()`，vite preview 會回傳內容不同的 `sw.js`（`vite.config.ts` 的 `simulateNewServiceWorker()`）。cookie 只影響這個 context，不會干擾平行的測試。
+- **sonner toast 在 Playwright 中是 `listitem`**：`page.getByRole('listitem').filter({ hasText: '有新版本' })`，按鈕再從它裡面取。
 - **新增 Playwright project（瀏覽器）時**，同步修改 `.github/workflows/ci.yml` 的 `playwright install` 參數。

@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Toaster } from '@/components/ui/sonner'
 import { useFlushFieldEditsOnHide } from '@/data'
+import { PersistentStorageProvider } from '@/features/settings/PersistentStorageProvider'
 import { SettingsProvider } from '@/features/settings/SettingsProvider'
 import { useSettings } from '@/features/settings/settingsContext'
 import { routes } from './routes'
+import { UpdatePrompt } from './UpdatePrompt'
 
 export default function App() {
   // 在元件內建立 router，讓每次渲染（含測試）都從當下的網址開始
@@ -15,8 +17,11 @@ export default function App() {
 
   return (
     <SettingsProvider>
-      <RouterProvider router={router} />
+      <PersistentStorageProvider>
+        <RouterProvider router={router} />
+      </PersistentStorageProvider>
       <ThemedToaster />
+      <UpdatePrompt />
     </SettingsProvider>
   )
 }
