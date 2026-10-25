@@ -3,6 +3,7 @@ import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { backupFixture, fixtureCustomExercise, fixtureWorkout } from '@/test/backupFixture'
 import { downloadCount, waitForDownloads } from '@/test/downloads'
+import { FIXED_TODAY } from '@/test/fixedToday'
 import { chooseBackupFile, importBackup, renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 
@@ -33,7 +34,7 @@ async function lastExportedAt() {
   return (await screen.findByRole('definition', { name: '上次匯出時間' })).textContent
 }
 
-const NOW = '2026-10-24T04:00:00.000Z'
+const NOW = FIXED_TODAY.toISOString()
 
 describe('匯出資料', () => {
   it('從未匯出時顯示「尚未匯出」；匯出後下載含全部資料的備份檔，並更新上次匯出時間', async () => {
