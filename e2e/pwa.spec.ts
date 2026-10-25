@@ -81,11 +81,7 @@ test('離線：直接開啟深層路由也能正常顯示', async ({ page, conte
 test('新版本：顯示「有新版本」toast，不自動重新整理；按「重新整理」才換成新版本', async ({
   page,
   context,
-  browserName,
 }) => {
-  // 暫時跳過：CI 的 WebKit 安裝新版較慢，App 延後註冊時新版仍在安裝中，toast 不會出現。
-  // 修正 UpdatePrompt 後移除（分支 fix/update-prompt-installing-race）
-  test.skip(!!process.env.CI && browserName === 'webkit', 'CI 的 WebKit 暫時跳過')
   await page.goto('./')
   await waitForServiceWorker(page)
 
@@ -93,6 +89,11 @@ test('新版本：顯示「有新版本」toast，不自動重新整理；按「
   // Playwright 的 route 攔不到 Service Worker 本身的請求，所以不能用 route 改
   await context.addCookies([{ name: 'e2e-sw-version', value: '2', url: page.url() }])
   await page.reload()
+  // Linux 的 WebKit 換頁後自動檢查更新時抓 sw.js 不帶 cookie，看不到新版；
+  // 改由頁面主動檢查更新（App 每小時檢查一次走的也是這條路）
+  await page.evaluate(async () => {
+    await (await navigator.serviceWorker.getRegistration())?.update()
+  })
 
   const toast = page.getByRole('listitem').filter({ hasText: '有新版本' })
   await expect(toast).toBeVisible()
