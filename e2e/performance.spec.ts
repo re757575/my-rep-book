@@ -63,7 +63,9 @@ async function measureClick(page: Page, target: Locator, dones: Done[]): Promise
       Promise.all(
         conditions.map(
           ({ selector, texts = [], count }) =>
-            new Promise<number>((resolve) => {
+            new Promise<number>((resolve, reject) => {
+              // 條件寫錯或畫面沒更新時盡快失敗，不要等到測試逾時
+              setTimeout(() => reject(new Error(`10 秒內沒有等到 ${selector}`)), 10_000)
               let start: number | undefined
               const isDone = () =>
                 [...document.querySelectorAll(selector)].filter((el) =>

@@ -59,8 +59,6 @@ describe('日期切換與補記', () => {
 
     await user.click(screen.getByRole('button', { name: '選擇日期' }))
     const picker = await screen.findByRole('dialog', { name: '選擇日期' })
-    // 月曆在打開選擇器時才載入（code splitting），先等月份出現
-    await within(picker).findByRole('grid')
     // 星期標題列對輔助科技隱藏，改看每一週第一天的日期按鈕
     for (const week of within(picker).getAllByRole('row')) {
       expect(within(week).getAllByRole('button')[0]).toHaveAccessibleName(/星期一/)

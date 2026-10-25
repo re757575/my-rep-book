@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react'
-import { useState } from 'react'
+import { lazy, startTransition, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useLiveData, useRepositories } from '@/data'
 import {
@@ -13,7 +13,7 @@ import {
   type Workout,
 } from '@/domain'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
-import { AddExerciseDialog } from './AddExerciseDialog'
+import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
 import { DailySummary } from './DailySummary'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
 import { ExerciseNoteField } from './ExerciseNoteField'
@@ -22,12 +22,21 @@ import { WorkoutDateHeader } from './WorkoutDateHeader'
 import { WorkoutExerciseActions } from './WorkoutExerciseActions'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
 
+// 加入動作選單帶著 Dialog、分類篩選與動作清單，不放進首次載入的 JS（PRD §7）。
+// 頁面載入後趁閒置先載入，第一次打開時就不用等下載
+const loadAddExerciseDialog = () => import('./AddExerciseDialog')
+const AddExerciseDialog = lazy(async () => ({
+  default: (await loadAddExerciseDialog()).AddExerciseDialog,
+}))
+
 function editContext(): EditContext {
   return { now: new Date().toISOString(), createId: () => crypto.randomUUID() }
 }
 
 export function TodayPage({ date }: { date: LocalDate }) {
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerLoaded, setPickerLoaded] = useState(false)
+  useEffect(() => whenIdleAfterLoad(() => void loadAddExerciseDialog()), [])
   const { workouts } = useRepositories()
   const workout = useLiveData(
     async (repositories) => (await repositories.workouts.getByDate(date)) ?? null,
@@ -146,20 +155,34 @@ export function TodayPage({ date }: { date: LocalDate }) {
           )
         })}
 
-      <Button variant="outline" className="h-11" onClick={() => setPickerOpen(true)}>
+      <Button
+        variant="outline"
+        className="h-11"
+        onClick={() =>
+          // 用 transition 等選單載入完成再一次打開，不經過 Suspense 的 fallback（React 會把 fallback
+          // 換成內容的時機延後約 300 ms，第一次打開就會慢半拍）
+          startTransition(() => {
+            setPickerLoaded(true)
+            setPickerOpen(true)
+          })
+        }
+      >
         <Plus aria-hidden="true" />
         加入動作
       </Button>
-      <AddExerciseDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={async (exercise) => {
-          const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
-          await workouts.update(date, (current) =>
-            addExerciseToWorkout(current, date, exercise, lastPerformance, editContext()),
-          )
-        }}
-      />
+      {/* 第一次打開才載入；之後保持掛載，關閉時才有動畫 */}
+      {pickerLoaded && (
+        <AddExerciseDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          onSelect={async (exercise) => {
+            const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
+            await workouts.update(date, (current) =>
+              addExerciseToWorkout(current, date, exercise, lastPerformance, editContext()),
+            )
+          }}
+        />
+      )}
     </div>
   )
 }

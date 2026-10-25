@@ -1,12 +1,12 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, startTransition, useState, type ComponentProps } from 'react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { addDays, formatDateTitle, type LocalDate } from '@/domain'
 import { dayPath, today } from './dayPath'
 
-// 日期選擇器帶著 react-day-picker 與 date-fns，打開時才載入，不放進首次載入的 JS（PRD §7）
+// 日期選擇器帶著 react-day-picker、date-fns 與 Popover（floating-ui），第一次打開時才載入，
+// 不放進首次載入的 JS（PRD §7）
 const WorkoutDatePicker = lazy(async () => ({
   default: (await import('./WorkoutDatePicker')).WorkoutDatePicker,
 }))
@@ -15,6 +15,7 @@ const WorkoutDatePicker = lazy(async () => ({
 export function WorkoutDateHeader({ date }: { date: LocalDate }) {
   const navigate = useNavigate()
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerLoaded, setPickerLoaded] = useState(false)
   const isToday = date === today()
   const goTo = (target: LocalDate) => navigate(dayPath(target))
 
@@ -47,25 +48,39 @@ export function WorkoutDateHeader({ date }: { date: LocalDate }) {
             回到今天
           </Button>
         )}
-        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-11" aria-label="選擇日期">
-              <CalendarDays aria-hidden="true" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-auto p-0" aria-label="選擇日期">
-            <Suspense>
-              <WorkoutDatePicker
-                date={date}
-                onSelect={(selected) => {
-                  setPickerOpen(false)
-                  goTo(selected)
-                }}
-              />
-            </Suspense>
-          </PopoverContent>
-        </Popover>
+        {pickerLoaded ? (
+          <WorkoutDatePicker
+            date={date}
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onSelect={(selected) => {
+              setPickerOpen(false)
+              goTo(selected)
+            }}
+            trigger={<DatePickerButton />}
+          />
+        ) : (
+          // 第一次點擊前只是一般按鈕；點了才載入選擇器，載入完成後直接打開。
+          // 用 transition 等載入完成再換上選擇器，不經過 Suspense 的 fallback
+          <DatePickerButton
+            onClick={() =>
+              startTransition(() => {
+                setPickerLoaded(true)
+                setPickerOpen(true)
+              })
+            }
+          />
+        )}
       </div>
     </header>
+  )
+}
+
+/** 打開日期選擇器的按鈕；載入選擇器前後是同一個樣子 */
+function DatePickerButton(props: ComponentProps<typeof Button>) {
+  return (
+    <Button variant="ghost" size="icon" className="size-11" aria-label="選擇日期" {...props}>
+      <CalendarDays aria-hidden="true" />
+    </Button>
   )
 }

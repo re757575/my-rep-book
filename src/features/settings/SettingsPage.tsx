@@ -44,7 +44,7 @@ function SettingOptions<T extends string>({
         {options.map((option) => (
           <div key={option} className="flex min-h-11 items-center gap-2">
             <RadioGroupItem id={`${id}-${option}`} value={option} />
-            <Label htmlFor={`${id}-${option}`} className="font-normal">
+            <Label htmlFor={`${id}-${option}`} className="min-h-11 min-w-11 font-normal">
               {labels[option]}
             </Label>
           </div>

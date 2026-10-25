@@ -27,6 +27,40 @@ function spaFallback404(): Plugin {
 
 const BASE = '/my-rep-book/'
 
+/**
+ * 預先載入 Geist 的拉丁字型（PRD §7：LCP < 2.5 秒）。字型檔原本要等 CSS 下載、解析後才開始下載，
+ * 而今天頁的 LCP 元素（日期標題）的數字用的就是它；在 index.html 加上 preload，讓它與 JS 同時下載。
+ * 中文字 Geist 沒有字形，用的是系統字型，所以只預先載入 latin 子集。
+ */
+function preloadLatinFont(): Plugin {
+  return {
+    name: 'preload-latin-font',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_, { bundle }) {
+        const font = Object.values(bundle ?? {}).find((file) =>
+          /geist-latin-wght-normal-.*\.woff2$/.test(file.fileName),
+        )
+        if (!font) throw new Error('找不到 Geist 的 latin 字型檔，無法預先載入')
+        return [
+          {
+            tag: 'link',
+            attrs: {
+              rel: 'preload',
+              href: `${BASE}${font.fileName}`,
+              as: 'font',
+              type: 'font/woff2',
+              crossorigin: '',
+            },
+            injectTo: 'head-prepend',
+          },
+        ]
+      },
+    },
+  }
+}
+
 /** E2E 用來模擬「部署了新版本」的 cookie 名稱（`e2e/pwa.spec.ts`） */
 const E2E_SW_VERSION_COOKIE = 'e2e-sw-version'
 
@@ -59,6 +93,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     spaFallback404(),
+    preloadLatinFont(),
     simulateNewServiceWorker(),
     // PWA（US-20、PRD §8.4）：預先快取 App shell 與所有資源，離線也能使用；
     // 有新版本時由 UpdatePrompt 提示，使用者按「重新整理」才更新（registerType: 'prompt'）

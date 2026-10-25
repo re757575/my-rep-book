@@ -2,8 +2,8 @@
 //
 // 「首次載入的 JS」以真實瀏覽器量：對建置結果（dist/）啟動 vite preview，以 Chromium 打開 App 首頁
 // （預設進入今天的訓練頁），等畫面渲染完成後，把這次載入請求的所有 JS 檔案逐一以 gzip 壓縮後加總。
-// 這樣入口 chunk、它靜態 import 的 chunk，以及啟動時才動態載入的 chunk（例如 workbox-window）都會算進去；
-// 只有切到其他分頁才載入的 chunk 不算。
+// 這樣入口 chunk、它靜態 import 的 chunk，以及啟動後才動態載入的 chunk（workbox-window、閒置時預先載入的
+// 加入動作選單）都會算進去，是偏保守的量法；只有切到其他分頁或打開日期選擇器等操作後才載入的 chunk 不算。
 //
 // 用法：npm run build && npm run check:bundle-size
 import { readFile } from 'node:fs/promises'

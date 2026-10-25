@@ -90,7 +90,7 @@ function MuscleCheckboxGroup({
               onCheckedChange={(checked) => toggle(muscle, checked === true)}
               aria-invalid={error !== undefined}
             />
-            <Label htmlFor={`${id}-${muscle}`} className="font-normal">
+            <Label htmlFor={`${id}-${muscle}`} className="min-h-11 flex-1 font-normal">
               {MUSCLE_LABELS[muscle]}
             </Label>
           </div>
@@ -145,7 +145,7 @@ function SingleChoiceGroup<T extends string>({
         {options.map((option) => (
           <div key={option} className="flex min-h-11 items-center gap-2">
             <RadioGroupItem id={`${id}-${option}`} value={option} />
-            <Label htmlFor={`${id}-${option}`} className="font-normal">
+            <Label htmlFor={`${id}-${option}`} className="min-h-11 flex-1 font-normal">
               {labels[option]}
             </Label>
           </div>

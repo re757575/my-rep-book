@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react'
-import { lazy, Suspense, useId, useState } from 'react'
+import { lazy, startTransition, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -95,17 +95,20 @@ function AddExerciseContent({ onSelect }: { onSelect: (exercise: LibraryExercise
       {creating ? (
         <div className="-mx-4 flex-1 overflow-y-auto px-4">
           {picker && (
-            <Suspense>
-              <CustomExerciseForm
-                existing={picker.library}
-                onCancel={() => setCreating(false)}
-                onSubmit={async (input) => onSelect(await exercises.createCustom(input))}
-              />
-            </Suspense>
+            <CustomExerciseForm
+              existing={picker.library}
+              onCancel={() => setCreating(false)}
+              onSubmit={async (input) => onSelect(await exercises.createCustom(input))}
+            />
           )}
         </div>
       ) : (
-        <ExercisePicker exercises={picker} onSelect={onSelect} onCreate={() => setCreating(true)} />
+        <ExercisePicker
+          exercises={picker}
+          onSelect={onSelect}
+          // 表單是動態載入的：用 transition 等它載入完成再切換，不經過 Suspense 的 fallback
+          onCreate={() => startTransition(() => setCreating(true))}
+        />
       )}
     </>
   )

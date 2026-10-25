@@ -59,7 +59,8 @@ function DialogContent({
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
+            {/* 本專案修改：觸控目標至少 44×44 px（PRD §7），shadcn 原為 size="icon-sm" */}
+            <Button variant="ghost" className="absolute top-1 right-1 size-11" size="icon">
               <XIcon />
               <span className="sr-only">關閉</span>
             </Button>

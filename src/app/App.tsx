@@ -26,8 +26,11 @@ export default function App() {
   )
 }
 
+/** toast 顯示在底部分頁上方，不擋住分頁（分頁高 3.5rem，另留 1rem 間距與 iPhone 的 Home 指示條區域） */
+const TOAST_BOTTOM_OFFSET = { bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }
+
 /** toast 跟著使用者選的主題 */
 function ThemedToaster() {
   const { theme } = useSettings()
-  return <Toaster theme={theme} />
+  return <Toaster theme={theme} offset={TOAST_BOTTOM_OFFSET} mobileOffset={TOAST_BOTTOM_OFFSET} />
 }
