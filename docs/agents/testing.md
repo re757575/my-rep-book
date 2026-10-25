@@ -46,6 +46,9 @@
 - **訓練動作區塊裡除了組的欄位，還有「備註」textbox**：要列出組的欄位時用 `getAllByRole('textbox', { name: /^第 \d+ 組/ })`，不要用沒有 name 的 `getAllByRole('textbox')`。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
+- **重量的欄位名稱與顯示跟著重量單位**：lb 模式下是「第 N 組重量（lb）」「第 N 組額外負重（lb）」，顯示四捨五入到 0.1 且固定 1 位小數（`135.0`、`132.3lb×8`、總訓練量 `1,058.2 lb`）；kg 最多顯示 2 位小數（135 lb 存成 kg 後顯示 `61.23`）。距離永遠是 km。
+- **設定是非同步載入的，載入前先用預設值（kg、跟隨系統）**：App 一渲染就顯示畫面，`SettingsProvider` 讀到設定後才換成儲存的單位與主題。所以 lb 模式下 `reload()` 或剛渲染時，欄位名稱會先是「（kg）」再變成「（lb）」，要用 `findByRole` 等 lb 的名稱，不要 `getByRole`。設定頁則在載入完才顯示選項，用 `findByRole('radiogroup', { name: '重量單位' })`（另一個是「主題」），選項是 `radio`：`kg`、`lb`、`跟隨系統`、`淺色`、`深色`。點完選項後用 `waitFor` 等 `toBeChecked()`，確定已寫入再切頁或 `reload()`。範例見 `src/features/settings/settings.test.tsx`。
+- **主題用 `<html>` 上的 `dark` class 斷言**：`document.documentElement.classList.contains('dark')`。setup 補的 `matchMedia` 一律不符合，所以接縫 A 裡「跟隨系統」就是淺色；系統深色只能在 E2E 用 `page.emulateMedia({ colorScheme: 'dark' })` 驗證（見 `e2e/theme.spec.ts`）。`dark` class 不會在 cleanup 時移除，要等下一個測試渲染 App 才依設定重設。
 - **熱身標記是 `button`＋`aria-pressed`**（shadcn `Toggle`），名稱是「第 N 組熱身」：`within(card).getByRole('button', { name: '第 1 組熱身' })`，斷言用 `toHaveAttribute('aria-pressed', 'true')`。它是點一下的開關，走 `update` 而不是 `editField`，點完要先 `waitFor` 到 `aria-pressed` 改變，再 `reload()` 或切換日期，否則寫入可能還沒完成。每一組的列裡因此多了一個按鈕，數組裡的按鈕時要算進去。
 - **建立「上次紀錄」用的歷史資料**：`renderApp('/day/2026-10-20')` 補記，再按「回到今天」或用日期選擇器切到別天後加入同一個動作，範例見 `src/features/workout/lastPerformance.test.tsx`。
 - **「上次」那一列是非同步載入的，第一組預填則不是**：加入動作時就已經把上次紀錄的數值寫進第一組，所以欄位值可以直接 `toHaveValue`；「上次（M/D）：…」文字由 live query 讀出，要用 `findByText` 等。斷言某個動作「沒有上次紀錄」前，先 `findByText` 等另一個有上次紀錄的動作出現，確定已經載入完。

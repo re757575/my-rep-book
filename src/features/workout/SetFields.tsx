@@ -1,4 +1,5 @@
 import type { SetField, SetValues } from '@/domain'
+import { useWeightUnit } from '@/features/settings/settingsContext'
 import { SetValueInput } from './SetValueInput'
 
 type ValuesOf<T extends SetValues['type']> = Extract<SetValues, { type: T }>
@@ -12,7 +13,7 @@ interface FieldsProps<T extends SetValues['type']> {
   onChange: ChangeSetField
 }
 
-/** 依記錄類型顯示該組需要的欄位；重量一律以 kg 顯示 */
+/** 依記錄類型顯示該組需要的欄位；重量以目前的重量單位顯示，距離固定為 km */
 export function SetFields({
   values,
   setNumber,
@@ -56,15 +57,16 @@ function Unit({ children }: { children: string }) {
 
 /** 重量×次數 */
 function WeightRepsFields({ values, setNumber, onChange }: FieldsProps<'weight_reps'>) {
+  const weightUnit = useWeightUnit()
   return (
     <>
       <SetValueInput
         field="weightKg"
-        label={`第 ${setNumber} 組重量（kg）`}
+        label={`第 ${setNumber} 組重量（${weightUnit}）`}
         value={values.weightKg}
         onChange={onChange}
       />
-      <Unit>kg ×</Unit>
+      <Unit>{`${weightUnit} ×`}</Unit>
       <SetValueInput
         field="reps"
         label={`第 ${setNumber} 組次數`}
@@ -77,6 +79,7 @@ function WeightRepsFields({ values, setNumber, onChange }: FieldsProps<'weight_r
 
 /** 次數，加上選填的額外負重 */
 function RepsFields({ values, setNumber, onChange }: FieldsProps<'reps'>) {
+  const weightUnit = useWeightUnit()
   return (
     <>
       <SetValueInput
@@ -88,12 +91,12 @@ function RepsFields({ values, setNumber, onChange }: FieldsProps<'reps'>) {
       <Unit>下 ＋</Unit>
       <SetValueInput
         field="addedWeightKg"
-        label={`第 ${setNumber} 組額外負重（kg）`}
+        label={`第 ${setNumber} 組額外負重（${weightUnit}）`}
         placeholder="選填"
         value={values.addedWeightKg}
         onChange={onChange}
       />
-      <Unit>kg</Unit>
+      <Unit>{weightUnit}</Unit>
     </>
   )
 }

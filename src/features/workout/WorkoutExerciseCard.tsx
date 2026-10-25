@@ -8,6 +8,7 @@ import {
   type SetField,
   type WorkoutExercise,
 } from '@/domain'
+import { useWeightUnit } from '@/features/settings/settingsContext'
 import { cn } from '@/lib/utils'
 import { SetFields } from './SetFields'
 
@@ -38,6 +39,7 @@ export function WorkoutExerciseCard({
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
+  const weightUnit = useWeightUnit()
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2 border-b pb-4">
@@ -48,7 +50,9 @@ export function WorkoutExerciseCard({
         {actions}
       </header>
       {lastPerformance && (
-        <p className="text-sm text-muted-foreground">{formatLastPerformance(lastPerformance)}</p>
+        <p className="text-sm text-muted-foreground">
+          {formatLastPerformance(lastPerformance, weightUnit)}
+        </p>
       )}
       <ol className="flex flex-col gap-2">
         {workoutExercise.sets.map((set, index) => (

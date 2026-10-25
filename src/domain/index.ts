@@ -50,3 +50,4 @@ export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } fro
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'
 export { summarizeWorkout, type WorkoutSummary } from './summary'
+export { formatWeight, kgToLb, lbToKg } from './units'

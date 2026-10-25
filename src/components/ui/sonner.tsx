@@ -1,4 +1,3 @@
-import { useTheme } from 'next-themes'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import {
   CircleCheckIcon,
@@ -8,12 +7,12 @@ import {
   Loader2Icon,
 } from 'lucide-react'
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme()
-
+// 改過 shadcn 原版：原版用 next-themes 的 useTheme() 讀主題，這個 App 的主題存在 Settings，
+// 由呼叫端以 `theme` 傳入（見 src/app/App.tsx）
+const Toaster = ({ theme = 'system', ...props }: ToasterProps) => {
   return (
     <Sonner
-      theme={theme as ToasterProps['theme']}
+      theme={theme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

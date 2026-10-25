@@ -21,13 +21,13 @@ describe('parseSetInput：組的欄位輸入', () => {
     ['reps', '9999', 9999],
     ['durationSec', '01:30', 90],
   ])('%s 輸入 %j → %d', (field, text, value) => {
-    expect(parseSetInput(field, text)).toEqual({ ok: true, value })
+    expect(parseSetInput(field, text, 'kg')).toEqual({ ok: true, value })
   })
 
   it.each<SetField>(['weightKg', 'reps', 'addedWeightKg', 'durationSec', 'distanceKm'])(
     '%s 空白代表尚未填寫',
     (field) => {
-      expect(parseSetInput(field, ' ')).toEqual({ ok: true, value: null })
+      expect(parseSetInput(field, ' ', 'kg')).toEqual({ ok: true, value: null })
     },
   )
 
@@ -52,7 +52,37 @@ describe('parseSetInput：組的欄位輸入', () => {
     ['durationSec', '00:60', '秒數須為 0–59'],
     ['durationSec', '00:00', '時間須大於 0'],
   ])('%s 輸入 %j 不合法：%s', (field, text, error) => {
-    expect(parseSetInput(field, text)).toEqual({ ok: false, error })
+    expect(parseSetInput(field, text, 'kg')).toEqual({ ok: false, error })
+  })
+
+  describe('lb 模式', () => {
+    it.each<[SetField, string, number]>([
+      ['weightKg', '135', 61.23496995],
+      ['weightKg', '135.25', 61.3483680425],
+      ['addedWeightKg', '25', 11.33980925],
+    ])('%s 輸入 %j lb → 換算成 %d kg，不四捨五入', (field, text, kg) => {
+      const parsed = parseSetInput(field, text, 'lb')
+      expect(parsed.ok && parsed.value).toBeCloseTo(kg, 12)
+    })
+
+    it('0 lb 是 0 kg', () => {
+      expect(parseSetInput('weightKg', '0', 'lb')).toEqual({ ok: true, value: 0 })
+    })
+
+    it('小數位數以輸入的 lb 為準', () => {
+      expect(parseSetInput('weightKg', '135.255', 'lb')).toEqual({
+        ok: false,
+        error: '最多 2 位小數',
+      })
+    })
+
+    it.each<[SetField, string, number]>([
+      ['distanceKm', '5.25', 5.25],
+      ['reps', '8', 8],
+      ['durationSec', '01:30', 90],
+    ])('%s 不受重量單位影響：%j → %d', (field, text, value) => {
+      expect(parseSetInput(field, text, 'lb')).toEqual({ ok: true, value })
+    })
   })
 })
 

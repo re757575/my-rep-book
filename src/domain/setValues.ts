@@ -1,5 +1,6 @@
 import { parseDuration } from './duration'
-import type { ParsedInput, SetValues, TrackingType } from './types'
+import type { ParsedInput, SetValues, TrackingType, WeightUnit } from './types'
+import { toKg } from './units'
 
 /** 該記錄類型所有欄位都還沒填的組數值 */
 export function emptySetValues(type: TrackingType): SetValues {
@@ -78,10 +79,11 @@ function parseReps(text: string): ParsedInput {
 }
 
 /**
- * 解析使用者在某個欄位輸入的文字（重量以目前的顯示單位輸入）。
+ * 解析使用者在某個欄位輸入的文字。重量與額外負重以 `weightUnit` 輸入，
+ * 小數位數以輸入的單位檢查，再換算成 kg（不四捨五入）；距離固定為 km。
  * 空白為 null，代表尚未填寫；不合法時回傳錯誤訊息，呼叫端不應寫入。
  */
-export function parseSetInput(field: SetField, text: string): ParsedInput {
+export function parseSetInput(field: SetField, text: string, weightUnit: WeightUnit): ParsedInput {
   const trimmed = text.trim()
   if (trimmed === '') return { ok: true, value: null }
   switch (field) {
@@ -90,7 +92,12 @@ export function parseSetInput(field: SetField, text: string): ParsedInput {
     case 'reps':
       return parseReps(trimmed)
     case 'weightKg':
-    case 'addedWeightKg':
+    case 'addedWeightKg': {
+      const parsed = parseDecimal(trimmed)
+      return parsed.ok && parsed.value !== null
+        ? { ok: true, value: toKg(parsed.value, weightUnit) }
+        : parsed
+    }
     case 'distanceKm':
       return parseDecimal(trimmed)
   }

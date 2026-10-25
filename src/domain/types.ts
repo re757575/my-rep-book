@@ -145,6 +145,13 @@ export interface Settings {
   lastExportedAt: Timestamp | null
 }
 
+/** 尚未儲存過設定時的預設值 */
+export const DEFAULT_SETTINGS: Readonly<Settings> = {
+  weightUnit: 'kg',
+  theme: 'system',
+  lastExportedAt: null,
+}
+
 /** 備份內容：匯出檔的 data，也是匯入時整份取代的內容 */
 export interface BackupData {
   /** 不含衍生欄位 */

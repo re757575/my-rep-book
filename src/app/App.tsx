@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { Toaster } from '@/components/ui/sonner'
 import { useFlushFieldEditsOnHide } from '@/data'
+import { SettingsProvider } from '@/features/settings/SettingsProvider'
+import { useSettings } from '@/features/settings/settingsContext'
 import { routes } from './routes'
 
 export default function App() {
@@ -12,9 +14,15 @@ export default function App() {
   useFlushFieldEditsOnHide()
 
   return (
-    <>
+    <SettingsProvider>
       <RouterProvider router={router} />
-      <Toaster />
-    </>
+      <ThemedToaster />
+    </SettingsProvider>
   )
+}
+
+/** toast 跟著使用者選的主題 */
+function ThemedToaster() {
+  const { theme } = useSettings()
+  return <Toaster theme={theme} />
 }
