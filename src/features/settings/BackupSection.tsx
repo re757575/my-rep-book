@@ -12,14 +12,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { useRepositories, type Repositories } from '@/data'
-import {
-  backupFileName,
-  createExportFile,
-  formatDateTime,
-  parseBackupFile,
-  type BackupData,
-  type Timestamp,
-} from '@/domain'
+import { formatDateTime, type BackupData, type Timestamp } from '@/domain'
+import { backupFileName, createExportFile, parseBackupFile } from '@/domain/backup'
 import { downloadJson } from './downloadFile'
 
 /** 下載目前全部資料的備份檔，並記下上次匯出時間 */

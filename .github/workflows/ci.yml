@@ -1,4 +1,4 @@
-# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build → e2e；
+# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build → bundle 大小 → e2e；
 # 只有 push 到 main 且全部通過才部署到 GitHub Pages（§8.4），PR 只跑 CI。
 name: CI
 
@@ -48,6 +48,10 @@ jobs:
 
       - name: 安裝 Playwright 瀏覽器
         run: npx playwright install --with-deps chromium webkit
+
+      # PRD §7：首次載入的 JS（gzip）< 250 KB。以 Chromium 打開 build 出的 App 首頁實際量測，所以排在安裝瀏覽器之後
+      - name: Bundle 大小檢查
+        run: npm run check:bundle-size
 
       # playwright.config.ts 的 webServer 會以正式 base path（/my-rep-book/）build 並啟動 vite preview
       - name: E2E

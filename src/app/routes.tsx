@@ -1,12 +1,14 @@
 import type { RouteObject } from 'react-router'
-import { EditCustomExercisePage } from '@/features/exercises/EditCustomExercisePage'
-import { ExerciseDetailPage } from '@/features/exercises/ExerciseDetailPage'
-import { ExercisesPage } from '@/features/exercises/ExercisesPage'
-import { NewCustomExercisePage } from '@/features/exercises/NewCustomExercisePage'
-import { HistoryPage } from '@/features/history/HistoryPage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
 import { WorkoutDayRoute } from '@/features/workout/WorkoutDayRoute'
 import { AppLayout } from './AppLayout'
+import {
+  EditCustomExercisePage,
+  ExerciseDetailPage,
+  ExercisesPage,
+  HistoryPage,
+  NewCustomExercisePage,
+  SettingsPage,
+} from './lazyPages'
 
 export const routes: RouteObject[] = [
   {

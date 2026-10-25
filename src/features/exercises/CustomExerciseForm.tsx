@@ -18,7 +18,11 @@ import {
   type ExerciseBase,
   type Muscle,
 } from '@/domain'
-import { customExerciseSchema, type CustomExerciseFormValues } from './customExerciseSchema'
+import {
+  EMPTY_CUSTOM_EXERCISE_FORM,
+  customExerciseSchema,
+  type CustomExerciseFormValues,
+} from './customExerciseSchema'
 
 function FieldError({ id, message }: { id: string; message: string | undefined }) {
   if (!message) return null
@@ -158,7 +162,7 @@ type CancelAction =
 
 /** 新增與編輯自訂動作共用的表單 */
 export function CustomExerciseForm({
-  defaultValues,
+  defaultValues = EMPTY_CUSTOM_EXERCISE_FORM,
   existing,
   excludeId,
   cancelTo,
@@ -166,7 +170,8 @@ export function CustomExerciseForm({
   trackingTypeLocked = false,
   onSubmit,
 }: {
-  defaultValues: CustomExerciseFormValues
+  /** 預設為空白表單 */
+  defaultValues?: CustomExerciseFormValues
   /** 用於重名檢查的所有既有動作（預設＋自訂） */
   existing: readonly ExerciseBase[]
   /** 編輯時排除動作自己 */

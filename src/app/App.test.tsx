@@ -24,14 +24,15 @@ describe('App 外殼', () => {
     for (const [tab, heading] of TAB_HEADINGS) {
       await user.click(within(tabs).getByRole('link', { name: tab }))
 
-      expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
+      // 今天以外的分頁在第一次進入時才載入（code splitting），要等頁面出現
+      expect(await screen.findByRole('heading', { level: 1, name: heading })).toBeInTheDocument()
       expect(within(tabs).getByRole('link', { name: tab })).toHaveAttribute('aria-current', 'page')
     }
   })
 
-  it('直接開啟深層連結會顯示對應的頁面', () => {
+  it('直接開啟深層連結會顯示對應的頁面', async () => {
     renderApp('/settings')
 
-    expect(screen.getByRole('heading', { level: 1, name: '設定' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: '設定' })).toBeInTheDocument()
   })
 })

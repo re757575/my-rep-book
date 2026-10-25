@@ -60,6 +60,8 @@ async function recordBench(user: UserEvent) {
 async function pickDate(user: UserEvent, day: RegExp) {
   await user.click(screen.getByRole('button', { name: '選擇日期' }))
   const picker = await screen.findByRole('dialog', { name: '選擇日期' })
+  // 月曆在打開選擇器時才載入（code splitting），先等月份出現
+  await within(picker).findByRole('grid')
   await user.click(within(picker).getByRole('button', { name: day }))
 }
 

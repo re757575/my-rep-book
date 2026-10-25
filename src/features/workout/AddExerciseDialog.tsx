@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react'
-import { useId, useState } from 'react'
+import { lazy, Suspense, useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -14,9 +14,12 @@ import {
   type Workout,
 } from '@/domain'
 import { CategoryFilterBar } from '@/features/exercises/CategoryFilterBar'
-import { CustomExerciseForm } from '@/features/exercises/CustomExerciseForm'
-import { EMPTY_CUSTOM_EXERCISE_FORM } from '@/features/exercises/customExerciseSchema'
 import { ExerciseList } from '@/features/exercises/ExerciseList'
+
+// 自訂動作表單帶著 react-hook-form 與 zod，按「新增自訂動作」才載入，不放進首次載入的 JS（PRD §7）
+const CustomExerciseForm = lazy(async () => ({
+  default: (await import('@/features/exercises/CustomExerciseForm')).CustomExerciseForm,
+}))
 
 /** 往前找最近使用的動作時，每批讀取的訓練筆數 */
 const WORKOUT_PAGE_SIZE = 30
@@ -92,12 +95,13 @@ function AddExerciseContent({ onSelect }: { onSelect: (exercise: LibraryExercise
       {creating ? (
         <div className="-mx-4 flex-1 overflow-y-auto px-4">
           {picker && (
-            <CustomExerciseForm
-              defaultValues={EMPTY_CUSTOM_EXERCISE_FORM}
-              existing={picker.library}
-              onCancel={() => setCreating(false)}
-              onSubmit={async (input) => onSelect(await exercises.createCustom(input))}
-            />
+            <Suspense>
+              <CustomExerciseForm
+                existing={picker.library}
+                onCancel={() => setCreating(false)}
+                onSubmit={async (input) => onSelect(await exercises.createCustom(input))}
+              />
+            </Suspense>
           )}
         </div>
       ) : (

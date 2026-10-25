@@ -4,9 +4,9 @@ import {
   createExportFile,
   migrateBackupData,
   parseBackupFile,
-  type BackupData,
   type BackupMigrations,
-} from './index'
+} from './backup'
+import type { BackupData } from './index'
 
 describe('備份檔名', () => {
   it.each([

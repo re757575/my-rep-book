@@ -8,6 +8,7 @@
 - **驗證「重新整理後仍保留」用 `reload()`**：`const { user, reload } = renderApp(...)`。它會卸載 App、關閉 db，再以目前網址重新渲染。
 - **每個測試都從空資料庫開始**，`src/test/setup.ts` 自動處理，測試裡不用做任何事。原因：Dexie 在建立 db 時就固定了 `indexedDB`，只替換 `globalThis.indexedDB` 無效，所以 setup 改用 `db.delete({ disableAutoOpen: false })`。待寫的欄位編輯存在 localStorage，setup 也會一併 `localStorage.clear()`；新增其他存在 localStorage 的資料時不用另外清。
 - **只有 `Date` 是假的**，固定在 2026-10-24（`src/test/fixedToday.ts`，E2E 共用）。`setTimeout` 等計時器是真的，所以 user-event、`findBy*`、toast 自動消失都照常運作。
+- **今天以外的分頁、日期選擇器的月曆、加入動作選單裡的自訂動作表單都是動態載入的**（code splitting，讓首次載入的 JS < 250 KB，見 `src/app/lazyPages.tsx`）：`renderApp('/exercises')` 或點分頁之後，第一個查詢要用 `findBy*`，即使那個元素不依賴資料（例如搜尋框、頁面標題）；打開日期選擇器後先 `await within(picker).findByRole('grid')` 再找日期按鈕。`src/test/setup.ts` 在每個測試檔開始前先載入 `src/features` 的所有元件，避免第一次轉譯拖過 `findBy*` 的 1 秒逾時；新增動態載入的元件放在 `src/features` 底下就會自動涵蓋。
 - **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
 - **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）、`ResizeObserver`（Radix `Checkbox`、`RadioGroup`）與 `Element.prototype.setPointerCapture` 等 pointer capture 方法（點 sonner toast 上的按鈕）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
 - **sonner toast 跨測試殘留**：toast 存在 sonner 的模組層級狀態，`<Toaster />` 掛載時會重播還沒消失的 toast，所以上一個測試的「復原」按鈕會跑到下一個測試。`src/test/setup.ts` 的 `afterEach` 已呼叫 `toast.dismiss()`，新增 toast 不用再處理；但同一個測試裡連續刪除兩次，畫面上會同時有兩個「復原」，要先等前一個消失或改用 `getAllByRole`。

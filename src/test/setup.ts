@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import 'fake-indexeddb/auto'
 import { cleanup } from '@testing-library/react'
 import { toast } from 'sonner'
-import { afterEach, beforeEach, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 import { db } from '@/data/dexie/db'
 import { installDownloadCapture, resetDownloads } from './downloads'
 import { FIXED_TODAY } from './fixedToday'
@@ -35,6 +35,13 @@ Element.prototype.hasPointerCapture ??= () => false
 
 // jsdom 沒有 URL.createObjectURL，也不會下載檔案：攔下 <a download> 的點擊，讓測試讀取下載的內容
 installDownloadCapture()
+
+// 今天以外的分頁、日期選擇器與自訂動作表單是動態載入的（code splitting）。Vitest 在第一次 import 時才轉譯，
+// 全套測試的負載下可能超過 findBy 的 1 秒逾時；先在每個測試檔開始前載入一次，測試中的動態載入就幾乎是立即完成。
+beforeAll(async () => {
+  const modules = import.meta.glob(['/src/features/**/*.tsx', '!/src/features/**/*.test.tsx'])
+  await Promise.all(Object.values(modules).map((load) => load()))
+})
 
 beforeEach(async () => {
   resetDownloads()

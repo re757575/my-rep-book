@@ -1,12 +1,15 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
-import { zhTW } from 'react-day-picker/locale'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { addDays, formatDateTitle, fromLocalDate, toLocalDate, type LocalDate } from '@/domain'
+import { addDays, formatDateTitle, type LocalDate } from '@/domain'
 import { dayPath, today } from './dayPath'
+
+// 日期選擇器帶著 react-day-picker 與 date-fns，打開時才載入，不放進首次載入的 JS（PRD §7）
+const WorkoutDatePicker = lazy(async () => ({
+  default: (await import('./WorkoutDatePicker')).WorkoutDatePicker,
+}))
 
 /** 訓練頁的日期標題：前一天、後一天、日期選擇器與回到今天 */
 export function WorkoutDateHeader({ date }: { date: LocalDate }) {
@@ -51,20 +54,15 @@ export function WorkoutDateHeader({ date }: { date: LocalDate }) {
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-auto p-0" aria-label="選擇日期">
-            <Calendar
-              mode="single"
-              locale={zhTW}
-              weekStartsOn={1}
-              selected={fromLocalDate(date)}
-              defaultMonth={fromLocalDate(date)}
-              disabled={{ after: fromLocalDate(today()) }}
-              endMonth={fromLocalDate(today())}
-              required
-              onSelect={(selected) => {
-                setPickerOpen(false)
-                goTo(toLocalDate(selected))
-              }}
-            />
+            <Suspense>
+              <WorkoutDatePicker
+                date={date}
+                onSelect={(selected) => {
+                  setPickerOpen(false)
+                  goTo(selected)
+                }}
+              />
+            </Suspense>
           </PopoverContent>
         </Popover>
       </div>
