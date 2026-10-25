@@ -22,6 +22,8 @@
   - `<dl>` 的 `dd` 以 `aria-labelledby` 指向 `dt`：`getByRole('definition', { name: '記錄類型' })`
 - **今天頁的 `h1` 是日期**（固定日期下為 `10/24（六）`），不是「今天」。要確認在今天頁，用 `getByRole('heading', { level: 1, name: '10/24（六）' })`。
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
+- **每日摘要是名稱為「每日摘要」的 `region`**，裡面是 `<dl>`，各項用 `definition` 取：`within(await screen.findByRole('region', { name: '每日摘要' })).getByRole('definition', { name: '總訓練量' })`。項目名稱是「動作數」「正式組數」「總訓練量」「有氧總時間」。數字是 live query 算出來的，輸入後要用 `waitFor` 等。範例見 `src/features/workout/dailySummary.test.tsx`。
+- **`toHaveTextContent('0')` 是子字串比對**：會比到「10」「0 kg」，斷言單一數字時改比 `.textContent`（`expect(el.textContent).toBe('0')`）或用錨定的正規表示式。
 - **確認對話框（shadcn `AlertDialog`）是 `alertdialog`**，名稱是標題：`findByRole('alertdialog', { name: '刪除「Smith 臥推」？' })`。對話框裡的確認鍵常和觸發鍵同名（例如都叫「刪除」），要用 `within(dialog)` 取。
 - **斷言「沒有某個元素」前，先等相關資料載入完**：依非同步資料決定是否顯示的元素（例如動作詳情頁依「是否已有紀錄」顯示「封存」或「刪除」），載入中兩者都不在，直接 `queryBy*` 斷言不存在會在載入前就通過。先 `findBy*` 等一個載入後必定出現的元素，再斷言另一個不存在。
 - **需要「已有紀錄」的動作時，透過 UI 在今天的訓練加入它**：建立自訂動作後切到「今天」分頁，從加入動作選單加入即可，不用填組數值。範例見 `src/features/exercises/archiveCustomExercises.test.tsx` 的 `createCustomWithRecord`。
@@ -53,7 +55,7 @@
 - **輸入組的數值或備註後可以直接 `page.reload()`／`page.goto()`／關閉分頁**：欄位編輯走 `WorkoutRepository.editField`，輸入當下就同步記進 localStorage 的待寫清單，下次開啟資料庫時會在任何讀取之前補寫，所以不用先做別的操作、也不用 `waitForTimeout` 等寫入完成。保證範圍見 `e2e/durable-writes.spec.ts`。新增「輸入即儲存」的欄位時也要走 `editField`（在 `src/domain/fieldEdits.ts` 的 `FieldEdit` 加一種 kind）；若改用 `update` 每次按鍵寫一次，這個保證就不成立。
 - **E2E 中開新分頁要自己固定「今天」**：`e2e/fixtures.ts` 的 auto fixture 只作用在預設的 `page`。用 `context.newPage()` 開的頁面要先 `await newPage.clock.setFixedTime(FIXED_TODAY)`（從 `src/test/fixedToday.ts` import）再 `goto`。
 - **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
-- **Playwright 不計算 `definition` 角色的名稱**：E2E 改用 `getByRole('definition').filter({ hasText: … })`。
+- **Playwright 不計算 `definition` 角色的名稱**：`dd` 以 `aria-labelledby` 指向 `dt` 時，改用 `getByLabel('總訓練量')` 取（Playwright 的 `getByLabel` 會看 `aria-labelledby`），例如 `summary.getByLabel('總訓練量')`；或用 `getByRole('definition').filter({ hasText: … })`。
 - **尺寸類檢查放 E2E**：jsdom 量不到尺寸，觸控目標 ≥ 44×44 之類的檢查要在真實瀏覽器量。
 - **vite preview 會自己 fallback 到 index.html**，直接開深層連結測不出 GitHub Pages 的 404.html 行為。要驗證新的深層路由，把它加進 `e2e/deep-link.spec.ts` 的路由清單，那裡用 `page.route` 以 404 回傳 `dist/404.html` 模擬 Pages。
 - **多個 worktree 平行跑 E2E 時，用 `E2E_PORT` 各自指定 port**：例如 `E2E_PORT=4181 npm run e2e`，請在 4181–4189 之間挑。不要用 4190：它在瀏覽器禁止連線的 port 清單上，Mobile Safari（WebKit）會連不上而逾時，Mobile Chrome 卻正常，很容易誤判成程式問題。預設 port 是 4173，而本機 `reuseExistingServer` 為 true：若另一個 worktree 的 `vite preview` 正占用同一個 port，Playwright 會直接拿它的建置產物來測，結果與自己的程式碼無關。

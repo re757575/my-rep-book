@@ -14,6 +14,7 @@ import {
 } from '@/domain'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { AddExerciseDialog } from './AddExerciseDialog'
+import { DailySummary } from './DailySummary'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
 import { ExerciseNoteField } from './ExerciseNoteField'
 import { queryLastPerformance } from './queryLastPerformance'
@@ -67,6 +68,7 @@ export function TodayPage({ date }: { date: LocalDate }) {
   return (
     <div className="flex flex-col gap-4">
       <WorkoutDateHeader date={date} />
+      {workout && <DailySummary workout={workout} />}
 
       {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
       {library &&
