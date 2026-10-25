@@ -32,3 +32,8 @@ export function formatDateTitle(date: LocalDate): string {
   const weekday = fromLocalDate(date).getDay()
   return `${month}/${day}（${WEEKDAY_LABELS[weekday]}）`
 }
+
+/** 帶年份的日期：`YYYY/M/D（週）`，例如 2026-10-20 → `2026/10/20（二）` */
+export function formatDateWithYear(date: LocalDate): string {
+  return `${date.slice(0, 4)}/${formatDateTitle(date)}`
+}

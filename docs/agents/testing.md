@@ -41,6 +41,8 @@
 - **熱身標記是 `button`＋`aria-pressed`**（shadcn `Toggle`），名稱是「第 N 組熱身」：`within(card).getByRole('button', { name: '第 1 組熱身' })`，斷言用 `toHaveAttribute('aria-pressed', 'true')`。它是點一下的開關，走 `update` 而不是 `editField`，點完要先 `waitFor` 到 `aria-pressed` 改變，再 `reload()` 或切換日期，否則寫入可能還沒完成。每一組的列裡因此多了一個按鈕，數組裡的按鈕時要算進去。
 - **建立「上次紀錄」用的歷史資料**：`renderApp('/day/2026-10-20')` 補記，再按「回到今天」或用日期選擇器切到別天後加入同一個動作，範例見 `src/features/workout/lastPerformance.test.tsx`。
 - **「上次」那一列是非同步載入的，第一組預填則不是**：加入動作時就已經把上次紀錄的數值寫進第一組，所以欄位值可以直接 `toHaveValue`；「上次（M/D）：…」文字由 live query 讀出，要用 `findByText` 等。斷言某個動作「沒有上次紀錄」前，先 `findByText` 等另一個有上次紀錄的動作出現，確定已經載入完。
+- **動作詳情頁的動作歷史**：清單是名稱為「歷史紀錄」的 `list`，每一天是以帶年份日期命名的 `article`（`findByRole('article', { name: '2026/10/20（二）' })`），裡面的日期是 `link`、各組是名稱為「組」的 `list`。熱身組的 `listitem` 文字前面多了「熱身」（例如 `熱身40kg×10`）。範例見 `src/features/exercises/exerciseHistory.test.tsx`。
+- **需要很多天的紀錄時（例如測分批載入），從最早的日期 `renderApp('/day/…')` 開始，用「後一天」逐日加入動作**：不用填組數值，21 天約 1.5 秒；每次按「後一天」後先 `findByRole('heading', { level: 1, name })` 等日期標題換成新的日期，確定已切換再加入。
 - **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
 - **欄位的驗證錯誤用 `toBeInvalid()` 與 `toHaveAccessibleDescription('錯誤訊息')` 斷言**：錯誤訊息以 `aria-describedby` 連到欄位，欄位帶 `aria-invalid`。`getByRole` 沒有 `invalid` 這個選項，傳了會被忽略。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。

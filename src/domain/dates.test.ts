@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, formatDateTitle, isValidLocalDate, toLocalDate } from './dates'
+import {
+  addDays,
+  formatDateTitle,
+  formatDateWithYear,
+  isValidLocalDate,
+  toLocalDate,
+} from './dates'
 
 describe('formatDateTitle：日期標題 M/D（週）', () => {
   it.each([
@@ -13,6 +19,15 @@ describe('formatDateTitle：日期標題 M/D（週）', () => {
     ['2027-01-05', '1/5（二）'],
   ])('%s → %s', (date, expected) => {
     expect(formatDateTitle(date)).toBe(expected)
+  })
+})
+
+describe('formatDateWithYear：帶年份的日期 YYYY/M/D（週）', () => {
+  it.each([
+    ['2026-10-20', '2026/10/20（二）'],
+    ['2027-01-05', '2027/1/5（二）'],
+  ])('%s → %s', (date, expected) => {
+    expect(formatDateWithYear(date)).toBe(expected)
   })
 })
 
