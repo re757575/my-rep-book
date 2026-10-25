@@ -144,6 +144,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // CI 的 runner 較慢，接縫 A 的整個 App 測試偶爾超過預設的 5 秒而擋住部署；本機維持預設
+    testTimeout: process.env.CI ? 15_000 : 5_000,
     coverage: {
       provider: 'v8',
       include: ['src/domain/**/*.ts'],
