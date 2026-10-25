@@ -11,6 +11,7 @@
 - **資料經 `useLiveData` 非同步載入**：清單、詳情等讀資料的畫面要用 `findBy*` 等待，不能用 `getBy*`。標題先出現、內容晚到的頁面也一樣，例如自訂動作表單要等動作庫載入（重名檢查用）才渲染，看到標題後還要 `findByRole('textbox', { name: '中文名稱' })`。
 - **jsdom 缺的瀏覽器 API 在 `src/test/setup.ts` 補**：目前補了 `matchMedia`（sonner、主題）、`ResizeObserver`（Radix `Checkbox`、`RadioGroup`）與 `Element.prototype.setPointerCapture` 等 pointer capture 方法（點 sonner toast 上的按鈕）。新的 Radix 元件若在測試中出現 `XXX is not defined`，在同一處補空實作，不要在個別測試裡 mock。
 - **sonner toast 跨測試殘留**：toast 存在 sonner 的模組層級狀態，`<Toaster />` 掛載時會重播還沒消失的 toast，所以上一個測試的「復原」按鈕會跑到下一個測試。`src/test/setup.ts` 的 `afterEach` 已呼叫 `toast.dismiss()`，新增 toast 不用再處理；但同一個測試裡連續刪除兩次，畫面上會同時有兩個「復原」，要先等前一個消失或改用 `getAllByRole`。
+- **不要拿「可能重複出現的 toast」當作非同步動作完成的訊號**：同一個測試裡 `reload()` 也會重播還沒消失的 toast。若第二次動作後用 `findByText('匯入完成')` 等完成，它會比到第一次留下的 toast 而立刻返回；接著 `reload()` 或測試結束會關閉資料庫，中斷還在進行的寫入。這類失敗只在全套測試的負載下偶發，而且還會把寫入漏到下一個測試的新資料庫。等 toast 之前先 `toast.dismiss()`，並 `waitFor` 舊的 toast 消失（見 `src/test/importBackup.ts` 的 `dismissToasts`）。要確認一個等待是否可靠，可以暫時在 repository 方法開頭加 `await new Promise((r) => setTimeout(r, 300))`，正確的測試在延遲下仍會通過。
 - **toast 的按鈕用 role 取**：`await screen.findByRole('button', { name: '復原' })`；訊息用 `findByText('已刪除一組')`。自動消失靠真實計時器，要驗證「約 5 秒後消失」只能真的等，測試要調高 timeout（例如 `it(..., 10_000)`），這類測試只寫一個。
 - **刪除、排序後畫面是非同步更新**：寫入 IndexedDB 後由 live query 重新渲染，點完「刪除第 2 組」「上移」後用 `waitFor` 斷言結果，不要立刻 `getBy*`。
 - **長字串用 `user.paste`**：測字數上限時 `user.type` 一字一字打很慢，先 `user.click(欄位)` 再 `user.paste('臥'.repeat(41))`。
