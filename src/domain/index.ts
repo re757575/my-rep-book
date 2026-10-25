@@ -10,7 +10,15 @@ export {
   TRACKING_TYPE_LABELS,
 } from './labels'
 export { isHiddenOrArchived } from './library'
-export { addDays, formatDateTitle, fromLocalDate, isValidLocalDate, toLocalDate } from './dates'
+export {
+  addDays,
+  formatDateTitle,
+  formatDateWithYear,
+  fromLocalDate,
+  isValidLocalDate,
+  toLocalDate,
+} from './dates'
+export { buildExerciseHistory, type ExerciseHistoryEntry } from './exerciseHistory'
 export { formatDuration, parseDuration } from './duration'
 export {
   emptySetValues,

@@ -23,6 +23,7 @@ import {
   type LibraryExercise,
   type Muscle,
 } from '@/domain'
+import { ExerciseHistory } from './ExerciseHistory'
 import { useLibraryExercise } from './useLibraryExercises'
 
 function formatMuscles(muscles: readonly Muscle[]) {
@@ -186,6 +187,8 @@ export function ExerciseDetailPage() {
           ) : (
             <CustomActions exercise={exercise} />
           )}
+
+          <ExerciseHistory exerciseId={exercise.id} />
         </>
       )}
     </div>
