@@ -13,6 +13,7 @@ export { isHiddenOrArchived } from './library'
 export { addDays, formatDateTitle, fromLocalDate, isValidLocalDate, toLocalDate } from './dates'
 export { formatDuration, parseDuration } from './duration'
 export {
+  emptySetValues,
   isCompleteSet,
   parseSetInput,
   validateSetValues,
@@ -23,18 +24,20 @@ export {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
   cloneSetForNext,
-  emptySetValues,
   moveWorkoutExercise,
   removeSet,
   removeWorkoutExercise,
   restoreSet,
   restoreWorkoutExercise,
+  toggleSetWarmup,
   updateSetValues,
   updateWorkoutExerciseNote,
   type EditContext,
   type RemovedSet,
   type RemovedWorkoutExercise,
 } from './workoutEdits'
+export { buildInitialSet, findLastPerformance, type LastPerformance } from './lastPerformance'
+export { formatLastPerformance, formatSetValues } from './formatSet'
 export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } from './fieldEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { LastPerformance } from './lastPerformance'
 import {
+  addExerciseToWorkout,
+  addSetToWorkoutExercise,
   cloneSetForNext,
   moveWorkoutExercise,
   removeSet,
@@ -57,6 +60,102 @@ function workout(exercises: WorkoutExercise[]): Workout {
 const exerciseIds = (target: Workout | undefined) => target?.exercises.map((item) => item.id)
 const setIds = (target: Workout, workoutExerciseId: string) =>
   target.exercises.find((item) => item.id === workoutExerciseId)?.sets.map((item) => item.id)
+
+const LAST_PERFORMANCE: LastPerformance = {
+  date: '2026-10-20',
+  sets: [
+    { type: 'weight_reps', weightKg: 60, reps: 8 },
+    { type: 'weight_reps', weightKg: 62.5, reps: 6 },
+  ],
+}
+
+function sequentialIds() {
+  let next = 0
+  return () => `new-${++next}`
+}
+
+const setsOf = (target: Workout, workoutExerciseId: string) =>
+  target.exercises
+    .find((item) => item.id === workoutExerciseId)
+    ?.sets.map(({ isWarmup, values }) => ({ isWarmup, values }))
+
+describe('addExerciseToWorkout：加入動作時第一組預填', () => {
+  const bench = { id: 'barbell-bench-press', trackingType: 'weight_reps' } as const
+
+  it('有上次紀錄時，第一組帶入上次第一個完整的正式組', () => {
+    const result = addExerciseToWorkout(undefined, '2026-10-24', bench, LAST_PERFORMANCE, {
+      now: NOW,
+      createId: sequentialIds(),
+    })
+
+    expect(setsOf(result, 'new-1')).toEqual([
+      { isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+    ])
+  })
+
+  it('沒有上次紀錄時，第一組欄位為空白', () => {
+    const result = addExerciseToWorkout(
+      workout([workoutExercise('a')]),
+      '2026-10-24',
+      bench,
+      undefined,
+      {
+        now: NOW,
+        createId: sequentialIds(),
+      },
+    )
+
+    expect(setsOf(result, 'new-1')).toEqual([
+      { isWarmup: false, values: { type: 'weight_reps', weightKg: null, reps: null } },
+    ])
+  })
+})
+
+describe('addSetToWorkoutExercise：新增一組', () => {
+  const warmup: WorkoutSet = {
+    id: 'a-1',
+    isWarmup: true,
+    values: { type: 'weight_reps', weightKg: 40, reps: 10 },
+  }
+
+  it('複製本次最後一組的數值與熱身標記，不看上次紀錄', () => {
+    const result = addSetToWorkoutExercise(
+      workout([workoutExercise('a', [set('a-0', 20), warmup])]),
+      'a',
+      'weight_reps',
+      LAST_PERFORMANCE,
+      { now: NOW, createId: sequentialIds() },
+    )
+
+    expect(setsOf(result, 'a')?.at(-1)).toEqual({
+      isWarmup: true,
+      values: { type: 'weight_reps', weightKg: 40, reps: 10 },
+    })
+  })
+
+  it.each<[string, LastPerformance | undefined, WorkoutSet['values']]>([
+    [
+      '沒有任何組時，改用第一組預填的規則',
+      LAST_PERFORMANCE,
+      { type: 'weight_reps', weightKg: 60, reps: 8 },
+    ],
+    [
+      '沒有任何組也沒有上次紀錄時，欄位為空白',
+      undefined,
+      { type: 'weight_reps', weightKg: null, reps: null },
+    ],
+  ])('%s', (_, lastPerformance, expected) => {
+    const result = addSetToWorkoutExercise(
+      workout([workoutExercise('a', [])]),
+      'a',
+      'weight_reps',
+      lastPerformance,
+      { now: NOW, createId: sequentialIds() },
+    )
+
+    expect(setsOf(result, 'a')).toEqual([{ isWarmup: false, values: expected }])
+  })
+})
 
 describe('moveWorkoutExercise：上移與下移', () => {
   it.each([

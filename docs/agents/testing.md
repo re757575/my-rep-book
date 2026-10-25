@@ -38,6 +38,9 @@
 - **訓練動作區塊裡除了組的欄位，還有「備註」textbox**：要列出組的欄位時用 `getAllByRole('textbox', { name: /^第 \d+ 組/ })`，不要用沒有 name 的 `getAllByRole('textbox')`。
 - **組的輸入欄位要讀 `.value` 時**，用 `getByRole<HTMLInputElement>('textbox', …)` 取得正確型別；單純斷言用 `toHaveValue('60')`（欄位是 `type="text"`，值是字串）。
 - **組的欄位名稱依記錄類型而定**（N 為組的序號）：重量×次數是「第 N 組重量（kg）」「第 N 組次數」；次數是「第 N 組次數」「第 N 組額外負重（kg）」；時間是「第 N 組時間（mm:ss）」；距離＋時間是「第 N 組距離（km）」「第 N 組時間（mm:ss）」。時間重新載入後一律顯示成 `mm:ss`（例如輸入 `1:30` 或 `130`，重新整理後是 `01:30`）。
+- **熱身標記是 `button`＋`aria-pressed`**（shadcn `Toggle`），名稱是「第 N 組熱身」：`within(card).getByRole('button', { name: '第 1 組熱身' })`，斷言用 `toHaveAttribute('aria-pressed', 'true')`。它是點一下的開關，走 `update` 而不是 `editField`，點完要先 `waitFor` 到 `aria-pressed` 改變，再 `reload()` 或切換日期，否則寫入可能還沒完成。每一組的列裡因此多了一個按鈕，數組裡的按鈕時要算進去。
+- **建立「上次紀錄」用的歷史資料**：`renderApp('/day/2026-10-20')` 補記，再按「回到今天」或用日期選擇器切到別天後加入同一個動作，範例見 `src/features/workout/lastPerformance.test.tsx`。
+- **「上次」那一列是非同步載入的，第一組預填則不是**：加入動作時就已經把上次紀錄的數值寫進第一組，所以欄位值可以直接 `toHaveValue`；「上次（M/D）：…」文字由 live query 讀出，要用 `findByText` 等。斷言某個動作「沒有上次紀錄」前，先 `findByText` 等另一個有上次紀錄的動作出現，確定已經載入完。
 - **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
 - **欄位的驗證錯誤用 `toBeInvalid()` 與 `toHaveAccessibleDescription('錯誤訊息')` 斷言**：錯誤訊息以 `aria-describedby` 連到欄位，欄位帶 `aria-invalid`。`getByRole` 沒有 `invalid` 這個選項，傳了會被忽略。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。

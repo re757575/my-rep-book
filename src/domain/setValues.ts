@@ -1,6 +1,20 @@
 import { parseDuration } from './duration'
 import type { ParsedInput, SetValues, TrackingType } from './types'
 
+/** 該記錄類型所有欄位都還沒填的組數值 */
+export function emptySetValues(type: TrackingType): SetValues {
+  switch (type) {
+    case 'weight_reps':
+      return { type, weightKg: null, reps: null }
+    case 'reps':
+      return { type, reps: null, addedWeightKg: null }
+    case 'duration':
+      return { type, durationSec: null }
+    case 'distance_duration':
+      return { type, distanceKm: null, durationSec: null }
+  }
+}
+
 /** 組的數值欄位（各記錄類型的欄位聯集） */
 export type SetField = 'weightKg' | 'reps' | 'addedWeightKg' | 'durationSec' | 'distanceKm'
 

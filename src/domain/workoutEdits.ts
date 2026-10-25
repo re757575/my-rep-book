@@ -1,3 +1,4 @@
+import { buildInitialSet, type LastPerformance } from './lastPerformance'
 import type {
   ExerciseBase,
   LocalDate,
@@ -15,40 +16,27 @@ export interface EditContext {
   createId: () => string
 }
 
-/** 該記錄類型所有欄位都還沒填的組數值 */
-export function emptySetValues(type: TrackingType): SetValues {
-  switch (type) {
-    case 'weight_reps':
-      return { type, weightKg: null, reps: null }
-    case 'reps':
-      return { type, reps: null, addedWeightKg: null }
-    case 'duration':
-      return { type, durationSec: null }
-    case 'distance_duration':
-      return { type, distanceKm: null, durationSec: null }
-  }
-}
-
 /** 「新增一組」：複製上一組的數值與熱身標記 */
 export function cloneSetForNext(previousSet: WorkoutSet): Omit<WorkoutSet, 'id'> {
   return { isWarmup: previousSet.isWarmup, values: { ...previousSet.values } }
 }
 
 /**
- * 把動作加到訓練的最後面，並自動建立空白的第一組。
- * 該日還沒有訓練（`workout` 為 undefined）時，建立該日的訓練。
+ * 把動作加到訓練的最後面，並自動建立第一組（第一組預填：帶入上次紀錄的第一個完整的正式組，
+ * 沒有上次紀錄時欄位為空白）。該日還沒有訓練（`workout` 為 undefined）時，建立該日的訓練。
  */
 export function addExerciseToWorkout(
   workout: Workout | undefined,
   date: LocalDate,
   exercise: Pick<ExerciseBase, 'id' | 'trackingType'>,
+  lastPerformance: LastPerformance | undefined,
   { now, createId }: EditContext,
 ): Workout {
   const added: WorkoutExercise = {
     id: createId(),
     exerciseId: exercise.id,
     note: '',
-    sets: [{ id: createId(), isWarmup: false, values: emptySetValues(exercise.trackingType) }],
+    sets: [{ id: createId(), ...buildInitialSet(lastPerformance, exercise.trackingType) }],
   }
   if (!workout) {
     return { date, exercises: [added], createdAt: now, updatedAt: now }
@@ -72,12 +60,14 @@ function updateWorkoutExercise(
 }
 
 /**
- * 「新增一組」：複製本次最後一組；這個動作目前沒有任何組時，新增一組空白的組。
+ * 「新增一組」：複製本次最後一組的數值與熱身標記；
+ * 這個動作目前沒有任何組時，改用第一組預填的規則（依上次紀錄，沒有時欄位為空白）。
  */
 export function addSetToWorkoutExercise(
   workout: Workout,
   workoutExerciseId: string,
   trackingType: TrackingType,
+  lastPerformance: LastPerformance | undefined,
   { now, createId }: EditContext,
 ): Workout {
   return updateWorkoutExercise(
@@ -87,9 +77,27 @@ export function addSetToWorkoutExercise(
       const lastSet = item.sets.at(-1)
       const next = lastSet
         ? cloneSetForNext(lastSet)
-        : { isWarmup: false, values: emptySetValues(trackingType) }
+        : buildInitialSet(lastPerformance, trackingType)
       return { ...item, sets: [...item.sets, { id: createId(), ...next }] }
     },
+    now,
+  )
+}
+
+/** 切換某一組的熱身標記：熱身組改成正式組，正式組改成熱身組 */
+export function toggleSetWarmup(
+  workout: Workout,
+  workoutExerciseId: string,
+  setId: string,
+  now: Timestamp,
+): Workout {
+  return updateWorkoutExercise(
+    workout,
+    workoutExerciseId,
+    (item) => ({
+      ...item,
+      sets: item.sets.map((set) => (set.id === setId ? { ...set, isWarmup: !set.isWarmup } : set)),
+    }),
     now,
   )
 }

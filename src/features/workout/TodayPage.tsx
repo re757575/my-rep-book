@@ -6,7 +6,9 @@ import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
   moveWorkoutExercise,
+  toggleSetWarmup,
   type EditContext,
+  type LastPerformance,
   type LocalDate,
   type Workout,
 } from '@/domain'
@@ -14,6 +16,7 @@ import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { AddExerciseDialog } from './AddExerciseDialog'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
 import { ExerciseNoteField } from './ExerciseNoteField'
+import { queryLastPerformance } from './queryLastPerformance'
 import { WorkoutDateHeader } from './WorkoutDateHeader'
 import { WorkoutExerciseActions } from './WorkoutExerciseActions'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
@@ -31,6 +34,27 @@ export function TodayPage({ date }: { date: LocalDate }) {
   )
   const library = useLibraryExercises()
   const exercisesById = new Map(library?.map((exercise) => [exercise.id, exercise]))
+
+  // 每個動作在這一天之前的上次紀錄；更早的訓練被修改時自動更新
+  const exerciseIdsKey = JSON.stringify([
+    ...new Set(workout?.exercises.map((item) => item.exerciseId)),
+  ])
+  const lastPerformances = useLiveData(
+    async (repositories) => {
+      const exerciseIds = JSON.parse(exerciseIdsKey) as string[]
+      const entries = await Promise.all(
+        exerciseIds.map(
+          async (exerciseId) =>
+            [
+              exerciseId,
+              await queryLastPerformance(repositories.workouts, exerciseId, date),
+            ] as const,
+        ),
+      )
+      return new Map<string, LastPerformance | undefined>(entries)
+    },
+    [date, exerciseIdsKey],
+  )
 
   /** 編輯已存在的訓練：在 repository 的 transaction 中以最新資料套用變更 */
   function editWorkout(change: (current: Workout) => Workout) {
@@ -54,6 +78,7 @@ export function TodayPage({ date }: { date: LocalDate }) {
               key={workoutExercise.id}
               workoutExercise={workoutExercise}
               exerciseName={exerciseName}
+              lastPerformance={lastPerformances?.get(workoutExercise.exerciseId)}
               actions={
                 <WorkoutExerciseActions
                   isFirst={index === 0}
@@ -73,15 +98,23 @@ export function TodayPage({ date }: { date: LocalDate }) {
                   }
                 />
               }
-              onAddSet={() =>
-                exercise &&
-                editWorkout((current) =>
+              onAddSet={async () => {
+                if (!exercise) return
+                // 沒有任何組時要依上次紀錄預填；查詢很快，每次都以最新的上次紀錄為準
+                const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
+                await editWorkout((current) =>
                   addSetToWorkoutExercise(
                     current,
                     workoutExercise.id,
                     exercise.trackingType,
+                    lastPerformance,
                     editContext(),
                   ),
+                )
+              }}
+              onToggleWarmup={(setId) =>
+                editWorkout((current) =>
+                  toggleSetWarmup(current, workoutExercise.id, setId, editContext().now),
                 )
               }
               onChangeSetField={(setId, field, value) =>
@@ -118,11 +151,12 @@ export function TodayPage({ date }: { date: LocalDate }) {
       <AddExerciseDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        onSelect={(exercise) =>
-          workouts.update(date, (current) =>
-            addExerciseToWorkout(current, date, exercise, editContext()),
+        onSelect={async (exercise) => {
+          const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
+          await workouts.update(date, (current) =>
+            addExerciseToWorkout(current, date, exercise, lastPerformance, editContext()),
           )
-        }
+        }}
       />
     </div>
   )

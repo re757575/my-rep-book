@@ -1,28 +1,40 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import type { SetField, WorkoutExercise } from '@/domain'
+import { Toggle } from '@/components/ui/toggle'
+import {
+  formatLastPerformance,
+  type LastPerformance,
+  type SetField,
+  type WorkoutExercise,
+} from '@/domain'
+import { cn } from '@/lib/utils'
 import { SetFields } from './SetFields'
 
 /**
- * 訓練動作：動作名稱、各組的輸入欄位與「新增一組」。
+ * 訓練動作：動作名稱、上次紀錄、各組的熱身標記與輸入欄位，以及「新增一組」。
  * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
  */
 export function WorkoutExerciseCard({
   workoutExercise,
   exerciseName,
+  lastPerformance,
   actions,
   children,
   onAddSet,
   onChangeSetField,
+  onToggleWarmup,
   onDeleteSet,
 }: {
   workoutExercise: WorkoutExercise
   exerciseName: string
+  /** 沒有上次紀錄時不顯示「上次」那一列 */
+  lastPerformance: LastPerformance | undefined
   actions?: ReactNode
   children?: ReactNode
   onAddSet: () => void
   onChangeSetField: (setId: string, field: SetField, value: number | null) => void
+  onToggleWarmup: (setId: string) => void
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
@@ -35,10 +47,28 @@ export function WorkoutExerciseCard({
         </h2>
         {actions}
       </header>
+      {lastPerformance && (
+        <p className="text-sm text-muted-foreground">{formatLastPerformance(lastPerformance)}</p>
+      )}
       <ol className="flex flex-col gap-2">
         {workoutExercise.sets.map((set, index) => (
-          <li key={set.id} className="flex items-center gap-2">
+          <li
+            key={set.id}
+            className={cn(
+              'flex items-center gap-2 rounded-md',
+              set.isWarmup && 'bg-muted text-muted-foreground',
+            )}
+          >
             <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}</span>
+            <Toggle
+              variant="outline"
+              className="size-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              aria-label={`第 ${index + 1} 組熱身`}
+              pressed={set.isWarmup}
+              onPressedChange={() => onToggleWarmup(set.id)}
+            >
+              熱
+            </Toggle>
             <SetFields
               values={set.values}
               setNumber={index + 1}

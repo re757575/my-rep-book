@@ -116,7 +116,16 @@ export function createDexieWorkoutRepository(
     flushFieldEdits,
 
     delete: notImplemented('WorkoutRepository.delete'),
-    listByExercise: notImplemented('WorkoutRepository.listByExercise'),
+    async listByExercise(exerciseId, { before, limit, offset = 0 } = {}) {
+      // multiEntry 索引只能比對動作 ID，先取出日期（主鍵）篩選、排序與分頁，再只讀需要的那幾筆
+      const dates = await db.workouts.where('exerciseIds').equals(exerciseId).primaryKeys()
+      const page = dates
+        .filter((date) => before === undefined || date < before)
+        .sort((a, b) => b.localeCompare(a))
+        .slice(offset, limit === undefined ? undefined : offset + limit)
+      const rows = await db.workouts.bulkGet(page)
+      return rows.filter((row) => row !== undefined).map(toWorkout)
+    },
     listDatesInRange: notImplemented('WorkoutRepository.listDatesInRange'),
 
     async hasAnyWithExercise(exerciseId) {
