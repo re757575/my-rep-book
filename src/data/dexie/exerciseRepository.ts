@@ -7,11 +7,14 @@ import {
 import type { ExerciseRepository } from '../repositories'
 import type { CustomExerciseRow, MyRepBookDb } from './db'
 
-function toRow(exercise: CustomExercise): CustomExerciseRow {
+export function toCustomExerciseRow(exercise: CustomExercise): CustomExerciseRow {
   return { ...exercise, nameKey: normalizeExerciseName(exercise.nameZh) }
 }
 
-function toCustomExercise({ nameKey: _nameKey, ...exercise }: CustomExerciseRow): CustomExercise {
+export function toCustomExercise({
+  nameKey: _nameKey,
+  ...exercise
+}: CustomExerciseRow): CustomExercise {
   return exercise
 }
 
@@ -22,7 +25,11 @@ export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseReposito
       const row = await db.customExercises.get(id)
       if (!row) throw new Error(`找不到自訂動作 ${id}`)
       await db.customExercises.put(
-        toRow({ ...toCustomExercise(row), ...patch, updatedAt: new Date().toISOString() }),
+        toCustomExerciseRow({
+          ...toCustomExercise(row),
+          ...patch,
+          updatedAt: new Date().toISOString(),
+        }),
       )
     })
   }
@@ -62,7 +69,9 @@ export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseReposito
         createdAt: now,
         updatedAt: now,
       }
-      await db.transaction('rw', db.customExercises, () => db.customExercises.add(toRow(exercise)))
+      await db.transaction('rw', db.customExercises, () =>
+        db.customExercises.add(toCustomExerciseRow(exercise)),
+      )
       return exercise
     },
 

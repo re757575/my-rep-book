@@ -5,6 +5,7 @@ import { cleanup } from '@testing-library/react'
 import { toast } from 'sonner'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { db } from '@/data/dexie/db'
+import { installDownloadCapture, resetDownloads } from './downloads'
 import { FIXED_TODAY } from './fixedToday'
 
 // jsdom 沒有 matchMedia（sonner 與主題偵測會用到），補一個「淺色、不符合任何 media query」的版本
@@ -32,7 +33,11 @@ Element.prototype.setPointerCapture ??= () => {}
 Element.prototype.releasePointerCapture ??= () => {}
 Element.prototype.hasPointerCapture ??= () => false
 
+// jsdom 沒有 URL.createObjectURL，也不會下載檔案：攔下 <a download> 的點擊，讓測試讀取下載的內容
+installDownloadCapture()
+
 beforeEach(async () => {
+  resetDownloads()
   // 待寫的欄位編輯存在 localStorage，jsdom 的 localStorage 會跨測試保留，要和資料庫一起清空
   localStorage.clear()
   // 每個測試都從空的資料庫開始。App 共用模組層級的 Dexie 單例，它在建立時就固定了 indexedDB，

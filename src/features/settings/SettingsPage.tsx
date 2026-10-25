@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useRepositories } from '@/data'
 import { THEMES, WEIGHT_UNITS, type Theme, type WeightUnit } from '@/domain'
+import { BackupSection } from './BackupSection'
 import { useStoredSettings } from './settingsContext'
 
 const WEIGHT_UNIT_LABELS: Readonly<Record<WeightUnit, string>> = { kg: 'kg', lb: 'lb' }
@@ -75,6 +76,7 @@ export function SettingsPage() {
             value={settings.theme}
             onChange={(theme) => repositories.settings.update({ theme })}
           />
+          <BackupSection lastExportedAt={settings.lastExportedAt} />
         </>
       )}
     </div>

@@ -11,12 +11,12 @@ import { notImplemented } from './notImplemented'
 import { createLocalStoragePendingFieldEdits, type PendingFieldEdits } from './pendingFieldEdits'
 
 /** 寫入時推導衍生欄位 exerciseIds：這筆訓練包含的動作 ID（去除重複） */
-function toRow(workout: Workout): WorkoutRow {
+export function toWorkoutRow(workout: Workout): WorkoutRow {
   const exerciseIds = [...new Set(workout.exercises.map((exercise) => exercise.exerciseId))]
   return { ...workout, exerciseIds }
 }
 
-function toWorkout({ exerciseIds: _exerciseIds, ...workout }: WorkoutRow): Workout {
+export function toWorkout({ exerciseIds: _exerciseIds, ...workout }: WorkoutRow): Workout {
   return workout
 }
 
@@ -38,7 +38,7 @@ async function writePendingThen<T>(
       if (!row) continue
       const workout = toWorkout(row)
       const next = applyFieldEdits(workout, written, now)
-      if (next !== workout) await db.workouts.put(toRow(next))
+      if (next !== workout) await db.workouts.put(toWorkoutRow(next))
     }
     return work()
   })
@@ -93,7 +93,7 @@ export function createDexieWorkoutRepository(
 
     save(workout) {
       return write(async () => {
-        await db.workouts.put(toRow(workout))
+        await db.workouts.put(toWorkoutRow(workout))
       })
     },
 
@@ -101,7 +101,7 @@ export function createDexieWorkoutRepository(
       return write(async () => {
         const row = await db.workouts.get(date)
         const next = change(row && toWorkout(row))
-        if (next) await db.workouts.put(toRow(next))
+        if (next) await db.workouts.put(toWorkoutRow(next))
         else await db.workouts.delete(date)
       })
     },

@@ -1,4 +1,4 @@
-import type { LocalDate } from './types'
+import type { LocalDate, Timestamp } from './types'
 
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六'] as const
 
@@ -31,6 +31,14 @@ export function formatDateTitle(date: LocalDate): string {
   const [, month, day] = date.split('-').map(Number)
   const weekday = fromLocalDate(date).getDay()
   return `${month}/${day}（${WEEKDAY_LABELS[weekday]}）`
+}
+
+/** 以本地時區顯示時間點：`YYYY/MM/DD HH:mm`，例如上次匯出時間 */
+export function formatDateTime(timestamp: Timestamp): string {
+  const at = new Date(timestamp)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const date = `${at.getFullYear()}/${pad(at.getMonth() + 1)}/${pad(at.getDate())}`
+  return `${date} ${pad(at.getHours())}:${pad(at.getMinutes())}`
 }
 
 /** 帶年份的日期：`YYYY/M/D（週）`，例如 2026-10-20 → `2026/10/20（二）` */

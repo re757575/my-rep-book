@@ -12,6 +12,7 @@ export {
 export { isHiddenOrArchived } from './library'
 export {
   addDays,
+  formatDateTime,
   formatDateTitle,
   formatDateWithYear,
   fromLocalDate,
@@ -51,3 +52,14 @@ export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'
 export { summarizeWorkout, type WorkoutSummary } from './summary'
 export { formatWeight, kgToLb, lbToKg } from './units'
+export {
+  BACKUP_APP_ID,
+  CURRENT_SCHEMA_VERSION,
+  backupFileName,
+  createExportFile,
+  migrateBackupData,
+  parseBackupFile,
+  type BackupMigrations,
+  type ExportFile,
+  type ParseBackupResult,
+} from './backup'

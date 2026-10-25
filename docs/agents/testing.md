@@ -57,6 +57,10 @@
 - **`user.type` 一字一字輸入，每個中間值都會被驗證，合法的就會寫入**：打 `60.555` 時 `60.55` 已經存下來；先 `clear` 再打不合法的值，清空那一下就寫入了 null。要驗證「保留上一個合法值」，選取全部再改打一個中間值都不合法的字串：`user.type(field, '00:60', { initialSelectionStart: 0, initialSelectionEnd: field.value.length })`。
 - **欄位的驗證錯誤用 `toBeInvalid()` 與 `toHaveAccessibleDescription('錯誤訊息')` 斷言**：錯誤訊息以 `aria-describedby` 連到欄位，欄位帶 `aria-invalid`。`getByRole` 沒有 `invalid` 這個選項，傳了會被忽略。
 - **domain 覆蓋率門檻（行 ≥ 80%）只在 `npm test -- --coverage` 時檢查**，單跑 `npm test` 不會擋。
+- **需要既有資料（尤其是歷史資料）時，改用匯入 fixture 備份檔，不要透過 UI 逐筆輸入**：`await renderAppWithBackup(backupFixture({ workouts: [fixtureWorkout('2026-10-20', [...])] }), '/history')`（`src/test/importBackup.ts`、`src/test/backupFixture.ts`）。它先在設定頁匯入並確認，再從指定路由重新渲染。fixture 的 ID 是固定的：訓練動作 `fixture-<日期>-<第幾個動作>`、組 `fixture-<日期>-<第幾個動作>-<第幾組>`（從 1 起算）。匯入時會自動下載一份匯入前的備份，所以之後的 `waitForDownloads(n)` 要把它算進去（它是第 1 個）。範例見 `src/features/settings/backup.test.tsx`。
+- **驗證下載的檔案用 `waitForDownloads(n)`**（`src/test/downloads.ts`）：setup 補了 `URL.createObjectURL` 並攔下 `<a download>` 的點擊，回傳依下載順序排列的 `{ fileName, text }`；沒下載用 `downloadCount()` 斷言為 0。新增下載功能時，連結要先加入 `document` 再 `click()`（見 `src/features/settings/downloadFile.ts`），否則點擊事件不會冒泡到 document，攔不到。
+- **選擇檔案用 `user.upload`**：匯入的 `<input type="file">` 是隱藏的，用 `findByLabelText('選擇備份檔')` 取；`chooseBackupFile(user, 內容)` 已包好，字串會原樣當作檔案內容（用來測非 JSON 的檔案）。
+- **模擬「剛輸入、還沒寫進資料庫」的欄位編輯時，要等資料庫開啟後才寫入 localStorage 的待寫清單**（`my-rep-book:pending-field-edits`）：透過 UI 輸入的話寫入幾乎立刻完成，測不出待寫清單的處理；但若在 `reload()` 或 `renderApp` 之後立刻寫入，資料庫開啟時的 `on('ready')` 會先把它補寫掉，測試就失去意義。先 `findBy*` 等一個依資料載入的元素出現再寫入，範例見 `backup.test.tsx` 的 `leavePendingEdit`。
 
 ## E2E（Playwright）
 
@@ -64,6 +68,8 @@
 - **`page.goto` 用相對路徑**：`page.goto('settings')`、`page.goto('day/2026-10-20')`、`page.goto('./')`。`baseURL` 帶有 base path `/my-rep-book/`，寫成 `'/settings'` 會跳出 base path。
 - **每個測試都是新的 browser context**，IndexedDB 天生是空的。
 - **輸入組的數值或備註後可以直接 `page.reload()`／`page.goto()`／關閉分頁**：欄位編輯走 `WorkoutRepository.editField`，輸入當下就同步記進 localStorage 的待寫清單，下次開啟資料庫時會在任何讀取之前補寫，所以不用先做別的操作、也不用 `waitForTimeout` 等寫入完成。保證範圍見 `e2e/durable-writes.spec.ts`。新增「輸入即儲存」的欄位時也要走 `editField`（在 `src/domain/fieldEdits.ts` 的 `FieldEdit` 加一種 kind）；若改用 `update` 每次按鍵寫一次，這個保證就不成立。
+- **E2E 需要既有資料時用 `importBackup(page, { content: backupFixture(...) })`**（`e2e/backup.ts`，fixture 與接縫 A 共用 `src/test/backupFixture.ts`）；匯入已下載的檔案用 `{ path: await download.path() }`。下載用 `page.waitForEvent('download')` 接，檔名看 `download.suggestedFilename()`。
+- **E2E 中清空資料**：在頁面裡 `indexedDB.deleteDatabase('my-rep-book')` 並 `localStorage.clear()` 後再 `goto`。Dexie 收到 versionchange 會自動關閉連線，刪除不會被擋住。範例見 `e2e/export-import.spec.ts`。
 - **E2E 中開新分頁要自己固定「今天」**：`e2e/fixtures.ts` 的 auto fixture 只作用在預設的 `page`。用 `context.newPage()` 開的頁面要先 `await newPage.clock.setFixedTime(FIXED_TODAY)`（從 `src/test/fixedToday.ts` import）再 `goto`。
 - **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
 - **Playwright 不計算 `definition` 角色的名稱**：`dd` 以 `aria-labelledby` 指向 `dt` 時，改用 `getByLabel('總訓練量')` 取（Playwright 的 `getByLabel` 會看 `aria-labelledby`），例如 `summary.getByLabel('總訓練量')`；或用 `getByRole('definition').filter({ hasText: … })`。
