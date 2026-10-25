@@ -85,3 +85,5 @@
 - **Playwright 的 route 攔不到 Service Worker 本身（`sw.js`）的請求**：要模擬「部署了新版本」，對該 context 加 cookie `e2e-sw-version`（`context.addCookies([{ name: 'e2e-sw-version', value: '2', url: page.url() }])`）再 `page.reload()`，vite preview 會回傳內容不同的 `sw.js`（`vite.config.ts` 的 `simulateNewServiceWorker()`）。cookie 只影響這個 context，不會干擾平行的測試。
 - **sonner toast 在 Playwright 中是 `listitem`**：`page.getByRole('listitem').filter({ hasText: '有新版本' })`，按鈕再從它裡面取。
 - **新增 Playwright project（瀏覽器）時**，同步修改 `.github/workflows/ci.yml` 的 `playwright install` 參數。
+- **量回應時間不要用 Playwright 端的計時**：`expect(...).toBeVisible()` 是輪詢（間隔 100 ms 以上），加上與瀏覽器之間的通訊，量不出 < 100 ms 的差異。用 `e2e/performance.spec.ts` 的 `measureClick`，在頁面裡以點擊事件為起點、DOM 符合條件後的下一個畫格為終點計時。終點條件用 CSS 選擇器（只拿來計時，行為仍用 role 斷言）。Playwright 的 Clock（`e2e/fixtures.ts` 固定「今天」）也接管了 `performance.now()`，解析度是 1 ms。
+- **大量資料用程式產生 fixture 再匯入**：1,000 筆訓練（每筆 4 個動作）的備份檔匯入約 3 秒，見 `e2e/performance.spec.ts` 的 `thousandWorkouts`。
