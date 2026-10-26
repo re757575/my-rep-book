@@ -63,7 +63,7 @@ function checkValue(field: SetField, value: number): string | undefined {
 }
 
 /** 重量、額外負重、距離：≥ 0，最多 2 位小數；允許輸入到一半的「62.」 */
-function parseDecimal(text: string): ParsedInput {
+export function parseDecimal(text: string): ParsedInput {
   if (!DECIMAL_TEXT.test(text)) return { ok: false, error: '請輸入數字' }
   if (text.startsWith('-')) return { ok: false, error: '不可小於 0' }
   const decimals = text.split('.')[1] ?? ''

@@ -1,6 +1,11 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
-import { backupFixture, fixtureCustomExercise, fixtureWorkout } from '../src/test/backupFixture.ts'
+import {
+  backupFixture,
+  fixtureBodyWeight,
+  fixtureCustomExercise,
+  fixtureWorkout,
+} from '../src/test/backupFixture.ts'
 import { importBackup } from './backup.ts'
 import { expect, test } from './fixtures.ts'
 
@@ -8,7 +13,10 @@ import { expect, test } from './fixtures.ts'
 // 輸入框字級 ≥ 16px（避免 iOS 聚焦時自動放大）。四個分頁、加入動作選單、自訂動作表單等畫面都要檢查，
 // 淺色與深色主題各一次。
 
-/** 讓各畫面都有內容可檢查：今天有兩個動作（含熱身組與備註）、10/20 有紀錄、一個自訂動作 */
+/**
+ * 讓各畫面都有內容可檢查：今天有兩個動作（含熱身組與備註）、10/20 有紀錄、一個自訂動作；
+ * 10/20 與今天記了體重，有身高（顯示 BMI）
+ */
 const FIXTURE = backupFixture({
   workouts: [
     fixtureWorkout('2026-10-20', [
@@ -43,6 +51,8 @@ const FIXTURE = backupFixture({
       trackingType: 'distance_duration',
     }),
   ],
+  bodyWeights: [fixtureBodyWeight('2026-10-20', 72.5), fixtureBodyWeight('2026-10-24', 72)],
+  settings: { weightUnit: 'kg', theme: 'system', heightCm: 175 },
 })
 
 /** 要檢查的畫面：名稱與如何從匯入完成的設定頁進入 */
@@ -95,6 +105,15 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
       await page.goto('history')
       await page.getByRole('button', { name: /10月20日/ }).click()
       await expect(page.getByRole('region', { name: '10/20（二）' })).toBeVisible()
+    },
+  },
+  {
+    name: '體重紀錄',
+    open: async (page) => {
+      await page.goto('history/body-weight')
+      await expect(page.getByRole('list', { name: '體重紀錄' }).getByRole('listitem')).toHaveCount(
+        2,
+      )
     },
   },
   {

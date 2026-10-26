@@ -1,7 +1,12 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { backupFixture, fixtureCustomExercise, fixtureWorkout } from '@/test/backupFixture'
+import {
+  backupFixture,
+  fixtureBodyWeight,
+  fixtureCustomExercise,
+  fixtureWorkout,
+} from '@/test/backupFixture'
 import { downloadCount, waitForDownloads } from '@/test/downloads'
 import { FIXED_TODAY } from '@/test/fixedToday'
 import { chooseBackupFile, importBackup, renderAppWithBackup } from '@/test/importBackup'
@@ -56,7 +61,7 @@ describe('匯出資料', () => {
     expect(file.fileName).toBe('my-rep-book-backup-20261024-1200.json')
     expect(JSON.parse(file.text)).toEqual({
       app: 'my-rep-book',
-      schemaVersion: 1,
+      schemaVersion: 2,
       exportedAt: NOW,
       data: {
         workouts: [
@@ -82,7 +87,8 @@ describe('匯出資料', () => {
         ],
         customExercises: [],
         hiddenPresetIds: [],
-        settings: { weightUnit: 'kg', theme: 'dark' },
+        bodyWeights: [],
+        settings: { weightUnit: 'kg', theme: 'dark', heightCm: null },
       },
     })
     await waitFor(async () => expect(await lastExportedAt()).toBe('2026/10/24 12:00'))
@@ -98,7 +104,10 @@ const runFixture = fixtureCustomExercise({
   trackingType: 'distance_duration',
 })
 
-/** 10/20 做了槓鈴臥推（熱身 40×10、60×8）與戶外跑步，隱藏了哈克深蹲，重量單位 lb */
+/**
+ * 10/20 做了槓鈴臥推（熱身 40×10、60×8）與戶外跑步，隱藏了哈克深蹲，重量單位 lb；
+ * 10/19、10/20 記了體重，身高 175 cm
+ */
 const importedBackup = backupFixture({
   workouts: [
     fixtureWorkout('2026-10-20', [
@@ -118,7 +127,8 @@ const importedBackup = backupFixture({
   ],
   customExercises: [runFixture],
   hiddenPresetIds: ['hack-squat'],
-  settings: { weightUnit: 'lb', theme: 'system' },
+  bodyWeights: [fixtureBodyWeight('2026-10-19', 72.5), fixtureBodyWeight('2026-10-20', 72)],
+  settings: { weightUnit: 'lb', theme: 'system', heightCm: 175 },
 })
 
 /** 今天記錄槓鈴臥推 60kg×8，切到設定頁 */
@@ -172,6 +182,9 @@ describe('匯入資料', () => {
     expect(setTexts(within(detail).getByRole('article', { name: '戶外跑步' }))).toEqual([
       '5km 30:00',
     ])
+    // 匯入的體重與身高
+    expect(within(detail).getByText('體重 158.7 lb')).toBeInTheDocument()
+    expect(within(detail).getByText('BMI 23.5')).toBeInTheDocument()
 
     // 匯入的隱藏清單生效
     await goToTab(user, '動作庫')
@@ -217,7 +230,7 @@ describe('拒絕匯入時顯示原因，現有資料不變', () => {
     { case: '不是 JSON', content: '這不是備份檔', reason: '檔案不是有效的 JSON' },
     {
       case: '版本比目前 App 新',
-      content: backupFixture({}, { schemaVersion: 2 }),
+      content: backupFixture({}, { schemaVersion: 3 }),
       reason: '此備份來自較新版本的 App，請先更新 App',
     },
     {
@@ -272,7 +285,7 @@ describe('待寫的欄位編輯', () => {
   }
   const kgBackup = backupFixture({
     ...importedBackup.data,
-    settings: { weightUnit: 'kg', theme: 'system' },
+    settings: { weightUnit: 'kg', theme: 'system', heightCm: null },
   })
 
   it('匯出時包含剛輸入、還沒寫進資料庫的值', async () => {

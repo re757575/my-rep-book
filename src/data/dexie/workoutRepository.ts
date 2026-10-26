@@ -21,7 +21,8 @@ export function toWorkout({ exerciseIds: _exerciseIds, ...workout }: WorkoutRow)
 }
 
 /**
- * 在 transaction 中把所有待寫的欄位編輯寫進 workouts，接著執行 `work`（它讀到的是套用後的資料）。
+ * 在 transaction 中把所有待寫的欄位編輯寫進 workouts（體重寫進 bodyWeights），
+ * 接著執行 `work`（它讀到的是套用後的資料）。
  * commit 後才從待寫清單移除已寫入的編輯；transaction 失敗時編輯留在清單，之後再寫。
  */
 async function writePendingThen<T>(
@@ -30,10 +31,18 @@ async function writePendingThen<T>(
   work: () => Promise<T>,
 ): Promise<T> {
   let written: FieldEdit[] = []
-  const result = await db.transaction('rw', db.workouts, async () => {
+  const result = await db.transaction('rw', db.workouts, db.bodyWeights, async () => {
     written = pending.read()
     const now = new Date().toISOString()
-    for (const date of new Set(written.map((edit) => edit.date))) {
+    for (const edit of written) {
+      if (edit.kind !== 'bodyWeight') continue
+      if (edit.weightKg === null) await db.bodyWeights.delete(edit.date)
+      else await db.bodyWeights.put({ date: edit.date, weightKg: edit.weightKg, updatedAt: now })
+    }
+    const workoutDates = written
+      .filter((edit) => edit.kind !== 'bodyWeight')
+      .map((edit) => edit.date)
+    for (const date of new Set(workoutDates)) {
       const row = await db.workouts.get(date)
       if (!row) continue
       const workout = toWorkout(row)

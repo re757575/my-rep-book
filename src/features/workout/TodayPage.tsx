@@ -12,6 +12,7 @@ import {
   type LocalDate,
   type Workout,
 } from '@/domain'
+import { BodyWeightField } from '@/features/bodyWeight/BodyWeightField'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
 import { DailySummary } from './DailySummary'
@@ -77,6 +78,7 @@ export function TodayPage({ date }: { date: LocalDate }) {
   return (
     <div className="flex flex-col gap-4">
       <WorkoutDateHeader date={date} />
+      <BodyWeightField date={date} />
       {workout && <DailySummary workout={workout} />}
 
       {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}

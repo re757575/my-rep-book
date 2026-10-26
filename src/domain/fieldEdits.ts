@@ -16,6 +16,8 @@ export type FieldEdit =
       value: number | null
     }
   | { kind: 'note'; date: LocalDate; workoutExerciseId: string; note: string }
+  /** 該日的體重（kg）；null 表示刪除。不屬於訓練，由 repository 寫進體重的資料表 */
+  | { kind: 'bodyWeight'; date: LocalDate; weightKg: number | null }
 
 /** 同一個欄位的編輯有相同的 key */
 function fieldKey(edit: FieldEdit): string {
@@ -24,6 +26,8 @@ function fieldKey(edit: FieldEdit): string {
       return [edit.kind, edit.date, edit.workoutExerciseId, edit.setId, edit.field].join('|')
     case 'note':
       return [edit.kind, edit.date, edit.workoutExerciseId].join('|')
+    case 'bodyWeight':
+      return [edit.kind, edit.date].join('|')
   }
 }
 
@@ -33,8 +37,9 @@ export function queueFieldEdit(pending: readonly FieldEdit[], edit: FieldEdit): 
   return [...pending.filter((item) => fieldKey(item) !== key), edit]
 }
 
-/** 套用一個編輯；該組或訓練動作已不存在、欄位不屬於該組的記錄類型時，訓練不變 */
+/** 套用一個編輯；體重、該組或訓練動作已不存在、欄位不屬於該組的記錄類型時，訓練不變 */
 function applyFieldEdit(workout: Workout, edit: FieldEdit, now: Timestamp): Workout {
+  if (edit.kind === 'bodyWeight') return workout
   const target = workout.exercises.find((item) => item.id === edit.workoutExerciseId)
   if (edit.date !== workout.date || !target) return workout
   switch (edit.kind) {
@@ -64,7 +69,14 @@ export function applyFieldEdits(
 }
 
 function editedValue(edit: FieldEdit): number | string | null {
-  return edit.kind === 'setValue' ? edit.value : edit.note
+  switch (edit.kind) {
+    case 'setValue':
+      return edit.value
+    case 'note':
+      return edit.note
+    case 'bodyWeight':
+      return edit.weightKg
+  }
 }
 
 /**

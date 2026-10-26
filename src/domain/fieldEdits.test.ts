@@ -14,6 +14,13 @@ function edit(field: SetField, value: number | null, setId = 's1'): SetValueEdit
 
 const weight = (value: number | null, setId = 's1') => edit('weightKg', value, setId)
 
+/** 某一天的體重編輯 */
+const bodyWeight = (weightKg: number | null, date = DATE): FieldEdit => ({
+  kind: 'bodyWeight',
+  date,
+  weightKg,
+})
+
 describe('queueFieldEdit：快速連續輸入時合併寫入，以最後的值為準', () => {
   it('同一個欄位再次編輯時，只保留最後的值', () => {
     const pending = queueFieldEdit(queueFieldEdit([], weight(6)), weight(62))
@@ -40,6 +47,14 @@ describe('queueFieldEdit：快速連續輸入時合併寫入，以最後的值�
 
   it('備註同樣以最後的值為準', () => {
     expect(queueFieldEdit([note('左肩')], note('左肩不適'))).toEqual([note('左肩不適')])
+  })
+
+  it('體重以日期區分，同一天以最後的值為準', () => {
+    const otherDay = bodyWeight(71, '2026-10-23')
+    expect(queueFieldEdit([bodyWeight(7), otherDay], bodyWeight(72))).toEqual([
+      otherDay,
+      bodyWeight(72),
+    ])
   })
 })
 
@@ -117,6 +132,7 @@ describe('applyFieldEdits：把待寫的編輯套用到訓練', () => {
     ['該訓練動作已被刪除', { ...weight(70), workoutExerciseId: 'deleted' }],
     ['欄位不屬於該組的記錄類型', edit('addedWeightKg', 10)],
     ['另一天的編輯', { ...weight(70), date: '2026-10-23' }],
+    ['體重不屬於訓練', bodyWeight(72)],
   ])('略過套用不到的編輯（%s），訓練不變', (_, edit) => {
     expect(applyFieldEdits(workout, [edit], NOW)).toBe(workout)
   })

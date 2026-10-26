@@ -69,6 +69,8 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 | 訓練量（Volume） | `weight_reps` 類型的完整正式組之 Σ(重量 × 次數) |
 | 部位（Muscle） | 細分的肌群，用於資料層 |
 | 篩選分類（Browse Category） | 畫面上用來篩選動作的 10 大類，由部位映射而來 |
+| 體重（Body Weight） | 某一天的體重，以日期為唯一鍵，一天最多一筆；與訓練分開儲存，沒有訓練的日子也能記錄 |
+| BMI | 體重（kg）÷ 身高（m）²，身高取自設定 |
 
 ---
 
@@ -251,6 +253,16 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 首次啟動時呼叫 `navigator.storage.persist()`
 - 設定頁顯示持久儲存狀態（「已啟用」或「未啟用，瀏覽器可能在空間不足時清除資料，建議定期匯出」）
 
+#### US-22 體重與身高
+
+- 訓練頁（今天與補記的日期）在日期下方有「體重」欄位，以目前的重量單位輸入與顯示，資料一律以 kg 儲存
+- 輸入即儲存，沒有儲存按鈕；清空即刪除當天的體重。須大於 0、最多 2 位小數，不合法時在欄位下方顯示錯誤且不寫入
+- 設定頁可填寫身高（cm，50–300，最多 2 位小數），輸入即儲存；清空即改回尚未填寫
+- **Given** 已填身高且當天有體重　**Then** 訓練頁與歷史的日明細在體重旁顯示 BMI（四捨五入到 0.1）；未填身高時不顯示
+- 歷史的日明細顯示當天體重；只記了體重、沒有訓練的日子也顯示，並可點「編輯」前往該日的訓練頁。月曆的標點不變，仍只標有訓練的日期
+- 歷史頁標題旁有「體重紀錄」按鈕，進入 `/history/body-weight`：由新到舊列出所有體重（目前的重量單位）與 BMI（有身高時），點日期前往該日的訓練頁修改；還沒有體重時顯示提示
+- 體重與身高包含在匯出檔中（schema v2）
+
 ---
 
 ## 5. 資料模型
@@ -396,9 +408,17 @@ export interface Workout {
   updatedAt: Timestamp;
 }
 
+/** 體重：一天最多一筆 */
+export interface BodyWeightEntry {
+  date: LocalDate; // 主鍵
+  weightKg: number; // > 0
+  updatedAt: Timestamp;
+}
+
 export interface Settings {
   weightUnit: 'kg' | 'lb';
   theme: 'system' | 'light' | 'dark';
+  heightCm: number | null; // 50–300；null 表示尚未填寫
   lastExportedAt: Timestamp | null;
 }
 ```
@@ -411,6 +431,10 @@ export interface Settings {
 | `customExercises` | `&id` | `nameKey`（正規化後的中文名稱，用於檢查重複） | `CustomExercise` |
 | `hiddenPresets` | `&id` | — | `{ id: string }` |
 | `settings` | `&key` | — | 單筆 `{ key: 'settings', ...Settings }` |
+| `bodyWeights` | `&date` | — | `BodyWeightEntry`（IndexedDB v2 新增） |
+
+- IndexedDB v1 建立前 4 張資料表，v2 新增 `bodyWeights`；v1 時存的設定沒有 `heightCm`，讀取時以預設值 `null` 補上
+- 體重與組的數值一樣經由待寫清單寫入（`FieldEdit` 的 `bodyWeight`），輸入後立刻重新整理也不會遺失
 
 - `exerciseIds` 由 repository 在寫入時從 `exercises` 推導，用於查詢「上次紀錄」、「動作歷史」及「自訂動作是否已有紀錄」
 - `nameKey = nameZh.trim().toLowerCase()`
@@ -420,16 +444,19 @@ export interface Settings {
 ```ts
 export interface ExportFile {
   app: 'my-rep-book';
-  schemaVersion: 1;
+  schemaVersion: 2;
   exportedAt: Timestamp;
   data: {
     workouts: Workout[];             // 不含衍生欄位 exerciseIds
     customExercises: CustomExercise[];
     hiddenPresetIds: string[];
+    bodyWeights: BodyWeightEntry[];  // 依日期由舊到新
     settings: Omit<Settings, 'lastExportedAt'>;
   };
 }
 ```
+
+- v1 → v2：加上空的 `bodyWeights`，`settings.heightCm` 設為 `null`
 
 - 以 zod schema 驗證；遷移函式以 `migrations[from]` 形式逐版升級：`v1 → v2 → … → current`
 - 匯入時若 workouts 引用了不存在的 `exerciseId`（例如未知的預設 slug），拒絕匯入並列出缺少的 ID
@@ -449,6 +476,8 @@ export interface ExportFile {
 | `getRecentExerciseIds(workouts, limit = 8)` | 最近使用 |
 | `normalizeNameKey(name)` / `isDuplicateName(...)` | 名稱重複檢查 |
 | `parseExportFile(json)` / `migrate(file)` | 匯入驗證與遷移 |
+| `parseBodyWeightInput` / `parseHeightInput` | 體重、身高輸入解析與驗證 |
+| `calculateBmi` / `formatBmi` | BMI 計算與顯示格式化 |
 
 ---
 
@@ -461,9 +490,9 @@ export interface ExportFile {
 | Tab | 路由 | 說明 |
 | --- | --- | --- |
 | 今天 | `/`、`/day/:date` | `/` 顯示今天；`/day/:date` 顯示指定日期，未來日期導回 `/` |
-| 歷史 | `/history` | 月曆與日明細 |
+| 歷史 | `/history`、`/history/body-weight` | 月曆與日明細；體重紀錄清單 |
 | 動作庫 | `/exercises`、`/exercises/:id` | 列表與動作詳情 |
-| 設定 | `/settings` | 單位、主題、匯出入、儲存狀態 |
+| 設定 | `/settings` | 單位、身高、主題、匯出入、儲存狀態 |
 
 自訂動作表單：`/exercises/new`、`/exercises/:id/edit`。加入動作選單為訓練頁上的全螢幕 Dialog（shadcn `Dialog` 或 `Drawer`），不改變路由。
 
@@ -472,6 +501,7 @@ export interface ExportFile {
 ```
 ┌─────────────────────────────┐
 │  ‹   10/24（五）今天    ›    │  ← 日期切換；非今天時顯示「回到今天」
+│  體重 [ 72.5 ] kg    BMI 23.7 │  ← 當天體重，輸入即儲存；有身高才顯示 BMI
 │  3 個動作 · 9 組 · 2,340 kg  │  ← 每日摘要
 │  有氧 20:00                  │
 ├─────────────────────────────┤

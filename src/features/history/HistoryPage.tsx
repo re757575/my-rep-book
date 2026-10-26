@@ -1,6 +1,9 @@
+import { Scale } from 'lucide-react'
 import { useState, type ComponentProps } from 'react'
 import { labelDayButton, type DayButtonProps } from 'react-day-picker'
 import { zhTW } from 'react-day-picker/locale'
+import { Link } from 'react-router'
+import { Button } from '@/components/ui/button'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { useLiveData } from '@/data'
 import { addDays, fromLocalDate, toLocalDate, type LocalDate } from '@/domain'
@@ -59,7 +62,15 @@ export function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">歷史</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl font-semibold">歷史</h1>
+        <Button asChild variant="outline" className="h-11">
+          <Link to="/history/body-weight">
+            <Scale aria-hidden="true" />
+            體重紀錄
+          </Link>
+        </Button>
+      </div>
       <Calendar
         className="mx-auto [--cell-size:--spacing(11)]"
         mode="single"

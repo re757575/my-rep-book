@@ -1,15 +1,16 @@
-import { DEFAULT_SETTINGS, type BackupData } from '@/domain'
+import type { BackupData } from '@/domain'
 import type { BackupRepository, WorkoutRepository } from '../repositories'
 import type { MyRepBookDb } from './db'
 import { toCustomExercise, toCustomExerciseRow } from './exerciseRepository'
 import type { PendingFieldEdits } from './pendingFieldEdits'
+import { toSettings } from './settingsRepository'
 import { toWorkout, toWorkoutRow } from './workoutRepository'
 
 export function createDexieBackupRepository(
   db: MyRepBookDb,
   { workouts, pending }: { workouts: WorkoutRepository; pending: PendingFieldEdits },
 ): BackupRepository {
-  const allTables = [db.workouts, db.customExercises, db.hiddenPresets, db.settings]
+  const allTables = [db.workouts, db.customExercises, db.hiddenPresets, db.bodyWeights, db.settings]
 
   return {
     async exportAll() {
@@ -19,14 +20,16 @@ export function createDexieBackupRepository(
         const workoutRows = await db.workouts.orderBy('date').toArray()
         const customRows = await db.customExercises.toArray()
         const hiddenPresetIds = await db.hiddenPresets.toCollection().primaryKeys()
-        const { weightUnit, theme } = (await db.settings.get('settings')) ?? DEFAULT_SETTINGS
+        const bodyWeights = await db.bodyWeights.orderBy('date').toArray()
+        const { weightUnit, theme, heightCm } = toSettings(await db.settings.get('settings'))
         return {
           workouts: workoutRows.map(toWorkout),
           customExercises: customRows
             .map(toCustomExercise)
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
           hiddenPresetIds,
-          settings: { weightUnit, theme },
+          bodyWeights,
+          settings: { weightUnit, theme, heightCm },
         }
       })
     },
@@ -41,6 +44,7 @@ export function createDexieBackupRepository(
         await db.workouts.bulkAdd(data.workouts.map(toWorkoutRow))
         await db.customExercises.bulkAdd(data.customExercises.map(toCustomExerciseRow))
         await db.hiddenPresets.bulkAdd(data.hiddenPresetIds.map((id) => ({ id })))
+        await db.bodyWeights.bulkAdd(data.bodyWeights)
         await db.settings.put({ ...data.settings, lastExportedAt, key: 'settings' })
       })
       // 取代成功後才清空待寫清單：留下的編輯屬於舊資料，下次開啟時不能補寫到匯入的資料上

@@ -1,5 +1,6 @@
 import type { Repositories } from '../repositories'
 import { createDexieBackupRepository } from './backupRepository'
+import { createDexieBodyWeightRepository } from './bodyWeightRepository'
 import type { MyRepBookDb } from './db'
 import { createDexieExerciseRepository } from './exerciseRepository'
 import { createLocalStoragePendingFieldEdits } from './pendingFieldEdits'
@@ -15,6 +16,7 @@ export function createDexieRepositories(db: MyRepBookDb): Repositories {
   return {
     workouts,
     exercises: createDexieExerciseRepository(db),
+    bodyWeights: createDexieBodyWeightRepository(db, workouts),
     settings: createDexieSettingsRepository(db),
     backup: createDexieBackupRepository(db, { workouts, pending }),
   }

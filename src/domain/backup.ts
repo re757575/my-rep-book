@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidBodyWeightKg, isValidHeightCm } from './bodyMetrics'
 import { isValidLocalDate } from './dates'
 import { PRESET_EXERCISES } from './presets'
 import { validateSetValues } from './setValues'
@@ -18,7 +19,7 @@ import {
 export const BACKUP_APP_ID = 'my-rep-book'
 
 /** 目前 App 的匯出檔 schema 版本 */
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 /** 匯出檔（PRD §5.7） */
 export interface ExportFile {
@@ -101,6 +102,12 @@ const customExerciseSchema = z.object({
   updatedAt: timestamp,
 })
 
+const bodyWeightSchema = z.object({
+  date: z.string().refine(isValidLocalDate),
+  weightKg: z.number().refine(isValidBodyWeightKg),
+  updatedAt: timestamp,
+})
+
 /** 陣列中第二次以後出現的同一個鍵（例如同一天的訓練），標為重複 */
 function rejectDuplicates<T>(key: (item: T) => string, field: string) {
   return (items: T[], ctx: z.RefinementCtx) => {
@@ -119,7 +126,14 @@ const backupDataSchema = z.object({
     .array(customExerciseSchema)
     .superRefine(rejectDuplicates((exercise) => exercise.id, 'id')),
   hiddenPresetIds: z.array(z.string()),
-  settings: z.object({ weightUnit: z.enum(WEIGHT_UNITS), theme: z.enum(THEMES) }),
+  bodyWeights: z
+    .array(bodyWeightSchema)
+    .superRefine(rejectDuplicates((entry) => entry.date, 'date')),
+  settings: z.object({
+    weightUnit: z.enum(WEIGHT_UNITS),
+    theme: z.enum(THEMES),
+    heightCm: z.number().refine(isValidHeightCm).nullable(),
+  }),
 })
 
 /** 檔案外層：版本與 data 的結構留給後續步驟檢查 */
@@ -174,7 +188,14 @@ type UnknownData = Record<string, unknown>
 export type BackupMigrations = Readonly<Record<number, (data: UnknownData) => UnknownData>>
 
 /** 各版本之間的遷移；schema 升版時在這裡加上 `[舊版]: (data) => 新版 data` */
-export const BACKUP_MIGRATIONS: BackupMigrations = {}
+export const BACKUP_MIGRATIONS: BackupMigrations = {
+  // v2 新增體重紀錄與設定中的身高；格式不對的 settings 原樣保留，留給驗證指出錯誤
+  1: (data) => ({
+    ...data,
+    bodyWeights: [],
+    settings: isRecord(data.settings) ? { ...data.settings, heightCm: null } : data.settings,
+  }),
+}
 
 interface MigrationOptions {
   migrations?: BackupMigrations

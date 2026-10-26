@@ -36,6 +36,16 @@ test('輸入備註後立刻重新整理，重新整理後顯示剛輸入的備�
   await expect(note).toHaveValue('左肩不適')
 })
 
+test('輸入體重後立刻重新整理，重新整理後顯示剛輸入的體重', async ({ page }) => {
+  await page.goto('./')
+  const bodyWeight = page.getByRole('textbox', { name: '體重（kg）' })
+
+  await bodyWeight.pressSequentially('72.5')
+  await page.reload()
+
+  await expect(bodyWeight).toHaveValue('72.5')
+})
+
 test('切到背景後分頁被關閉，重新開啟時剛輸入的值仍在', async ({ page, context }) => {
   await page.goto('./')
   const card = await addBenchPress(page)

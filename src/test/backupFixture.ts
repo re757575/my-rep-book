@@ -1,6 +1,12 @@
 // 匯入用的 fixture 備份檔：接縫 A 與 E2E 共用，用來建立歷史資料。
 // E2E 也會 import 這個檔案，所以只用相對路徑，且只 import 型別。
-import type { BackupData, CustomExercise, SetValues, Workout } from '../domain/types.ts'
+import type {
+  BackupData,
+  BodyWeightEntry,
+  CustomExercise,
+  SetValues,
+  Workout,
+} from '../domain/types.ts'
 
 /** fixture 中的一組：組數值，可加上熱身標記 */
 export type FixtureSet = SetValues & { isWarmup?: boolean }
@@ -57,11 +63,16 @@ export function fixtureCustomExercise(
   }
 }
 
+/** 某一天的體重（kg） */
+export function fixtureBodyWeight(date: string, weightKg: number): BodyWeightEntry {
+  return { date, weightKg, updatedAt: FIXTURE_TIME }
+}
+
 /** 匯出檔格式的 fixture（PRD §5.7）；未指定的 data 欄位為空，設定為預設值 */
 export function backupFixture(
   data: Partial<BackupData> = {},
   {
-    schemaVersion = 1,
+    schemaVersion = 2,
     exportedAt = FIXTURE_TIME,
   }: { schemaVersion?: number; exportedAt?: string } = {},
 ) {
@@ -73,7 +84,8 @@ export function backupFixture(
       workouts: [],
       customExercises: [],
       hiddenPresetIds: [],
-      settings: { weightUnit: 'kg', theme: 'system' },
+      bodyWeights: [],
+      settings: { weightUnit: 'kg', theme: 'system', heightCm: null },
       ...data,
     } satisfies BackupData,
   }

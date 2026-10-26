@@ -1,5 +1,5 @@
 import { Dexie, type EntityTable } from 'dexie'
-import type { CustomExercise, Settings, Workout } from '@/domain'
+import type { BodyWeightEntry, CustomExercise, Settings, Workout } from '@/domain'
 
 /** workouts 的一列：加上衍生欄位 exerciseIds（multiEntry 索引），由 repository 寫入時推導 */
 export type WorkoutRow = Workout & { exerciseIds: string[] }
@@ -11,7 +11,7 @@ export interface HiddenPresetRow {
   id: string
 }
 
-/** settings 只存一筆，key 固定為 'settings' */
+/** settings 只存一筆，key 固定為 'settings'；v1 時存的列沒有 heightCm */
 export type SettingsRow = Settings & { key: 'settings' }
 
 export type MyRepBookDb = Dexie & {
@@ -19,19 +19,23 @@ export type MyRepBookDb = Dexie & {
   customExercises: EntityTable<CustomExerciseRow, 'id'>
   hiddenPresets: EntityTable<HiddenPresetRow, 'id'>
   settings: EntityTable<SettingsRow, 'key'>
+  bodyWeights: EntityTable<BodyWeightEntry, 'date'>
 }
 
 export const DB_NAME = 'my-rep-book'
 
-/** IndexedDB schema v1（PRD §5.6）：一次建好全部 4 張資料表 */
+/** IndexedDB schema（PRD §5.6） */
 export function createDb(name = DB_NAME): MyRepBookDb {
   const db = new Dexie(name) as MyRepBookDb
+  // v1：一次建好 MVP 的 4 張資料表
   db.version(1).stores({
     workouts: 'date, *exerciseIds',
     customExercises: 'id, nameKey',
     hiddenPresets: 'id',
     settings: 'key',
   })
+  // v2：新增體重；其他資料表沿用 v1
+  db.version(2).stores({ bodyWeights: 'date' })
   return db
 }
 

@@ -132,6 +132,15 @@ export interface Workout {
   updatedAt: Timestamp
 }
 
+/** 體重：一天一筆，沒有記錄的日子沒有這筆資料 */
+export interface BodyWeightEntry {
+  /** 主鍵 */
+  date: LocalDate
+  /** > 0；一律以 kg 儲存，lb 輸入時換算後不四捨五入 */
+  weightKg: number
+  updatedAt: Timestamp
+}
+
 export const WEIGHT_UNITS = ['kg', 'lb'] as const
 export type WeightUnit = (typeof WEIGHT_UNITS)[number]
 
@@ -142,6 +151,8 @@ export type Theme = (typeof THEMES)[number]
 export interface Settings {
   weightUnit: WeightUnit
   theme: Theme
+  /** 身高（cm），用於計算 BMI；null 表示尚未填寫 */
+  heightCm: number | null
   lastExportedAt: Timestamp | null
 }
 
@@ -149,6 +160,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Readonly<Settings> = {
   weightUnit: 'kg',
   theme: 'system',
+  heightCm: null,
   lastExportedAt: null,
 }
 
@@ -158,5 +170,7 @@ export interface BackupData {
   workouts: Workout[]
   customExercises: CustomExercise[]
   hiddenPresetIds: string[]
+  /** 依日期由舊到新 */
+  bodyWeights: BodyWeightEntry[]
   settings: Omit<Settings, 'lastExportedAt'>
 }

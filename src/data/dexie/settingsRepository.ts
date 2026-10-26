@@ -4,10 +4,11 @@ import type { MyRepBookDb, SettingsRow } from './db'
 
 const SETTINGS_KEY = 'settings'
 
-function toSettings(row: SettingsRow | undefined): Settings {
+/** 沒有存過的設定（例如 v1 時存的列沒有身高）用預設值 */
+export function toSettings(row: SettingsRow | undefined): Settings {
   if (!row) return { ...DEFAULT_SETTINGS }
   const { key: _key, ...settings } = row
-  return settings
+  return { ...DEFAULT_SETTINGS, ...settings }
 }
 
 export function createDexieSettingsRepository(db: MyRepBookDb): SettingsRepository {

@@ -2,6 +2,7 @@
 // 介面設計成可替換，未來接雲端同步時只換實作。
 import type {
   BackupData,
+  BodyWeightEntry,
   CustomExercise,
   ExerciseBase,
   FieldEdit,
@@ -26,7 +27,7 @@ export interface WorkoutRepository {
     change: (current: Workout | undefined) => Workout | undefined,
   ): Promise<void>
   /**
-   * 「輸入即儲存」的欄位編輯（組的數值、備註），每次輸入都呼叫，不用等它完成。
+   * 「輸入即儲存」的欄位編輯（組的數值、備註、體重），每次輸入都呼叫，不用等它完成。
    * - 呼叫當下就同步記進本機的待寫清單：寫入完成前頁面被重新整理、關閉或結束，
    *   下次開啟時會在任何讀取之前補寫，讀到的一定是最後輸入的值
    * - 同一個欄位快速連續編輯時合併，以最後的值為準；所有寫入排成一列，同一時間最多只有一筆在進行
@@ -63,6 +64,17 @@ export interface ExerciseRepository {
   deleteCustom(id: string): Promise<void>
 }
 
+export interface BodyWeightRepository {
+  getByDate(date: LocalDate): Promise<BodyWeightEntry | undefined>
+  /** 列出全部體重，由新到舊；一天最多一筆，資料量小，不分批 */
+  listAll(): Promise<BodyWeightEntry[]>
+  /**
+   * 「輸入即儲存」：每次輸入都呼叫，不用等它完成；`weightKg` 為 null 時刪除該日的體重。
+   * 與組的數值共用同一份待寫清單，保證同 `WorkoutRepository.editField`
+   */
+  edit(date: LocalDate, weightKg: number | null): void
+}
+
 export interface SettingsRepository {
   /** 尚未儲存過設定時回傳預設值 */
   get(): Promise<Settings>
@@ -78,6 +90,7 @@ export interface BackupRepository {
 export interface Repositories {
   workouts: WorkoutRepository
   exercises: ExerciseRepository
+  bodyWeights: BodyWeightRepository
   settings: SettingsRepository
   backup: BackupRepository
 }
