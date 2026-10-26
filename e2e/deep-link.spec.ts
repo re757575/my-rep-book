@@ -13,6 +13,7 @@ test('建置產物的 404.html 與 index.html 相同', () => {
 for (const [route, heading, tab = heading] of [
   ['history', '歷史'],
   ['history/body-weight', '體重紀錄', '歷史'],
+  ['history/ai-prompt', 'AI 提示詞', '歷史'],
   ['exercises', '動作庫'],
   ['exercises/new', '新增自訂動作', '動作庫'],
   ['settings', '設定'],

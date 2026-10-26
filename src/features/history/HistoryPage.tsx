@@ -1,4 +1,4 @@
-import { Scale } from 'lucide-react'
+import { Scale, Sparkles } from 'lucide-react'
 import { useState, type ComponentProps } from 'react'
 import { labelDayButton, type DayButtonProps } from 'react-day-picker'
 import { zhTW } from 'react-day-picker/locale'
@@ -65,12 +65,20 @@ export function HistoryPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">歷史</h1>
-        <Button asChild variant="outline" className="h-11">
-          <Link to="/history/body-weight">
-            <Scale aria-hidden="true" />
-            體重紀錄
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" className="h-11">
+            <Link to="/history/body-weight">
+              <Scale aria-hidden="true" />
+              體重紀錄
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11">
+            <Link to="/history/ai-prompt">
+              <Sparkles aria-hidden="true" />
+              AI 提示詞
+            </Link>
+          </Button>
+        </div>
       </div>
       <Calendar
         className="mx-auto [--cell-size:--spacing(11)]"

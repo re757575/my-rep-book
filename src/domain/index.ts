@@ -60,6 +60,14 @@ export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'
 export { summarizeWorkout, type WorkoutSummary } from './summary'
 export { periodRange, summarizePeriod, type PeriodStats, type StatsPeriod } from './periodStats'
+export {
+  PROMPT_WEEKS,
+  buildTrainingPrompt,
+  hasPromptData,
+  promptRange,
+  type PromptWeeks,
+  type TrainingPromptInput,
+} from './trainingPrompt'
 export { formatRoundedWeight, formatWeight, formatWeightChange, kgToLb, lbToKg } from './units'
 export {
   calculateBmi,

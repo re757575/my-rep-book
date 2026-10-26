@@ -118,6 +118,13 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
     },
   },
   {
+    name: 'AI 提示詞',
+    open: async (page) => {
+      await page.goto('history/ai-prompt')
+      await expect(page.getByRole('textbox', { name: '提示詞' })).toHaveValue(/## 訓練明細/)
+    },
+  },
+  {
     name: '動作庫',
     open: async (page) => {
       await page.goto('exercises')

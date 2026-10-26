@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router'
 import { WorkoutDayRoute } from '@/features/workout/WorkoutDayRoute'
 import { AppLayout } from './AppLayout'
 import {
+  AiPromptPage,
   BodyWeightHistoryPage,
   EditCustomExercisePage,
   ExerciseDetailPage,
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
       { path: 'day/:date', element: <WorkoutDayRoute /> },
       { path: 'history', element: <HistoryPage /> },
       { path: 'history/body-weight', element: <BodyWeightHistoryPage /> },
+      { path: 'history/ai-prompt', element: <AiPromptPage /> },
       { path: 'exercises', element: <ExercisesPage /> },
       { path: 'exercises/new', element: <NewCustomExercisePage /> },
       { path: 'exercises/:id', element: <ExerciseDetailPage /> },

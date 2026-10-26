@@ -235,6 +235,23 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 各部位組數：10 大篩選分類全部列出（0 組也列），依動作的主要部位歸類，一個動作屬於多個分類時各算一次；以長條呈現相對多寡
 - 這段期間沒有訓練時顯示「這段期間沒有訓練」，不列出各部位組數
 
+#### US-25 AI 提示詞
+
+- 歷史頁標題旁有「AI 提示詞」按鈕，進入 `/history/ai-prompt`
+- 可選「最近 4 週」（預設）、「最近 8 週」、「最近 12 週」，期間算到今天為止
+- 把期間內的紀錄整理成 Markdown 提示詞並預覽，按「複製提示詞」複製到剪貼簿，顯示「已複製，可以貼到 AI 的對話中」，使用者自行貼到外部 AI
+- 提示詞依序包含：
+  - 請求：請 AI 以教練角色分析訓練頻率、訓練量與部位平衡，找出進步與停滯的動作，建議下週的訓練
+  - 說明：重量單位、熱身組不計入統計、估算 1RM 的公式
+  - 基本資料：身高、最近體重（含 7 日平均與比上週增減）
+  - 期間統計：同 US-24，各部位組數 10 類全部列出
+  - 個人紀錄：期間內做過的重量×次數動作，以全部歷史計算（同 US-23）
+  - 訓練明細：由舊到新，每天每個動作的已填完的組（標示熱身）與備註
+  - 體重紀錄：期間內每筆體重與 7 日平均
+- 沒有資料的段落省略；期間內沒有訓練也沒有體重時顯示「這段期間沒有紀錄」，不能複製
+- 無法寫入剪貼簿時選取全文，顯示「無法自動複製，請長按文字手動複製」
+- 資料只寫進剪貼簿，App 不會傳送到任何地方
+
 ### 4.4 設定與資料
 
 #### US-16 匯出資料 `[E2E-05]`
@@ -505,6 +522,7 @@ export interface ExportFile {
 | `buildBodyWeightTrend(entries)` | 每筆體重的 7 日平均與比上週增減 |
 | `estimateOneRepMaxKg` / `buildExerciseRecords(workouts, exerciseId)` | 估算 1RM；個人紀錄與每次的進度（US-23） |
 | `periodRange(period, date)` / `summarizePeriod(workouts, exercisesById)` | 每週／每月統計的區間與統計（US-24） |
+| `promptRange(weeks, today)` / `buildTrainingPrompt(input)` | AI 提示詞的期間與內容（US-25） |
 
 ---
 
@@ -517,7 +535,7 @@ export interface ExportFile {
 | Tab | 路由 | 說明 |
 | --- | --- | --- |
 | 今天 | `/`、`/day/:date` | `/` 顯示今天；`/day/:date` 顯示指定日期，未來日期導回 `/` |
-| 歷史 | `/history`、`/history/body-weight` | 月曆與日明細；體重紀錄清單 |
+| 歷史 | `/history`、`/history/body-weight`、`/history/ai-prompt` | 月曆與日明細；體重紀錄清單；AI 提示詞 |
 | 動作庫 | `/exercises`、`/exercises/:id` | 列表與動作詳情 |
 | 設定 | `/settings` | 單位、身高、主題、匯出入、儲存狀態 |
 

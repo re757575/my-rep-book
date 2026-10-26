@@ -9,6 +9,10 @@ export const HistoryPage = lazy(async () => ({
   default: (await import('@/features/history/HistoryPage')).HistoryPage,
 }))
 
+export const AiPromptPage = lazy(async () => ({
+  default: (await import('@/features/history/AiPromptPage')).AiPromptPage,
+}))
+
 export const BodyWeightHistoryPage = lazy(async () => ({
   default: (await import('@/features/bodyWeight/BodyWeightHistoryPage')).BodyWeightHistoryPage,
 }))
