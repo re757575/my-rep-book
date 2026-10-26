@@ -71,7 +71,7 @@ const sampleData: BackupData = {
     { date: '2026-10-19', weightKg: 72.5, updatedAt: T },
     { date: '2026-10-20', weightKg: 72.25, updatedAt: T },
   ],
-  settings: { weightUnit: 'lb', theme: 'dark', heightCm: 175 },
+  settings: { weightUnit: 'lb', theme: 'dark', heightCm: 175, birthDate: '1990-05-20' },
 }
 
 /** 把匯出檔物件轉成檔案文字後解析 */
@@ -80,10 +80,10 @@ function parse(file: unknown) {
 }
 
 describe('匯出檔解析', () => {
-  it('匯出檔包含 app 識別、schemaVersion 2、匯出時間與 data', () => {
+  it('匯出檔包含 app 識別、schemaVersion 3、匯出時間與 data', () => {
     expect(createExportFile(sampleData, '2026-10-24T04:00:00.000Z')).toEqual({
       app: 'my-rep-book',
-      schemaVersion: 2,
+      schemaVersion: 3,
       exportedAt: '2026-10-24T04:00:00.000Z',
       data: sampleData,
     })
@@ -224,6 +224,11 @@ describe('格式錯誤時指出錯誤位置', () => {
       error: 'bodyWeights[2].date 重複',
     },
     {
+      case: '生日不是合法的日期',
+      file: fileWith((file) => (file.data.settings.birthDate = '1990-02-30')),
+      error: 'settings.birthDate 格式錯誤',
+    },
+    {
       case: '身高超出範圍',
       file: fileWith((file) => (file.data.settings.heightCm = 1750)),
       error: 'settings.heightCm 格式錯誤',
@@ -235,7 +240,7 @@ describe('格式錯誤時指出錯誤位置', () => {
 
 describe('schema 版本與遷移', () => {
   it('版本比目前 App 新時拒絕', () => {
-    expect(parse(fileWith((file) => (file.schemaVersion = 3)))).toEqual({
+    expect(parse(fileWith((file) => (file.schemaVersion = 4)))).toEqual({
       ok: false,
       error: '此備份來自較新版本的 App，請先更新 App',
     })
@@ -265,19 +270,31 @@ describe('schema 版本與遷移', () => {
     ).toThrow('缺少 v2 → v3 的遷移')
   })
 
-  it('v1 的檔案（還沒有體重與身高）遷移成沒有體重紀錄、尚未填寫身高', () => {
+  it('v1 的檔案（還沒有體重、身高與生日）依序遷移到 v3', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
       delete (file.data as Partial<BackupData>).bodyWeights
       delete (file.data.settings as { heightCm?: unknown }).heightCm
+      delete (file.data.settings as { birthDate?: unknown }).birthDate
     })
     expect(parse(v1)).toEqual({
       ok: true,
       data: {
         ...sampleData,
         bodyWeights: [],
-        settings: { ...sampleData.settings, heightCm: null },
+        settings: { ...sampleData.settings, heightCm: null, birthDate: null },
       },
+    })
+  })
+
+  it('v2 的檔案（還沒有生日）遷移成尚未填寫生日', () => {
+    const v2 = fileWith((file) => {
+      file.schemaVersion = 2
+      delete (file.data.settings as { birthDate?: unknown }).birthDate
+    })
+    expect(parse(v2)).toEqual({
+      ok: true,
+      data: { ...sampleData, settings: { ...sampleData.settings, birthDate: null } },
     })
   })
 
@@ -290,20 +307,20 @@ describe('schema 版本與遷移', () => {
   })
 
   it('舊版的檔案先遷移再驗證', () => {
-    // 假設 v2 的設定以 unit 記錄重量單位，v3 改名為 weightUnit
-    const v2 = fileWith((file) => {
+    // 假設 v3 的設定以 unit 記錄重量單位，v4 改名為 weightUnit
+    const v3 = fileWith((file) => {
       const { weightUnit, ...rest } = file.data.settings
       ;(file.data as { settings: unknown }).settings = { ...rest, unit: weightUnit }
     })
     const migrations: BackupMigrations = {
-      2: (data) => {
+      3: (data) => {
         const { unit, ...settings } = data.settings as Record<string, unknown>
         return { ...data, settings: { ...settings, weightUnit: unit } }
       },
     }
 
-    expect(parse(v2)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
-    expect(parseBackupFile(JSON.stringify(v2), { migrations, currentVersion: 3 })).toEqual({
+    expect(parse(v3)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
+    expect(parseBackupFile(JSON.stringify(v3), { migrations, currentVersion: 4 })).toEqual({
       ok: true,
       data: sampleData,
     })

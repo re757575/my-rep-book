@@ -4,6 +4,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useRepositories } from '@/data'
 import { THEMES, WEIGHT_UNITS, type Theme, type WeightUnit } from '@/domain'
 import { BackupSection } from './BackupSection'
+import { BirthDateSection } from './BirthDateSection'
 import { HeightSection } from './HeightSection'
 import { PersistentStorageSection } from './PersistentStorageSection'
 import { useStoredSettings } from './settingsContext'
@@ -72,6 +73,7 @@ export function SettingsPage() {
             onChange={(weightUnit) => repositories.settings.update({ weightUnit })}
           />
           <HeightSection heightCm={settings.heightCm} />
+          <BirthDateSection birthDate={settings.birthDate} />
           <SettingOptions
             title="主題"
             options={THEMES}

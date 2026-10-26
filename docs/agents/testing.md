@@ -22,7 +22,7 @@
   - 自訂動作表單的部位多選是 `fieldset`，role 為 `group`：`within(getByRole('group', { name: '主要部位' })).getByRole('checkbox', { name: '胸' })`
   - `Switch` 是 `switch`
   - `<dl>` 的 `dd` 以 `aria-labelledby` 指向 `dt`：`getByRole('definition', { name: '記錄類型' })`
-- **體重欄位在訓練頁的日期下方，載入後才出現**：`await screen.findByRole('textbox', { name: '體重（kg）' })`（lb 模式為「體重（lb）」）。它在名稱為「體重」的 `region` 裡，所以訓練頁上一直多一個 `region`。BMI 是純文字，用 `findByText('BMI 22.9')`；設定頁的身高欄位是 `getByRole('textbox', { name: '身高' })`。
+- **體重欄位在訓練頁的日期下方，載入後才出現**：`await screen.findByRole('textbox', { name: '體重（kg）' })`（lb 模式為「體重（lb）」）。它在名稱為「體重」的 `region` 裡，所以訓練頁上一直多一個 `region`。BMI 是純文字，用 `findByText('BMI 22.9')`；設定頁的身高欄位是 `getByRole('textbox', { name: '身高' })`；生日是日期欄位，沒有 `textbox` 角色，用 `findByLabelText('生日')` 取，以 `user.type(field, '1990-05-20')` 輸入完整的 `YYYY-MM-DD`。
 - **測 IndexedDB 升級（舊版 App 留下的資料庫）用 `seedV1Database`**（`src/test/seedV1Database.ts`）：先以 v1 schema 寫入舊資料，再 `renderApp()` 讓 App 開啟時升級。feature 的測試檔不能 import `dexie`（ESLint 限制），以後再升版時，建立舊版資料庫的 helper 也放在 `src/test`。
 - **今天頁的 `h1` 是日期**（固定日期下為 `10/24（六）`），不是「今天」。要確認在今天頁，用 `getByRole('heading', { level: 1, name: '10/24（六）' })`。
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。

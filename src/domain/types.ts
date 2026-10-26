@@ -103,6 +103,9 @@ export type SetValues =
  */
 export type ParsedInput = { ok: true; value: number | null } | { ok: false; error: string }
 
+/** 解析日期欄位的輸入：空白為 null；不合法時帶錯誤訊息，呼叫端不寫入 */
+export type ParsedDateInput = { ok: true; value: LocalDate | null } | { ok: false; error: string }
+
 /** 組 */
 export interface WorkoutSet {
   /** UUID */
@@ -153,6 +156,8 @@ export interface Settings {
   theme: Theme
   /** 身高（cm），用於計算 BMI；null 表示尚未填寫 */
   heightCm: number | null
+  /** 生日，用於 AI 提示詞中的年齡；null 表示尚未填寫 */
+  birthDate: LocalDate | null
   lastExportedAt: Timestamp | null
 }
 
@@ -161,6 +166,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   weightUnit: 'kg',
   theme: 'system',
   heightCm: null,
+  birthDate: null,
   lastExportedAt: null,
 }
 

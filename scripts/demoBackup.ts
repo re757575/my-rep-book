@@ -93,5 +93,5 @@ export const DEMO_BACKUP = backupFixture({
     }),
   ],
   bodyWeights,
-  settings: { weightUnit: 'kg', theme: 'system', heightCm: 175 },
+  settings: { weightUnit: 'kg', theme: 'system', heightCm: 175, birthDate: '1990-05-20' },
 })

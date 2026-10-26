@@ -68,11 +68,14 @@ export function fixtureBodyWeight(date: string, weightKg: number): BodyWeightEnt
   return { date, weightKg, updatedAt: FIXTURE_TIME }
 }
 
-/** 匯出檔格式的 fixture（PRD §5.7）；未指定的 data 欄位為空，設定為預設值 */
+/** 匯出檔格式的 fixture（PRD §5.7）；未指定的 data 欄位為空，未指定的設定為預設值 */
 export function backupFixture(
-  data: Partial<BackupData> = {},
   {
-    schemaVersion = 2,
+    settings,
+    ...data
+  }: Partial<Omit<BackupData, 'settings'>> & { settings?: Partial<BackupData['settings']> } = {},
+  {
+    schemaVersion = 3,
     exportedAt = FIXTURE_TIME,
   }: { schemaVersion?: number; exportedAt?: string } = {},
 ) {
@@ -85,8 +88,8 @@ export function backupFixture(
       customExercises: [],
       hiddenPresetIds: [],
       bodyWeights: [],
-      settings: { weightUnit: 'kg', theme: 'system', heightCm: null },
       ...data,
+      settings: { weightUnit: 'kg', theme: 'system', heightCm: null, birthDate: null, ...settings },
     } satisfies BackupData,
   }
 }

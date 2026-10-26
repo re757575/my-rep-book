@@ -243,7 +243,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 提示詞依序包含：
   - 請求：請 AI 以教練角色分析訓練頻率、訓練量與部位平衡，找出進步與停滯的動作，建議下週的訓練
   - 說明：重量單位、熱身組不計入統計、估算 1RM 的公式
-  - 基本資料：身高、最近體重（含 7 日平均與比上週增減）
+  - 基本資料：年齡（期間最後一天滿幾歲，不放生日本身）、身高、最近體重（含 7 日平均與比上週增減）
   - 期間統計：同 US-24，各部位組數 10 類全部列出
   - 個人紀錄：期間內做過的重量×次數動作，以全部歷史計算（同 US-23）
   - 訓練明細：由舊到新，每天每個動作的已填完的組（標示熱身）與備註
@@ -303,6 +303,14 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
   - 比上週增減：該筆的 7 日平均減去 7 天前的 7 日平均；上一週沒有任何體重時不顯示
   - 平均與增減只顯示到 0.1，增減帶正負號，四捨五入為 0 時不帶
 - 體重與身高包含在匯出檔中（schema v2）
+
+#### US-26 生日
+
+- 設定頁在身高下方可填寫生日，使用瀏覽器的日期選擇器，選了就儲存；清空即改回尚未填寫
+- 不早於 1900-01-01、不晚於今天，不合法時在欄位下方顯示錯誤且不寫入
+- 已填生日時在欄位旁顯示目前的年齡（滿幾歲，今年生日還沒到就少一歲；2/29 出生者在非閏年的 3/1 滿歲）
+- AI 提示詞的基本資料只帶入年齡，不放生日本身（US-25）
+- 生日包含在匯出檔中（schema v3）
 
 ---
 
@@ -460,6 +468,7 @@ export interface Settings {
   weightUnit: 'kg' | 'lb';
   theme: 'system' | 'light' | 'dark';
   heightCm: number | null; // 50–300；null 表示尚未填寫
+  birthDate: LocalDate | null; // 不早於 1900-01-01、不晚於今天；null 表示尚未填寫
   lastExportedAt: Timestamp | null;
 }
 ```
@@ -485,7 +494,7 @@ export interface Settings {
 ```ts
 export interface ExportFile {
   app: 'my-rep-book';
-  schemaVersion: 2;
+  schemaVersion: 3;
   exportedAt: Timestamp;
   data: {
     workouts: Workout[];             // 不含衍生欄位 exerciseIds
@@ -498,6 +507,7 @@ export interface ExportFile {
 ```
 
 - v1 → v2：加上空的 `bodyWeights`，`settings.heightCm` 設為 `null`
+- v2 → v3：`settings.birthDate` 設為 `null`
 
 - 以 zod schema 驗證；遷移函式以 `migrations[from]` 形式逐版升級：`v1 → v2 → … → current`
 - 匯入時若 workouts 引用了不存在的 `exerciseId`（例如未知的預設 slug），拒絕匯入並列出缺少的 ID
@@ -523,6 +533,7 @@ export interface ExportFile {
 | `estimateOneRepMaxKg` / `buildExerciseRecords(workouts, exerciseId)` | 估算 1RM；個人紀錄與每次的進度（US-23） |
 | `periodRange(period, date)` / `summarizePeriod(workouts, exercisesById)` | 每週／每月統計的區間與統計（US-24） |
 | `promptRange(weeks, today)` / `buildTrainingPrompt(input)` | AI 提示詞的期間與內容（US-25） |
+| `parseBirthDateInput` / `calculateAge(birthDate, on)` | 生日輸入驗證與年齡（US-26） |
 
 ---
 

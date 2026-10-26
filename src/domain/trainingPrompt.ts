@@ -1,3 +1,4 @@
+import { calculateAge } from './age'
 import { buildBodyWeightTrend, type BodyWeightTrendEntry } from './bodyWeightTrend'
 import { addDays, formatDateWithYear } from './dates'
 import type { ExerciseRecords } from './exerciseRecords'
@@ -22,6 +23,8 @@ export interface TrainingPromptInput {
   to: LocalDate
   weightUnit: WeightUnit
   heightCm: number | null
+  /** 生日；提示詞只帶入期間最後一天的年齡，不放生日本身 */
+  birthDate: LocalDate | null
   /** 期間內的訓練 */
   workouts: readonly Workout[]
   /** 動作庫的全部動作（含已隱藏、已封存），用來查名稱與部位 */
@@ -64,10 +67,11 @@ function introduction({ from, to, weightUnit }: TrainingPromptInput): string[] {
 }
 
 function profile(
-  { heightCm, weightUnit: unit }: TrainingPromptInput,
+  { to, birthDate, heightCm, weightUnit: unit }: TrainingPromptInput,
   latestWeight: BodyWeightTrendEntry | undefined,
 ): string[] {
   const lines: string[] = []
+  if (birthDate !== null) lines.push(`- 年齡：${calculateAge(birthDate, to)} 歲`)
   if (heightCm !== null) lines.push(`- 身高：${heightCm} cm`)
   if (latestWeight) {
     const change =

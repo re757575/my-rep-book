@@ -51,12 +51,12 @@ export function AiPromptPage() {
   const [weeks, setWeeks] = useState<PromptWeeks>(4)
   const [from, to] = promptRange(weeks, today())
   const data = usePromptData(from, to)
-  const { weightUnit, heightCm } = useSettings()
+  const { weightUnit, heightCm, birthDate } = useSettings()
   const textarea = useRef<HTMLTextAreaElement>(null)
 
   const prompt =
     data && hasPromptData({ from, to, ...data })
-      ? buildTrainingPrompt({ from, to, weightUnit, heightCm, ...data })
+      ? buildTrainingPrompt({ from, to, weightUnit, heightCm, birthDate, ...data })
       : undefined
 
   async function copy() {

@@ -76,6 +76,7 @@ const input: TrainingPromptInput = {
   to: '2026-10-25',
   weightUnit: 'kg',
   heightCm: 175,
+  birthDate: '1990-10-26',
   workouts,
   exercises,
   bodyWeights: [
@@ -101,6 +102,7 @@ describe('buildTrainingPrompt：把紀錄整理成貼到外部 AI 的提示詞',
 說明：重量單位為 kg，距離為 km；標示「熱身」的是熱身組，不計入統計；估算 1RM 以 Epley 公式計算：重量 ×（1 + 次數 ÷ 30）。
 
 ## 基本資料
+- 年齡：35 歲
 - 身高：175 cm
 - 最近體重：72 kg（2026/10/24（六），7 日平均 72.3 kg，比上週 -0.8 kg）
 
@@ -127,6 +129,13 @@ describe('buildTrainingPrompt：把紀錄整理成貼到外部 AI 的提示詞',
 `)
   })
 
+  it('只帶入期間最後一天的年齡，不放生日本身', () => {
+    const prompt = buildTrainingPrompt(input)
+    expect(prompt).not.toContain('1990')
+    // 期間最後一天正好是生日時已滿歲
+    expect(buildTrainingPrompt({ ...input, to: '2026-10-26' })).toContain('- 年齡：36 歲')
+  })
+
   it('以目前的重量單位顯示', () => {
     const prompt = buildTrainingPrompt({ ...input, weightUnit: 'lb' })
     expect(prompt).toContain('重量單位為 lb')
@@ -134,10 +143,11 @@ describe('buildTrainingPrompt：把紀錄整理成貼到外部 AI 的提示詞',
     expect(prompt).toContain('- 最近體重：158.7 lb')
   })
 
-  it('沒有身高、體重與個人紀錄時省略那些段落', () => {
+  it('沒有生日、身高、體重與個人紀錄時省略那些段落', () => {
     const prompt = buildTrainingPrompt({
       ...input,
       heightCm: null,
+      birthDate: null,
       bodyWeights: [],
       records: new Map(),
     })

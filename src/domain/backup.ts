@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidBirthDate } from './age'
 import { isValidBodyWeightKg, isValidHeightCm } from './bodyMetrics'
 import { isValidLocalDate } from './dates'
 import { PRESET_EXERCISES } from './presets'
@@ -19,7 +20,7 @@ import {
 export const BACKUP_APP_ID = 'my-rep-book'
 
 /** 目前 App 的匯出檔 schema 版本 */
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 3
 
 /** 匯出檔（PRD §5.7） */
 export interface ExportFile {
@@ -133,6 +134,7 @@ const backupDataSchema = z.object({
     weightUnit: z.enum(WEIGHT_UNITS),
     theme: z.enum(THEMES),
     heightCm: z.number().refine(isValidHeightCm).nullable(),
+    birthDate: z.string().refine(isValidBirthDate).nullable(),
   }),
 })
 
@@ -194,6 +196,11 @@ export const BACKUP_MIGRATIONS: BackupMigrations = {
     ...data,
     bodyWeights: [],
     settings: isRecord(data.settings) ? { ...data.settings, heightCm: null } : data.settings,
+  }),
+  // v3 新增設定中的生日
+  2: (data) => ({
+    ...data,
+    settings: isRecord(data.settings) ? { ...data.settings, birthDate: null } : data.settings,
   }),
 }
 

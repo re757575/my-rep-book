@@ -5,7 +5,10 @@ import { backupFixture, fixtureBodyWeight, fixtureWorkout } from '@/test/backupF
 import { renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 
-/** 最近 4 週（9/27–10/24）：10/20 臥推；4 週之前：9/10 深蹲；10/20 體重 72.5 kg，身高 175 cm */
+/**
+ * 最近 4 週（9/27–10/24）：10/20 臥推；4 週之前：9/10 深蹲；10/20 體重 72.5 kg，
+ * 身高 175 cm，生日 1990/5/20
+ */
 const backup = backupFixture({
   workouts: [
     fixtureWorkout('2026-09-10', [
@@ -23,7 +26,7 @@ const backup = backupFixture({
     ]),
   ],
   bodyWeights: [fixtureBodyWeight('2026-10-20', 72.5)],
-  settings: { weightUnit: 'kg', theme: 'system', heightCm: 175 },
+  settings: { weightUnit: 'kg', theme: 'system', heightCm: 175, birthDate: '1990-05-20' },
 })
 
 /** 從歷史頁點「AI 提示詞」，回傳提示詞的文字框 */
@@ -42,7 +45,9 @@ describe('AI 提示詞', () => {
     expect(text).toMatch(
       /^你是一位專業的肌力與體能教練。以下是我在 2026\/9\/27（日）到 2026\/10\/24（六）的健身紀錄/,
     )
-    expect(text).toContain('- 身高：175 cm')
+    // 只帶入年齡，不放生日本身
+    expect(text).toContain('- 年齡：36 歲\n- 身高：175 cm')
+    expect(text).not.toContain('1990')
     expect(text).toContain('- 槓鈴臥推：熱身 40kg×10、60kg×8\n  - 備註：左肩不適')
     expect(text).toContain('- 2026/10/20（二）：72.5 kg')
     // 4 週之前的訓練不包含

@@ -21,7 +21,9 @@ export function createDexieBackupRepository(
         const customRows = await db.customExercises.toArray()
         const hiddenPresetIds = await db.hiddenPresets.toCollection().primaryKeys()
         const bodyWeights = await db.bodyWeights.orderBy('date').toArray()
-        const { weightUnit, theme, heightCm } = toSettings(await db.settings.get('settings'))
+        const { lastExportedAt: _lastExportedAt, ...settings } = toSettings(
+          await db.settings.get('settings'),
+        )
         return {
           workouts: workoutRows.map(toWorkout),
           customExercises: customRows
@@ -29,7 +31,7 @@ export function createDexieBackupRepository(
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
           hiddenPresetIds,
           bodyWeights,
-          settings: { weightUnit, theme, heightCm },
+          settings,
         }
       })
     },
