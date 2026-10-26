@@ -50,6 +50,11 @@ function isHeavier(a: WeightRepsSet, b: WeightRepsSet) {
   return a.weightKg > b.weightKg || (a.weightKg === b.weightKg && a.reps > b.reps)
 }
 
+/** 最重的一組；同重量取次數多的。`sets` 至少要有一組 */
+export function heaviestSet<T extends WeightRepsSet>(sets: readonly T[]): T {
+  return sets.reduce((best, set) => (isHeavier(set, best) ? set : best))
+}
+
 /** 這一天這個動作的完整正式組（重量×次數）；同一天加入多次這個動作時合併 */
 function workingSetsOf(workout: Workout, exerciseId: string): WeightRepsSet[] {
   const sets: WeightRepsSet[] = []
@@ -80,7 +85,7 @@ export function buildExerciseRecords(
     const sets = workingSetsOf(workout, exerciseId)
     if (sets.length === 0) continue
 
-    const topSet = sets.reduce((best, set) => (isHeavier(set, best) ? set : best))
+    const topSet = heaviestSet(sets)
     const bestOneRepMaxSet = sets.reduce((best, set) =>
       estimateOneRepMaxKg(set) > estimateOneRepMaxKg(best) ? set : best,
     )

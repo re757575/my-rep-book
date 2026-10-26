@@ -32,6 +32,7 @@
 - **確認對話框（shadcn `AlertDialog`）是 `alertdialog`**，名稱是標題：`findByRole('alertdialog', { name: '刪除「Smith 臥推」？' })`。對話框裡的確認鍵常和觸發鍵同名（例如都叫「刪除」），要用 `within(dialog)` 取。
 - **斷言「沒有某個元素」前，先等相關資料載入完**：依非同步資料決定是否顯示的元素（例如動作詳情頁依「是否已有紀錄」顯示「封存」或「刪除」），載入中兩者都不在，直接 `queryBy*` 斷言不存在會在載入前就通過。先 `findBy*` 等一個載入後必定出現的元素，再斷言另一個不存在。
 - **需要「已有紀錄」的動作時，透過 UI 在今天的訓練加入它**：建立自訂動作後切到「今天」分頁，從加入動作選單加入即可，不用填組數值。範例見 `src/features/exercises/archiveCustomExercises.test.tsx` 的 `createCustomWithRecord`。
+- **訓練動作的名稱是收合按鈕**：`h2` 裡是 `button`（`aria-expanded` 表示是否展開），名稱與動作名稱相同，用 `within(card).getByRole('button', { name: '槓鈴臥推' })` 取。所以在加入動作選單的 `dialog` 之外用 `getByRole('button', { name: /^槓鈴臥推/ })` 會比到它，選單裡的動作要先 `within(dialog)`。收合後各組欄位不在無障礙樹中，`queryByRole` 會回傳 null；收合狀態存在 localStorage，`reload()` 後仍保留。
 - **加入動作選單是 `dialog`**，裡面的動作列是 `button`（動作庫分頁則是 `link`）。按鈕名稱是「中文名 英文名 · 器材」（例如「槓鈴臥推Barbell Bench Press · 槓鈴」），比對用 `{ name: /^槓鈴臥推/ }` 錨定開頭，避免名稱較短的關鍵字同時比到器材欄或其他動作。
 - **做過的動作會同時出現在「最近使用」與「動作清單」**：只要任何一天的訓練有這個動作（包含剛在今天加入的），加入動作選單裡就有兩個同名按鈕，`within(dialog).getByRole('button', { name: /^槓鈴臥推/ })` 會因為比到多個而失敗。從全部動作選，先取清單：`within(within(dialog).getByRole('list', { name: '動作清單' })).getByRole('button', …)`；「最近使用」是名稱為「最近使用」的 `region`，裡面的清單也叫「最近使用」。範例見 `src/features/workout/addExercisePicker.test.tsx`。
 - **在選單中「＋ 新增自訂動作」後，dialog 的名稱變成「新增自訂動作」**：表單在同一個 dialog 裡，`findByRole('dialog', { name: '新增自訂動作' })` 後用 `within` 填表；按「取消」回到名稱為「加入動作」的 dialog。

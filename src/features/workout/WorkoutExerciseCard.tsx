@@ -1,9 +1,10 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import {
   formatLastPerformance,
+  formatWorkoutExerciseSummary,
   type LastPerformance,
   type SetField,
   type WorkoutExercise,
@@ -11,10 +12,12 @@ import {
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { cn } from '@/lib/utils'
 import { SetFields } from './SetFields'
+import { useCollapsedWorkoutExercise } from './useCollapsedWorkoutExercise'
 
 /**
  * 訓練動作：動作名稱、上次紀錄、各組的熱身標記與輸入欄位，以及「新增一組」。
  * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
+ * 點動作名稱可以收合：收合後只留名稱、操作與這個動作的總計（`formatWorkoutExerciseSummary`）。
  */
 export function WorkoutExerciseCard({
   workoutExercise,
@@ -39,62 +42,85 @@ export function WorkoutExerciseCard({
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
+  const bodyId = useId()
   const weightUnit = useWeightUnit()
+  const [collapsed, setCollapsed] = useCollapsedWorkoutExercise(workoutExercise.id)
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2 border-b pb-4">
       <header className="flex items-center gap-2">
         <h2 id={headingId} className="flex-1 font-semibold">
-          {exerciseName}
+          {/* 整個名稱都是收合按鈕，單手也好按 */}
+          <button
+            type="button"
+            aria-expanded={!collapsed}
+            aria-controls={bodyId}
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex min-h-11 w-full items-center gap-1 rounded-md text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={cn('size-4 shrink-0 transition-transform', collapsed && '-rotate-90')}
+            />
+            {exerciseName}
+          </button>
         </h2>
         {actions}
       </header>
-      {lastPerformance && (
-        <p className="text-sm text-muted-foreground">
-          {formatLastPerformance(lastPerformance, weightUnit)}
+      {collapsed && (
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {formatWorkoutExerciseSummary(workoutExercise.sets, weightUnit)}
         </p>
       )}
-      <ol className="flex flex-col gap-2">
-        {workoutExercise.sets.map((set, index) => (
-          <li
-            key={set.id}
-            className={cn(
-              'flex items-center gap-2 rounded-md',
-              set.isWarmup && 'bg-muted text-muted-foreground',
-            )}
-          >
-            <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}</span>
-            <Toggle
-              variant="outline"
-              className="size-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-              aria-label={`第 ${index + 1} 組熱身`}
-              pressed={set.isWarmup}
-              onPressedChange={() => onToggleWarmup(set.id)}
+      {/* 收合時保持掛載、只隱藏，輸入到一半的文字不會遺失 */}
+      <div id={bodyId} hidden={collapsed} className={collapsed ? 'hidden' : 'flex flex-col gap-2'}>
+        {lastPerformance && (
+          <p className="text-sm text-muted-foreground">
+            {formatLastPerformance(lastPerformance, weightUnit)}
+          </p>
+        )}
+        <ol className="flex flex-col gap-2">
+          {workoutExercise.sets.map((set, index) => (
+            <li
+              key={set.id}
+              className={cn(
+                'flex items-center gap-2 rounded-md',
+                set.isWarmup && 'bg-muted text-muted-foreground',
+              )}
             >
-              熱
-            </Toggle>
-            <SetFields
-              values={set.values}
-              setNumber={index + 1}
-              onChange={(field, value) => onChangeSetField(set.id, field, value)}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto size-11 text-muted-foreground"
-              aria-label={`刪除第 ${index + 1} 組`}
-              onClick={() => onDeleteSet(set.id)}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
-          </li>
-        ))}
-      </ol>
-      <Button variant="ghost" className="h-11" onClick={onAddSet}>
-        <Plus aria-hidden="true" />
-        新增一組
-      </Button>
-      {children}
+              <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}</span>
+              <Toggle
+                variant="outline"
+                className="size-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                aria-label={`第 ${index + 1} 組熱身`}
+                pressed={set.isWarmup}
+                onPressedChange={() => onToggleWarmup(set.id)}
+              >
+                熱
+              </Toggle>
+              <SetFields
+                values={set.values}
+                setNumber={index + 1}
+                onChange={(field, value) => onChangeSetField(set.id, field, value)}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto size-11 text-muted-foreground"
+                aria-label={`刪除第 ${index + 1} 組`}
+                onClick={() => onDeleteSet(set.id)}
+              >
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </li>
+          ))}
+        </ol>
+        <Button variant="ghost" className="h-11" onClick={onAddSet}>
+          <Plus aria-hidden="true" />
+          新增一組
+        </Button>
+        {children}
+      </div>
     </section>
   )
 }

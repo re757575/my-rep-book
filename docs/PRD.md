@@ -148,6 +148,17 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 有氧總時間：`distance_duration` 類型完整正式組的時間加總；`duration`（如平板支撐）不計入
 - 數值為 0 的項目仍顯示 0；不完整的組不計入任何摘要
 
+#### US-27 收合訓練動作
+
+- 訓練頁上點動作名稱可收合或展開該動作；排序與刪除動作在收合時照常可用
+- 收合後隱藏上次紀錄、各組欄位、「新增一組」與備註，改顯示這個動作的總計（只算完整的正式組）：
+  - `weight_reps`：`3 組 · 最重 60kg×8 · 訓練量 1,440 kg`
+  - `reps`：`3 組 · 共 24 下`
+  - `duration`：`2 組 · 共 03:00`
+  - `distance_duration`：`1 組 · 5 km · 30:00`
+  - 沒有完整的正式組時顯示「尚未記錄正式組」
+- 收合狀態記在本機（localStorage），重新整理後保留；屬於畫面狀態，不寫進資料庫、不包含在匯出檔
+
 ### 4.2 動作庫
 
 #### US-10 瀏覽與搜尋動作
@@ -523,6 +534,7 @@ export interface ExportFile {
 | `buildInitialSet(lastPerformance, trackingType)` | 依 US-02 規則產生第一組 |
 | `cloneSetForNext(previousSet)` | 依 US-03 規則複製上一組 |
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
+| `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `matchesSearch(exercise, query)` / `exercisesInCategory(...)` | 搜尋與分類篩選 |
 | `getRecentExerciseIds(workouts, limit = 8)` | 最近使用 |
 | `normalizeNameKey(name)` / `isDuplicateName(...)` | 名稱重複檢查 |
