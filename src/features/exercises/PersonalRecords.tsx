@@ -3,7 +3,7 @@ import { useLiveData } from '@/data'
 import {
   buildExerciseRecords,
   formatDateWithYear,
-  formatEstimatedWeight,
+  formatRoundedWeight,
   formatWeightReps,
   type ExerciseRecords,
   type ExerciseSessionProgress,
@@ -46,7 +46,7 @@ function PersonalRecords({ records }: { records: ExerciseRecords }) {
         />
         <RecordItem
           label="估算 1RM"
-          value={`${formatEstimatedWeight(oneRepMax.estimatedKg, weightUnit)} ${weightUnit}`}
+          value={`${formatRoundedWeight(oneRepMax.estimatedKg, weightUnit)} ${weightUnit}`}
           detail={`${formatWeightReps(oneRepMax.set, weightUnit)} · ${formatDateWithYear(oneRepMax.date)}`}
         />
       </dl>

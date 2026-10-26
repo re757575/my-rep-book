@@ -5,7 +5,7 @@ import { useLiveData } from '@/data'
 import {
   buildExerciseHistory,
   formatDateWithYear,
-  formatEstimatedWeight,
+  formatRoundedWeight,
   formatWeight,
   formatWeightReps,
   type ExerciseHistoryEntry,
@@ -29,7 +29,7 @@ function RecordBadge({ children }: { children: string }) {
 function SessionProgress({ progress }: { progress: ExerciseSessionProgress }) {
   const weightUnit = useWeightUnit()
   const topSet = formatWeightReps(progress.topSet, weightUnit)
-  const oneRepMax = formatEstimatedWeight(progress.estimatedOneRepMaxKg, weightUnit)
+  const oneRepMax = formatRoundedWeight(progress.estimatedOneRepMaxKg, weightUnit)
   const volume = formatWeight(progress.volumeKg, weightUnit, { grouping: true })
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

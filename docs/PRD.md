@@ -272,6 +272,10 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - **Given** 已填身高且當天有體重　**Then** 訓練頁與歷史的日明細在體重旁顯示 BMI（四捨五入到 0.1）；未填身高時不顯示
 - 歷史的日明細顯示當天體重；只記了體重、沒有訓練的日子也顯示，並可點「編輯」前往該日的訓練頁。月曆的標點不變，仍只標有訓練的日期
 - 歷史頁標題旁有「體重紀錄」按鈕，進入 `/history/body-weight`：由新到舊列出所有體重（目前的重量單位）與 BMI（有身高時），點日期前往該日的訓練頁修改；還沒有體重時顯示提示
+- 體重紀錄的每筆下方顯示 7 日平均與比上週增減（例如「7 日平均 72.3 kg · 比上週 -0.4 kg」）：
+  - 7 日平均：該日往前 7 天內（含當天）有記的體重平均，沒記的日子不計入
+  - 比上週增減：該筆的 7 日平均減去 7 天前的 7 日平均；上一週沒有任何體重時不顯示
+  - 平均與增減只顯示到 0.1，增減帶正負號，四捨五入為 0 時不帶
 - 體重與身高包含在匯出檔中（schema v2）
 
 ---
@@ -489,6 +493,7 @@ export interface ExportFile {
 | `parseExportFile(json)` / `migrate(file)` | 匯入驗證與遷移 |
 | `parseBodyWeightInput` / `parseHeightInput` | 體重、身高輸入解析與驗證 |
 | `calculateBmi` / `formatBmi` | BMI 計算與顯示格式化 |
+| `buildBodyWeightTrend(entries)` | 每筆體重的 7 日平均與比上週增減 |
 | `estimateOneRepMaxKg` / `buildExerciseRecords(workouts, exerciseId)` | 估算 1RM；個人紀錄與每次的進度（US-23） |
 
 ---

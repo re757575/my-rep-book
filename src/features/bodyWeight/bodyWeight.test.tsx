@@ -231,15 +231,16 @@ describe('從資料庫 v1（還沒有體重與身高）升級', () => {
 })
 
 describe('體重紀錄', () => {
-  /** 體重紀錄清單的每一列：[日期, 體重, BMI（沒有時為 null）] */
+  /** 體重紀錄清單的每一列：[日期, 體重, BMI（沒有時為 null）, 7 日平均與比上週增減] */
   async function bodyWeightRows() {
     const list = await screen.findByRole('list', { name: '體重紀錄' })
     return within(list)
       .getAllByRole('listitem')
       .map((item) => [
         within(item).getByRole('link').textContent,
-        within(item).getByText(/ (kg|lb)$/).textContent,
+        within(item).getByText(/^[\d.]+ (kg|lb)$/).textContent,
         within(item).queryByText(/^BMI /)?.textContent ?? null,
+        within(item).getByText(/^7 日平均 /).textContent,
       ])
   }
 
@@ -263,9 +264,10 @@ describe('體重紀錄', () => {
     await openFromHistory(user)
 
     expect(await bodyWeightRows()).toEqual([
-      ['2026/10/21（三）', '158.7 lb', 'BMI 23.5'],
-      ['2026/10/20（二）', '159.8 lb', 'BMI 23.7'],
-      ['2026/9/30（三）', '163.1 lb', 'BMI 24.2'],
+      // 10/15–10/21 的平均 (72.5 + 72) ÷ 2 = 72.25 kg = 159.3 lb
+      ['2026/10/21（三）', '158.7 lb', 'BMI 23.5', '7 日平均 159.3 lb'],
+      ['2026/10/20（二）', '159.8 lb', 'BMI 23.7', '7 日平均 159.8 lb'],
+      ['2026/9/30（三）', '163.1 lb', 'BMI 24.2', '7 日平均 163.1 lb'],
     ])
     // 仍在歷史分頁
     const tabs = screen.getByRole('navigation', { name: '主要分頁' })
@@ -277,7 +279,9 @@ describe('體重紀錄', () => {
       backupFixture({ bodyWeights: [fixtureBodyWeight('2026-10-20', 72.5)] }),
       '/history/body-weight',
     )
-    expect(await bodyWeightRows()).toEqual([['2026/10/20（二）', '72.5 kg', null]])
+    expect(await bodyWeightRows()).toEqual([
+      ['2026/10/20（二）', '72.5 kg', null, '7 日平均 72.5 kg'],
+    ])
   })
 
   it('在訓練頁輸入的體重出現在清單中', async () => {
@@ -289,8 +293,32 @@ describe('體重紀錄', () => {
     await goToTab(user, '歷史')
     await openFromHistory(user)
     expect(await bodyWeightRows()).toEqual([
-      ['2026/10/24（六）', '72.8 kg', null],
-      ['2026/10/23（五）', '73 kg', null],
+      ['2026/10/24（六）', '72.8 kg', null, '7 日平均 72.9 kg'],
+      ['2026/10/23（五）', '73 kg', null, '7 日平均 73 kg'],
+    ])
+  })
+
+  it('每筆顯示 7 日平均與比上週增減，上一週沒有體重時不比較', async () => {
+    await renderAppWithBackup(
+      backupFixture({
+        bodyWeights: [
+          fixtureBodyWeight('2026-10-12', 74),
+          fixtureBodyWeight('2026-10-17', 73),
+          fixtureBodyWeight('2026-10-20', 72),
+          fixtureBodyWeight('2026-10-24', 71),
+        ],
+      }),
+      '/history/body-weight',
+    )
+
+    expect((await bodyWeightRows()).map((row) => [row[0], row[3]])).toEqual([
+      // 10/18–10/24 平均 71.5；上週 10/11–10/17 平均 73.5
+      ['2026/10/24（六）', '7 日平均 71.5 kg · 比上週 -2 kg'],
+      // 10/14–10/20 平均 72.5；上週 10/7–10/13 只有 74
+      ['2026/10/20（二）', '7 日平均 72.5 kg · 比上週 -1.5 kg'],
+      // 上週 10/4–10/10 沒有體重
+      ['2026/10/17（六）', '7 日平均 73.5 kg'],
+      ['2026/10/12（一）', '7 日平均 74 kg'],
     ])
   })
 

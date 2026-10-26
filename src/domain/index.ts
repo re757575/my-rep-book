@@ -23,7 +23,6 @@ export { buildExerciseHistory, type ExerciseHistoryEntry } from './exerciseHisto
 export {
   buildExerciseRecords,
   estimateOneRepMaxKg,
-  formatEstimatedWeight,
   type ExerciseRecords,
   type ExerciseSessionProgress,
   type PersonalRecord,
@@ -60,7 +59,7 @@ export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } fro
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'
 export { summarizeWorkout, type WorkoutSummary } from './summary'
-export { formatWeight, kgToLb, lbToKg } from './units'
+export { formatRoundedWeight, formatWeight, formatWeightChange, kgToLb, lbToKg } from './units'
 export {
   calculateBmi,
   formatBmi,
@@ -69,5 +68,6 @@ export {
   parseBodyWeightInput,
   parseHeightInput,
 } from './bodyMetrics'
+export { buildBodyWeightTrend, type BodyWeightTrendEntry } from './bodyWeightTrend'
 // 匯出檔的解析與驗證（./backup）用到 zod，只有設定頁需要。為了不讓 zod 進入首次載入的 JS（PRD §7），
 // 不從這裡匯出，改由使用端直接 import '@/domain/backup'。

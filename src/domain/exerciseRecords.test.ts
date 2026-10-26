@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExerciseRecords, estimateOneRepMaxKg, formatEstimatedWeight } from './exerciseRecords'
+import { buildExerciseRecords, estimateOneRepMaxKg } from './exerciseRecords'
 import type { SetValues, Workout, WorkoutSet } from './types'
 
 const T = '2026-10-01T00:00:00.000Z'
@@ -173,20 +173,5 @@ describe('buildExerciseRecords：個人紀錄與每一次的進度', () => {
       topSet: { weightKg: 70, reps: 3 },
       volumeKg: 60 * 8 + 70 * 3,
     })
-  })
-})
-
-describe('formatEstimatedWeight：估算 1RM 的顯示', () => {
-  it.each<[number, string]>([
-    [76, '76'],
-    [77.33333, '77.3'],
-    [106.66667, '106.7'],
-    [1234.5, '1234.5'],
-  ])('kg：%d → %s（最多 1 位小數，不補零）', (kg, expected) => {
-    expect(formatEstimatedWeight(kg, 'kg')).toBe(expected)
-  })
-
-  it('lb：換算後固定 1 位小數', () => {
-    expect(formatEstimatedWeight(76, 'lb')).toBe('167.6')
   })
 })

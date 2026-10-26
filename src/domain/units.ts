@@ -25,6 +25,8 @@ const FRACTION_DIGITS: Readonly<
   lb: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
 }
 
+// 第一次用到時才建立並快取：模組層級的 new Intl.NumberFormat 是副作用，
+// 會讓打包工具改變 chunk 的切分，首次載入的 JS 變大
 const formatters = new Map<string, Intl.NumberFormat>()
 
 function formatterFor(unit: WeightUnit, grouping: boolean) {
@@ -51,4 +53,37 @@ export function formatWeight(
 ): string {
   const value = unit === 'lb' ? kgToLb(kg) : kg
   return formatterFor(unit, grouping).format(value)
+}
+
+const roundedFormatters = new Map<WeightUnit, Intl.NumberFormat>()
+
+function roundedFormatterFor(unit: WeightUnit) {
+  let formatter = roundedFormatters.get(unit)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: unit === 'lb' ? 1 : 0,
+      maximumFractionDigits: 1,
+      useGrouping: false,
+    })
+    roundedFormatters.set(unit, formatter)
+  }
+  return formatter
+}
+
+/**
+ * 估算、平均這類算出來的重量（不含單位文字）：只顯示到 0.1，避免看起來比實際精確。
+ * kg 不補零（例如 `76`、`77.3`），lb 與一般重量相同固定 1 位小數
+ */
+export function formatRoundedWeight(kg: number, unit: WeightUnit): string {
+  return roundedFormatterFor(unit).format(unit === 'lb' ? kgToLb(kg) : kg)
+}
+
+/**
+ * 重量的增減（不含單位文字），顯示到 0.1 並帶正負號，例如 `+0.4`、`-1.2`；
+ * 四捨五入後為 0 時不帶正負號
+ */
+export function formatWeightChange(kg: number, unit: WeightUnit): string {
+  const magnitude = formatRoundedWeight(Math.abs(kg), unit)
+  if (Number(magnitude) === 0) return magnitude
+  return `${kg > 0 ? '+' : '-'}${magnitude}`
 }

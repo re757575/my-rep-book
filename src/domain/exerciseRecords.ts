@@ -1,6 +1,5 @@
 import { isCompleteSet } from './setValues'
-import type { LocalDate, WeightUnit, Workout } from './types'
-import { kgToLb } from './units'
+import type { LocalDate, Workout } from './types'
 
 /** 一組的重量與次數 */
 export interface WeightRepsSet {
@@ -106,29 +105,4 @@ export function buildExerciseRecords(
 
   if (!maxWeight || !oneRepMax) return undefined
   return { maxWeight, oneRepMax, sessions: sessions.reverse() }
-}
-
-// 第一次用到時才建立：模組層級的 new Intl.NumberFormat 是副作用，會讓打包工具改變 chunk 的切分，
-// 首次載入的 JS 變大約 3 KB
-const formatters = new Map<WeightUnit, Intl.NumberFormat>()
-
-function formatterFor(unit: WeightUnit) {
-  let formatter = formatters.get(unit)
-  if (!formatter) {
-    formatter = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: unit === 'lb' ? 1 : 0,
-      maximumFractionDigits: 1,
-      useGrouping: false,
-    })
-    formatters.set(unit, formatter)
-  }
-  return formatter
-}
-
-/**
- * 估算 1RM 的顯示（不含單位文字）：估算值只顯示到 0.1，kg 不補零（例如 `76`、`77.3`），
- * lb 與一般重量相同固定 1 位小數
- */
-export function formatEstimatedWeight(kg: number, unit: WeightUnit): string {
-  return formatterFor(unit).format(unit === 'lb' ? kgToLb(kg) : kg)
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatWeight, kgToLb, lbToKg } from './units'
+import { formatRoundedWeight, formatWeight, formatWeightChange, kgToLb, lbToKg } from './units'
 
 describe('lbToKg／kgToLb：重量單位換算（1 lb = 0.45359237 kg）', () => {
   it('lb 換算成 kg 不四捨五入', () => {
@@ -44,5 +44,41 @@ describe('formatWeight：以顯示單位顯示以 kg 儲存的重量', () => {
     expect(formatWeight(1234.5, 'kg', { grouping: true })).toBe('1,234.5')
     expect(formatWeight(1000, 'lb', { grouping: true })).toBe('2,204.6')
     expect(formatWeight(1234.5, 'kg')).toBe('1234.5')
+  })
+})
+
+describe('formatRoundedWeight：估算、平均這類算出來的重量，只顯示到 0.1', () => {
+  it.each<[number, string]>([
+    [76, '76'],
+    [77.33333, '77.3'],
+    [106.66667, '106.7'],
+    [1234.5, '1234.5'],
+  ])('kg：%d → %s（最多 1 位小數，不補零）', (kg, expected) => {
+    expect(formatRoundedWeight(kg, 'kg')).toBe(expected)
+  })
+
+  it('lb：換算後固定 1 位小數', () => {
+    expect(formatRoundedWeight(76, 'lb')).toBe('167.6')
+  })
+})
+
+describe('formatWeightChange：重量的增減', () => {
+  it.each<[number, string]>([
+    [0.4, '+0.4'],
+    [-1.25, '-1.3'],
+    [2, '+2'],
+    [0, '0'],
+    [0.04, '0'],
+    [-0.04, '0'],
+  ])('kg：%d → %s', (kg, expected) => {
+    expect(formatWeightChange(kg, 'kg')).toBe(expected)
+  })
+
+  it.each<[number, string]>([
+    [1, '+2.2'],
+    [-0.5, '-1.1'],
+    [0, '0.0'],
+  ])('lb：%d kg → %s', (kg, expected) => {
+    expect(formatWeightChange(kg, 'lb')).toBe(expected)
   })
 })
