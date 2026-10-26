@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLastPerformance, formatSetValues } from './formatSet'
+import { formatLastPerformance, formatSetValues, formatWeightReps } from './formatSet'
 import type { SetValues } from './types'
 
 describe('formatSetValues：一組數值的簡短顯示', () => {
@@ -34,6 +34,13 @@ describe('formatSetValues：一組數值的簡短顯示', () => {
     expect(formatSetValues({ type: 'weight_reps', weightKg: 61.23496995, reps: 8 }, 'kg')).toBe(
       '61.23kg×8',
     )
+  })
+})
+
+describe('formatWeightReps：一組重量×次數的簡短顯示', () => {
+  it('與組的顯示相同', () => {
+    expect(formatWeightReps({ weightKg: 62.5, reps: 5 }, 'kg')).toBe('62.5kg×5')
+    expect(formatWeightReps({ weightKg: 61.23496995, reps: 8 }, 'lb')).toBe('135.0lb×8')
   })
 })
 

@@ -30,6 +30,14 @@ export function formatSetValues(values: SetValues, weightUnit: WeightUnit): stri
   }
 }
 
+/** 一組重量×次數的簡短顯示，例如 `60kg×8`；個人紀錄與每次的進度用 */
+export function formatWeightReps(
+  { weightKg, reps }: { weightKg: number; reps: number },
+  weightUnit: WeightUnit,
+): string {
+  return formatSetValues({ type: 'weight_reps', weightKg, reps }, weightUnit)
+}
+
 /** 動作標題下方的上次紀錄，例如 `上次（10/20）：60kg×8、60kg×8、62.5kg×6` */
 export function formatLastPerformance(
   { date, sets }: LastPerformance,

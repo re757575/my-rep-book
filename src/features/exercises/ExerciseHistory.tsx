@@ -2,14 +2,53 @@ import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useLiveData } from '@/data'
-import { buildExerciseHistory, formatDateWithYear, type ExerciseHistoryEntry } from '@/domain'
+import {
+  buildExerciseHistory,
+  formatDateWithYear,
+  formatEstimatedWeight,
+  formatWeight,
+  formatWeightReps,
+  type ExerciseHistoryEntry,
+  type ExerciseSessionProgress,
+  type LocalDate,
+} from '@/domain'
+import { useWeightUnit } from '@/features/settings/settingsContext'
 import { dayPath } from '@/features/workout/dayPath'
 import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
 
 /** 首批與每次「載入更多」的筆數 */
 const HISTORY_PAGE_SIZE = 20
 
-function HistoryEntry({ entry }: { entry: ExerciseHistoryEntry }) {
+function RecordBadge({ children }: { children: string }) {
+  return (
+    <span className="rounded-sm bg-primary px-1.5 text-xs text-primary-foreground">{children}</span>
+  )
+}
+
+/** 當次的進度：最重的一組、估算 1RM、訓練量，破紀錄時加上標記 */
+function SessionProgress({ progress }: { progress: ExerciseSessionProgress }) {
+  const weightUnit = useWeightUnit()
+  const topSet = formatWeightReps(progress.topSet, weightUnit)
+  const oneRepMax = formatEstimatedWeight(progress.estimatedOneRepMaxKg, weightUnit)
+  const volume = formatWeight(progress.volumeKg, weightUnit, { grouping: true })
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <p className="text-sm text-muted-foreground tabular-nums">
+        {`最重 ${topSet} · 估算 1RM ${oneRepMax} ${weightUnit} · 訓練量 ${volume} ${weightUnit}`}
+      </p>
+      {progress.isMaxWeightRecord && <RecordBadge>重量新紀錄</RecordBadge>}
+      {progress.isOneRepMaxRecord && <RecordBadge>1RM 新紀錄</RecordBadge>}
+    </div>
+  )
+}
+
+function HistoryEntry({
+  entry,
+  progress,
+}: {
+  entry: ExerciseHistoryEntry
+  progress: ExerciseSessionProgress | undefined
+}) {
   const dateId = useId()
 
   return (
@@ -21,6 +60,7 @@ function HistoryEntry({ entry }: { entry: ExerciseHistoryEntry }) {
       >
         {formatDateWithYear(entry.date)}
       </Link>
+      {progress && <SessionProgress progress={progress} />}
       <WorkoutSetList sets={entry.sets} />
       {entry.notes.map((note, index) => (
         <p key={index} className="text-sm whitespace-pre-wrap text-muted-foreground">
@@ -31,8 +71,17 @@ function HistoryEntry({ entry }: { entry: ExerciseHistoryEntry }) {
   )
 }
 
-/** 動作詳情頁的動作歷史：這個動作的每一次紀錄，由新到舊，分批載入 */
-export function ExerciseHistory({ exerciseId }: { exerciseId: string }) {
+/**
+ * 動作詳情頁的動作歷史：這個動作的每一次紀錄，由新到舊，分批載入。
+ * `progress` 為各日期當次的進度（重量×次數的動作才有），有的話顯示在日期下方。
+ */
+export function ExerciseHistory({
+  exerciseId,
+  progress,
+}: {
+  exerciseId: string
+  progress?: ReadonlyMap<LocalDate, ExerciseSessionProgress>
+}) {
   const headingId = useId()
   const [limit, setLimit] = useState(HISTORY_PAGE_SIZE)
   // 多取一筆，用來判斷還有沒有更多
@@ -57,7 +106,7 @@ export function ExerciseHistory({ exerciseId }: { exerciseId: string }) {
         <ol aria-label="歷史紀錄" className="divide-y">
           {entries.map((entry) => (
             <li key={entry.date}>
-              <HistoryEntry entry={entry} />
+              <HistoryEntry entry={entry} progress={progress?.get(entry.date)} />
             </li>
           ))}
         </ol>

@@ -20,6 +20,15 @@ export {
   toLocalDate,
 } from './dates'
 export { buildExerciseHistory, type ExerciseHistoryEntry } from './exerciseHistory'
+export {
+  buildExerciseRecords,
+  estimateOneRepMaxKg,
+  formatEstimatedWeight,
+  type ExerciseRecords,
+  type ExerciseSessionProgress,
+  type PersonalRecord,
+  type WeightRepsSet,
+} from './exerciseRecords'
 export { formatDuration, parseDuration } from './duration'
 export {
   emptySetValues,
@@ -46,7 +55,7 @@ export {
   type RemovedWorkoutExercise,
 } from './workoutEdits'
 export { buildInitialSet, findLastPerformance, type LastPerformance } from './lastPerformance'
-export { formatLastPerformance, formatSetValues } from './formatSet'
+export { formatLastPerformance, formatSetValues, formatWeightReps } from './formatSet'
 export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } from './fieldEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'

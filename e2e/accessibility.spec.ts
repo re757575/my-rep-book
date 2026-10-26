@@ -35,7 +35,8 @@ const FIXTURE = backupFixture({
         note: '左肩不適',
         sets: [
           { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
-          { type: 'weight_reps', weightKg: 60, reps: 8 },
+          // 比 10/20 重：動作詳情會顯示「新紀錄」標記，一併檢查它的對比
+          { type: 'weight_reps', weightKg: 62.5, reps: 8 },
         ],
       },
       {
@@ -130,6 +131,7 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
     open: async (page) => {
       await page.goto('exercises/barbell-bench-press')
       await expect(page.getByRole('article', { name: '2026/10/20（二）' })).toBeVisible()
+      await expect(page.getByText('重量新紀錄')).toBeVisible()
     },
   },
   {
