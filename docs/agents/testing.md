@@ -28,6 +28,7 @@
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
 - **每日摘要是名稱為「每日摘要」的 `region`**，裡面是 `<dl>`，各項用 `definition` 取：`within(await screen.findByRole('region', { name: '每日摘要' })).getByRole('definition', { name: '總訓練量' })`。項目名稱是「動作數」「正式組數」「總訓練量」「有氧總時間」。數字是 live query 算出來的，輸入後要用 `waitFor` 等。範例見 `src/features/workout/dailySummary.test.tsx`。
 - **`toHaveTextContent('0')` 是子字串比對**：會比到「10」「0 kg」，斷言單一數字時改比 `.textContent`（`expect(el.textContent).toBe('0')`）或用錨定的正規表示式。
+- **`toHaveValue` 不接受 `expect.stringContaining` 等部分比對**：不論 `input` 或 `textarea`、單行或多行都會失敗，即使欄位裡確實有那段文字（錯誤訊息印出的值看起來是對的，很容易誤判）。要比對完整的值就傳完整字串；只比對其中一段時改取 `.value`：`expect((field as HTMLTextAreaElement).value).toContain('…')`，範例見 `src/features/history/aiPrompt.test.tsx`。
 - **確認對話框（shadcn `AlertDialog`）是 `alertdialog`**，名稱是標題：`findByRole('alertdialog', { name: '刪除「Smith 臥推」？' })`。對話框裡的確認鍵常和觸發鍵同名（例如都叫「刪除」），要用 `within(dialog)` 取。
 - **斷言「沒有某個元素」前，先等相關資料載入完**：依非同步資料決定是否顯示的元素（例如動作詳情頁依「是否已有紀錄」顯示「封存」或「刪除」），載入中兩者都不在，直接 `queryBy*` 斷言不存在會在載入前就通過。先 `findBy*` 等一個載入後必定出現的元素，再斷言另一個不存在。
 - **需要「已有紀錄」的動作時，透過 UI 在今天的訓練加入它**：建立自訂動作後切到「今天」分頁，從加入動作選單加入即可，不用填組數值。範例見 `src/features/exercises/archiveCustomExercises.test.tsx` 的 `createCustomWithRecord`。
