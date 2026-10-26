@@ -36,6 +36,16 @@ export default defineConfig(
     // 分層規則（PRD §8.3）：domain 只放純 TypeScript
     files: ['src/domain/**/*.{ts,tsx}'],
     rules: {
+      // domain 經由 `@/domain` 進入首頁：模組最上層的 new Intl.* 是副作用，打包工具（rolldown）
+      // 會因此改變 chunk 的切分，首次載入的 JS 多約 3 KB（見 docs/agents/testing.md）
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'NewExpression[callee.object.name="Intl"]:not(:function NewExpression)',
+          message:
+            'domain 模組最上層不可建立 Intl 格式器，改成第一次用到時才建立並快取（見 src/domain/units.ts 的 formatterFor）。',
+        },
+      ],
       'no-restricted-imports': [
         'error',
         {
