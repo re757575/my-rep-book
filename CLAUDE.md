@@ -2,6 +2,8 @@
 
 寫測試或 E2E 前，先讀 `docs/agents/testing.md`。
 
+確認畫面版面時用 `npm run screenshot -- <路徑>` 截手機截圖（內建示範資料），不用開瀏覽器；選項見 `scripts/screenshot.ts` 開頭。
+
 ## Agent skills
 
 ### Issue tracker
