@@ -8,6 +8,7 @@ import {
   type WeightUnit,
 } from '@/domain'
 import { useWeightUnit } from '@/features/settings/settingsContext'
+import { useWorkoutReadOnly } from './workoutReadOnly'
 
 const INPUT_MODES: Readonly<Record<SetField, 'decimal' | 'numeric'>> = {
   weightKg: 'decimal',
@@ -59,6 +60,7 @@ function SetValueInputField({
   weightUnit,
 }: SetValueInputProps & { weightUnit: WeightUnit }) {
   const errorId = useId()
+  const readOnly = useWorkoutReadOnly()
   const [text, setText] = useState(() => formatValue(field, value, weightUnit))
   const [error, setError] = useState<string>()
 
@@ -71,6 +73,7 @@ function SetValueInputField({
         aria-invalid={error !== undefined}
         aria-describedby={error ? errorId : undefined}
         placeholder={placeholder}
+        readOnly={readOnly}
         value={text}
         onChange={(event) => {
           setText(event.target.value)

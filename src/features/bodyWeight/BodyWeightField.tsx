@@ -9,11 +9,13 @@ import {
   type WeightUnit,
 } from '@/domain'
 import { useWeightUnit } from '@/features/settings/settingsContext'
+import { useWorkoutReadOnly } from '@/features/workout/workoutReadOnly'
 import { Bmi } from './Bmi'
 
 /**
  * 訓練頁上當天的體重：每次輸入就自動儲存，沒有儲存按鈕；清空即刪除當天的體重。
  * 不合法時在欄位下方顯示錯誤且不寫入。以目前的重量單位輸入與顯示，有身高時在旁邊顯示 BMI。
+ * 訓練頁鎖定時唯讀；這天沒有體重就不顯示欄位。
  */
 export function BodyWeightField({ date }: { date: LocalDate }) {
   const entry = useLiveData(
@@ -21,9 +23,11 @@ export function BodyWeightField({ date }: { date: LocalDate }) {
     [date],
   )
   const weightUnit = useWeightUnit()
+  const readOnly = useWorkoutReadOnly()
 
   // 載入完才知道欄位的初始值；先保留同樣的高度，避免下方內容跳動
   if (entry === undefined) return <div className="h-11" />
+  if (readOnly && entry === null) return null
   return (
     <section aria-label="體重" className="flex items-start gap-2">
       {/* 切換單位時欄位重新掛載，以新的單位顯示 */}
@@ -43,6 +47,7 @@ function BodyWeightInput({
   weightUnit: WeightUnit
 }) {
   const { bodyWeights } = useRepositories()
+  const readOnly = useWorkoutReadOnly()
   const inputId = useId()
   const errorId = useId()
   // 畫面上的文字由欄位自己保存，避免輸入到一半（例如「72.」）被儲存後的數值蓋掉
@@ -59,6 +64,7 @@ function BodyWeightInput({
           id={inputId}
           type="text"
           inputMode="decimal"
+          readOnly={readOnly}
           aria-label={`體重（${weightUnit}）`}
           aria-invalid={error !== undefined}
           aria-describedby={error ? errorId : undefined}

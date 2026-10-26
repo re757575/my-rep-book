@@ -1,8 +1,13 @@
 import type { Page } from '@playwright/test'
 import { expect, test } from './fixtures.ts'
+import { unlockDay } from './unlockDay.ts'
 
-/** 從加入動作選單搜尋並加入槓鈴臥推；搜尋時不顯示「最近使用」，清單裡只有一個同名按鈕 */
+/**
+ * 從加入動作選單搜尋並加入槓鈴臥推；搜尋時不顯示「最近使用」，清單裡只有一個同名按鈕。
+ * 非今天的訓練頁預設鎖定，先解鎖
+ */
 async function addBench(page: Page) {
+  await unlockDay(page)
   await page.getByRole('button', { name: '加入動作' }).click()
   const dialog = page.getByRole('dialog', { name: '加入動作' })
   await dialog.getByRole('searchbox', { name: '搜尋動作' }).fill('槓鈴臥推')

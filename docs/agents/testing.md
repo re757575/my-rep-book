@@ -24,6 +24,7 @@
   - `<dl>` 的 `dd` 以 `aria-labelledby` 指向 `dt`：`getByRole('definition', { name: '記錄類型' })`
 - **體重欄位在訓練頁的日期下方，載入後才出現**：`await screen.findByRole('textbox', { name: '體重（kg）' })`（lb 模式為「體重（lb）」）。它在名稱為「體重」的 `region` 裡，所以訓練頁上一直多一個 `region`。BMI 是純文字，用 `findByText('BMI 22.9')`；設定頁的身高欄位是 `getByRole('textbox', { name: '身高' })`；生日是日期欄位，沒有 `textbox` 角色，用 `findByLabelText('生日')` 取，以 `user.type(field, '1990-05-20')` 輸入完整的 `YYYY-MM-DD`。
 - **測 IndexedDB 升級（舊版 App 留下的資料庫）用 `seedV1Database`**（`src/test/seedV1Database.ts`）：先以 v1 schema 寫入舊資料，再 `renderApp()` 讓 App 開啟時升級。feature 的測試檔不能 import `dexie`（ESLint 限制），以後再升版時，建立舊版資料庫的 helper 也放在 `src/test`。
+- **非今天的訓練頁預設鎖定**：鎖定時沒有「加入動作」、新增或刪除的按鈕，數值欄位唯讀。在過去的日期修改紀錄前先 `await unlockDay(user)`（`src/test/unlockDay.ts`）；換日期或 `reload()` 後會回到預設的鎖定。各測試檔的 `addExercise` helper 開頭已經會先解鎖，直接輸入體重、數值等不經過它的要自己呼叫。開關是 Toggle：`getByRole('button', { name: '鎖定' })`，按下（`aria-pressed="true"`）表示鎖定。
 - **今天頁的 `h1` 是日期**（固定日期下為 `10/24（六）`），不是「今天」。要確認在今天頁，用 `getByRole('heading', { level: 1, name: '10/24（六）' })`。
 - **不要用 `getAllByRole('region')` 數訓練動作**：sonner 的 `<Toaster />` 一直掛在 App 上，它的 `<section aria-label="Notifications …">` 也是 `region`。每個訓練動作是以動作名稱命名的 `region`，用 `getByRole('region', { name: '槓鈴臥推' })` 取單一動作；要看順序，改數 `heading` level 2。
 - **每日摘要是名稱為「每日摘要」的 `region`**，裡面是 `<dl>`，各項用 `definition` 取：`within(await screen.findByRole('region', { name: '每日摘要' })).getByRole('definition', { name: '總訓練量' })`。項目名稱是「動作數」「正式組數」「總訓練量」「有氧總時間」。數字是 live query 算出來的，輸入後要用 `waitFor` 等。範例見 `src/features/workout/dailySummary.test.tsx`。

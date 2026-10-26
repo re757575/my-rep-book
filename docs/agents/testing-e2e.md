@@ -10,6 +10,7 @@ E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs
 - **輸入組的數值或備註後可以直接 `page.reload()`／`page.goto()`／關閉分頁**：欄位編輯走 `WorkoutRepository.editField`，輸入當下就同步記進 localStorage 的待寫清單，下次開啟資料庫時會在任何讀取之前補寫，所以不用先做別的操作、也不用 `waitForTimeout` 等寫入完成。保證範圍見 `e2e/durable-writes.spec.ts`。新增「輸入即儲存」的欄位時也要走 `editField`（在 `src/domain/fieldEdits.ts` 的 `FieldEdit` 加一種 kind）；若改用 `update` 每次按鍵寫一次，這個保證就不成立。
 - **E2E 需要既有資料時用 `importBackup(page, { content: backupFixture(...) })`**（`e2e/backup.ts`，fixture 與接縫 A 共用 `src/test/backupFixture.ts`）；匯入已下載的檔案用 `{ path: await download.path() }`。下載用 `page.waitForEvent('download')` 接，檔名看 `download.suggestedFilename()`。
 - **E2E 中清空資料**：在頁面裡 `indexedDB.deleteDatabase('my-rep-book')` 並 `localStorage.clear()` 後再 `goto`。Dexie 收到 versionchange 會自動關閉連線，刪除不會被擋住。範例見 `e2e/export-import.spec.ts`。
+- **在過去的日期修改紀錄前先解鎖**：非今天的訓練頁預設鎖定，用 `e2e/unlockDay.ts` 的 `await unlockDay(page)`；`page.reload()`／`page.goto()` 後會回到預設的鎖定。
 - **E2E 中開新分頁要自己固定「今天」**：`e2e/fixtures.ts` 的 auto fixture 只作用在預設的 `page`。用 `context.newPage()` 開的頁面要先 `await newPage.clock.setFixedTime(FIXED_TODAY)`（從 `src/test/fixedToday.ts` import）再 `goto`。
 - **Playwright 的 `name` 字串預設是子字串比對**（RTL 的字串則是完整比對）：`getByRole('radio', { name: '次數' })` 會同時比到「次數」與「重量×次數」而觸發 strict mode 錯誤，要加 `exact: true`。
 - **Playwright 不計算 `definition` 角色的名稱**：`dd` 以 `aria-labelledby` 指向 `dt` 時，改用 `getByLabel('總訓練量')` 取（Playwright 的 `getByLabel` 會看 `aria-labelledby`），例如 `summary.getByLabel('總訓練量')`；或用 `getByRole('definition').filter({ hasText: … })`。

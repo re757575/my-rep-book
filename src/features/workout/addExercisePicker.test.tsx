@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
+import { unlockDay } from '@/test/unlockDay'
 
 async function openPicker(user: UserEvent) {
   await user.click(await screen.findByRole('button', { name: '加入動作' }))
@@ -18,6 +19,8 @@ function workoutExerciseCount() {
 
 /** 從加入動作選單的全部動作清單加入一個動作，等它出現在訓練頁 */
 async function addExercise(user: UserEvent, name: string) {
+  // 非今天的訓練頁預設鎖定，鎖定時沒有「加入動作」
+  await unlockDay(user)
   const countBefore = workoutExerciseCount()
   const dialog = await openPicker(user)
   const list = within(dialog).getByRole('list', { name: '動作清單' })

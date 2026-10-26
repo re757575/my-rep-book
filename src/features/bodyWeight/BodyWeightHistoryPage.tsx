@@ -11,7 +11,7 @@ import {
   type WeightUnit,
 } from '@/domain'
 import { useWeightUnit } from '@/features/settings/settingsContext'
-import { dayPath } from '@/features/workout/dayPath'
+import { dayPath, UNLOCKED } from '@/features/workout/dayPath'
 import { Bmi } from './Bmi'
 
 /** 7 日平均與比上週增減，例如 `7 日平均 72.3 kg · 比上週 -0.4 kg` */
@@ -27,9 +27,10 @@ function BodyWeightRow({ entry }: { entry: BodyWeightTrendEntry }) {
   return (
     <li className="flex flex-col pb-2">
       <div className="flex items-center gap-4">
-        {/* 點日期前往該日的訓練頁修改體重 */}
+        {/* 點日期前往該日的訓練頁修改體重，一進入就解鎖 */}
         <Link
           to={dayPath(entry.date)}
+          state={UNLOCKED}
           className="flex min-h-11 items-center font-medium underline-offset-4 hover:underline"
         >
           {formatDateWithYear(entry.date)}

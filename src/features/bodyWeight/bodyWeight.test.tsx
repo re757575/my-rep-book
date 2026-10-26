@@ -5,6 +5,7 @@ import { backupFixture, fixtureBodyWeight, fixtureWorkout } from '@/test/backupF
 import { renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 import { seedV1Database } from '@/test/seedV1Database'
+import { unlockDay } from '@/test/unlockDay'
 
 /** 點底部的分頁 */
 async function goToTab(user: UserEvent, tab: '今天' | '歷史' | '動作庫' | '設定') {
@@ -76,6 +77,7 @@ describe('每天的體重', () => {
 
   it('每一天各自記錄：補記昨天不影響今天', async () => {
     const { user } = renderApp('/day/2026-10-23')
+    await unlockDay(user)
     await user.type(await bodyWeightField(), '73')
 
     await user.click(screen.getByRole('button', { name: '後一天' }))
@@ -286,6 +288,7 @@ describe('體重紀錄', () => {
 
   it('在訓練頁輸入的體重出現在清單中', async () => {
     const { user } = renderApp('/day/2026-10-23')
+    await unlockDay(user)
     await user.type(await bodyWeightField(), '73')
     await user.click(screen.getByRole('button', { name: '後一天' }))
     await user.type(await bodyWeightField(), '72.8')
@@ -337,6 +340,11 @@ describe('體重紀錄', () => {
 
     await screen.findByRole('heading', { level: 1, name: '10/20（二）' })
     expect(await bodyWeightField('lb')).toHaveValue('159.8')
+    // 從清單點日期是要修改體重，一進入就解鎖
+    expect(await screen.findByRole('button', { name: '鎖定' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
 
     await user.click(screen.getByRole('button', { name: '前一天' }))
     await screen.findByRole('heading', { level: 1, name: '10/19（一）' })

@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
+import { unlockDay } from '@/test/unlockDay'
 
 const dateHeading = (name: string) => screen.findByRole('heading', { level: 1, name })
 
@@ -15,6 +16,8 @@ function workoutExerciseCount() {
  * 做過的動作也會出現在「最近使用」，所以從「動作清單」裡選。
  */
 async function addExercise(user: UserEvent, name: string) {
+  // 非今天的訓練頁預設鎖定，鎖定時沒有「加入動作」
+  await unlockDay(user)
   const countBefore = workoutExerciseCount()
   await user.click(await screen.findByRole('button', { name: '加入動作' }))
   const dialog = await screen.findByRole('dialog', { name: '加入動作' })

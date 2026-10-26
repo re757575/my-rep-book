@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 import { lazy, startTransition, useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { useLiveData, useRepositories } from '@/data'
 import {
@@ -16,12 +17,15 @@ import { BodyWeightField } from '@/features/bodyWeight/BodyWeightField'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
 import { DailySummary } from './DailySummary'
+import { today, type DayRouteState } from './dayPath'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
 import { ExerciseNoteField } from './ExerciseNoteField'
 import { queryLastPerformance } from './queryLastPerformance'
 import { WorkoutDateHeader } from './WorkoutDateHeader'
 import { WorkoutExerciseActions } from './WorkoutExerciseActions'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
+import { WorkoutLockSwitch } from './WorkoutLockSwitch'
+import { WorkoutReadOnlyContext } from './workoutReadOnly'
 
 // 加入動作選單帶著 Dialog、分類篩選與動作清單，不放進首次載入的 JS（PRD §7）。
 // 頁面載入後趁閒置先載入，第一次打開時就不用等下載
@@ -35,6 +39,12 @@ function editContext(): EditContext {
 }
 
 export function TodayPage({ date }: { date: LocalDate }) {
+  const location = useLocation()
+  // 非今天的紀錄預設鎖定，避免翻看過去時誤改；從「編輯」進入時一開始就解鎖。
+  // 不記住：換日期時頁面重新掛載，回到預設
+  const [locked, setLocked] = useState(
+    () => date !== today() && !(location.state as DayRouteState | null)?.unlocked,
+  )
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerLoaded, setPickerLoaded] = useState(false)
   useEffect(() => whenIdleAfterLoad(() => void loadAddExerciseDialog()), [])
@@ -76,115 +86,129 @@ export function TodayPage({ date }: { date: LocalDate }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <WorkoutDateHeader date={date} />
-      <BodyWeightField date={date} />
-      {workout && <DailySummary workout={workout} />}
+    <WorkoutReadOnlyContext value={locked}>
+      <div className="flex flex-col gap-4">
+        <WorkoutDateHeader date={date} />
+        <WorkoutLockSwitch locked={locked} onLockedChange={setLocked} />
+        <BodyWeightField date={date} />
+        {workout && <DailySummary workout={workout} />}
 
-      {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
-      {library &&
-        workout?.exercises.map((workoutExercise, index, all) => {
-          const exercise = exercisesById.get(workoutExercise.exerciseId)
-          const exerciseName = exercise?.nameZh ?? workoutExercise.exerciseId
-          return (
-            <WorkoutExerciseCard
-              key={workoutExercise.id}
-              workoutExercise={workoutExercise}
-              exerciseName={exerciseName}
-              lastPerformance={lastPerformances?.get(workoutExercise.exerciseId)}
-              actions={
-                <WorkoutExerciseActions
-                  isFirst={index === 0}
-                  isLast={index === all.length - 1}
-                  onMove={(direction) =>
-                    editWorkout((current) =>
-                      moveWorkoutExercise(
-                        current,
-                        workoutExercise.id,
-                        direction,
-                        editContext().now,
-                      ),
-                    )
-                  }
-                  onDelete={() =>
-                    deleteWorkoutExerciseWithUndo(workouts, date, workoutExercise.id, exerciseName)
-                  }
-                />
-              }
-              onAddSet={async () => {
-                if (!exercise) return
-                // 沒有任何組時要依上次紀錄預填；查詢很快，每次都以最新的上次紀錄為準
-                const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
-                await editWorkout((current) =>
-                  addSetToWorkoutExercise(
-                    current,
-                    workoutExercise.id,
-                    exercise.trackingType,
-                    lastPerformance,
-                    editContext(),
-                  ),
-                )
-              }}
-              onToggleWarmup={(setId) =>
-                editWorkout((current) =>
-                  toggleSetWarmup(current, workoutExercise.id, setId, editContext().now),
-                )
-              }
-              onChangeSetField={(setId, field, value) =>
-                workouts.editField({
-                  kind: 'setValue',
-                  date,
-                  workoutExerciseId: workoutExercise.id,
-                  setId,
-                  field,
-                  value,
-                })
-              }
-              onDeleteSet={(setId) => deleteSetWithUndo(workouts, date, workoutExercise.id, setId)}
-            >
-              <ExerciseNoteField
-                note={workoutExercise.note}
-                onChange={(note) =>
+        {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
+        {library &&
+          workout?.exercises.map((workoutExercise, index, all) => {
+            const exercise = exercisesById.get(workoutExercise.exerciseId)
+            const exerciseName = exercise?.nameZh ?? workoutExercise.exerciseId
+            return (
+              <WorkoutExerciseCard
+                key={workoutExercise.id}
+                workoutExercise={workoutExercise}
+                exerciseName={exerciseName}
+                lastPerformance={lastPerformances?.get(workoutExercise.exerciseId)}
+                actions={
+                  !locked && (
+                    <WorkoutExerciseActions
+                      isFirst={index === 0}
+                      isLast={index === all.length - 1}
+                      onMove={(direction) =>
+                        editWorkout((current) =>
+                          moveWorkoutExercise(
+                            current,
+                            workoutExercise.id,
+                            direction,
+                            editContext().now,
+                          ),
+                        )
+                      }
+                      onDelete={() =>
+                        deleteWorkoutExerciseWithUndo(
+                          workouts,
+                          date,
+                          workoutExercise.id,
+                          exerciseName,
+                        )
+                      }
+                    />
+                  )
+                }
+                onAddSet={async () => {
+                  if (!exercise) return
+                  // 沒有任何組時要依上次紀錄預填；查詢很快，每次都以最新的上次紀錄為準
+                  const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
+                  await editWorkout((current) =>
+                    addSetToWorkoutExercise(
+                      current,
+                      workoutExercise.id,
+                      exercise.trackingType,
+                      lastPerformance,
+                      editContext(),
+                    ),
+                  )
+                }}
+                onToggleWarmup={(setId) =>
+                  editWorkout((current) =>
+                    toggleSetWarmup(current, workoutExercise.id, setId, editContext().now),
+                  )
+                }
+                onChangeSetField={(setId, field, value) =>
                   workouts.editField({
-                    kind: 'note',
+                    kind: 'setValue',
                     date,
                     workoutExerciseId: workoutExercise.id,
-                    note,
+                    setId,
+                    field,
+                    value,
                   })
                 }
-              />
-            </WorkoutExerciseCard>
-          )
-        })}
-
-      <Button
-        variant="outline"
-        className="h-11"
-        onClick={() =>
-          // 用 transition 等選單載入完成再一次打開，不經過 Suspense 的 fallback（React 會把 fallback
-          // 換成內容的時機延後約 300 ms，第一次打開就會慢半拍）
-          startTransition(() => {
-            setPickerLoaded(true)
-            setPickerOpen(true)
-          })
-        }
-      >
-        <Plus aria-hidden="true" />
-        加入動作
-      </Button>
-      {/* 第一次打開才載入；之後保持掛載，關閉時才有動畫 */}
-      {pickerLoaded && (
-        <AddExerciseDialog
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-          onSelect={async (exercise) => {
-            const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
-            await workouts.update(date, (current) =>
-              addExerciseToWorkout(current, date, exercise, lastPerformance, editContext()),
+                onDeleteSet={(setId) =>
+                  deleteSetWithUndo(workouts, date, workoutExercise.id, setId)
+                }
+              >
+                <ExerciseNoteField
+                  note={workoutExercise.note}
+                  onChange={(note) =>
+                    workouts.editField({
+                      kind: 'note',
+                      date,
+                      workoutExerciseId: workoutExercise.id,
+                      note,
+                    })
+                  }
+                />
+              </WorkoutExerciseCard>
             )
-          }}
-        />
-      )}
-    </div>
+          })}
+
+        {!locked && (
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() =>
+              // 用 transition 等選單載入完成再一次打開，不經過 Suspense 的 fallback（React 會把 fallback
+              // 換成內容的時機延後約 300 ms，第一次打開就會慢半拍）
+              startTransition(() => {
+                setPickerLoaded(true)
+                setPickerOpen(true)
+              })
+            }
+          >
+            <Plus aria-hidden="true" />
+            加入動作
+          </Button>
+        )}
+        {/* 第一次打開才載入；之後保持掛載，關閉時才有動畫 */}
+        {pickerLoaded && (
+          <AddExerciseDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onSelect={async (exercise) => {
+              const lastPerformance = await queryLastPerformance(workouts, exercise.id, date)
+              await workouts.update(date, (current) =>
+                addExerciseToWorkout(current, date, exercise, lastPerformance, editContext()),
+              )
+            }}
+          />
+        )}
+      </div>
+    </WorkoutReadOnlyContext>
   )
 }

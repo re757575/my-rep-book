@@ -2,9 +2,12 @@ import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
+import { unlockDay } from '@/test/unlockDay'
 
 /** 從加入動作選單加入一個動作，回傳該訓練動作的區塊 */
 async function addExercise(user: UserEvent, name: string) {
+  // 非今天的訓練頁預設鎖定，鎖定時沒有「加入動作」
+  await unlockDay(user)
   await user.click(screen.getByRole('button', { name: '加入動作' }))
   const dialog = await screen.findByRole('dialog', { name: '加入動作' })
   await user.click(await within(dialog).findByRole('button', { name: new RegExp(`^${name}`) }))

@@ -66,6 +66,17 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
     },
   },
   {
+    name: '過去的訓練（鎖定）',
+    open: async (page) => {
+      await page.goto('day/2026-10-20')
+      await expect(page.getByRole('button', { name: '鎖定', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      )
+      await expect(page.getByRole('region', { name: '槓鈴臥推' })).toBeVisible()
+    },
+  },
+  {
     name: '日期選擇器',
     open: async (page) => {
       await page.goto('./')

@@ -7,7 +7,7 @@ import { formatDateTitle, type LocalDate, type WorkoutExercise } from '@/domain'
 import { BodyWeightSummary } from '@/features/bodyWeight/BodyWeightSummary'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { DailySummary } from '@/features/workout/DailySummary'
-import { dayPath } from '@/features/workout/dayPath'
+import { dayPath, UNLOCKED } from '@/features/workout/dayPath'
 import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
 
 function DayDetailExercise({
@@ -56,7 +56,8 @@ export function DayDetail({ date }: { date: LocalDate }) {
         </h2>
         {(workout || bodyWeight) && (
           <Button asChild variant="outline" className="h-11">
-            <Link to={dayPath(date)}>
+            {/* 明確要修改，一進入就解鎖 */}
+            <Link to={dayPath(date)} state={UNLOCKED}>
               <Pencil aria-hidden="true" />
               編輯
             </Link>

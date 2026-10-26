@@ -1,6 +1,7 @@
 import { expect, test } from './fixtures.ts'
+import { unlockDay } from './unlockDay.ts'
 
-// E2E-04：切到昨天補記一個動作，重新整理後仍在，月曆上昨天出現標點且明細正確；
+// E2E-04：切到昨天（預設鎖定）解鎖後補記一個動作，重新整理後仍在，月曆上昨天出現標點且明細正確；
 // 嘗試前往未來日期被導回今天。
 test('E2E-04 切到昨天補記槓鈴臥推，重新整理後仍在，月曆標點且明細正確', async ({ page }) => {
   await page.goto('./')
@@ -10,6 +11,14 @@ test('E2E-04 切到昨天補記槓鈴臥推，重新整理後仍在，月曆標�
   await page.getByRole('button', { name: '前一天' }).click()
   await expect(page.getByRole('heading', { level: 1, name: '10/23（五）' })).toBeVisible()
   await expect(page).toHaveURL(/\/my-rep-book\/day\/2026-10-23$/)
+
+  // 非今天預設鎖定，解鎖後才能補記
+  await expect(page.getByRole('button', { name: '鎖定', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: '加入動作' })).toHaveCount(0)
+  await unlockDay(page)
 
   await page.getByRole('button', { name: '加入動作' }).click()
   const dialog = page.getByRole('dialog', { name: '加入動作' })
