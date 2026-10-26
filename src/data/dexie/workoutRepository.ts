@@ -140,6 +140,11 @@ export function createDexieWorkoutRepository(
       return db.workouts.where('date').between(from, to, true, true).primaryKeys()
     },
 
+    async listInRange(from, to) {
+      const rows = await db.workouts.where('date').between(from, to, true, true).toArray()
+      return rows.map(toWorkout)
+    },
+
     async hasAnyWithExercise(exerciseId) {
       return (await db.workouts.where('exerciseIds').equals(exerciseId).count()) > 0
     },

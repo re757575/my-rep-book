@@ -44,6 +44,8 @@ export interface WorkoutRepository {
   ): Promise<Workout[]>
   /** 列出區間內（含頭尾）有訓練的日期 */
   listDatesInRange(from: LocalDate, to: LocalDate): Promise<LocalDate[]>
+  /** 列出區間內（含頭尾）的訓練，由舊到新；用於每週、每月統計 */
+  listInRange(from: LocalDate, to: LocalDate): Promise<Workout[]>
   hasAnyWithExercise(exerciseId: string): Promise<boolean>
   /** 列出訓練，由新到舊；用於分批往前找最近使用的動作 */
   listRecent(options: { limit: number; offset?: number }): Promise<Workout[]>

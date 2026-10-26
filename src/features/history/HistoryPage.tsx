@@ -9,6 +9,7 @@ import { useLiveData } from '@/data'
 import { addDays, fromLocalDate, toLocalDate, type LocalDate } from '@/domain'
 import { today } from '@/features/workout/dayPath'
 import { DayDetail } from './DayDetail'
+import { PeriodStatsSection } from './PeriodStatsSection'
 
 type CalendarProps = ComponentProps<typeof Calendar>
 
@@ -92,6 +93,7 @@ export function HistoryPage() {
       ) : (
         <p className="py-4 text-center text-muted-foreground">點選日期查看當天明細</p>
       )}
+      <PeriodStatsSection month={month} selected={selected} />
     </div>
   )
 }

@@ -226,6 +226,15 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 當次最重的一組比之前每一次都重時標示「重量新紀錄」，估算 1RM 比之前每一次都高時標示「1RM 新紀錄」；第一次訓練與追平不標示
 - 重量以目前的重量單位顯示
 
+#### US-24 每週／每月統計
+
+- 歷史頁在日明細下方顯示「統計」，可切換「週」「月」，預設為週
+  - 週：週一到週日，取選取日期所在的一週，還沒選日期時為本週（標示「本週」）
+  - 月：跟著月曆目前顯示的月份
+- 顯示訓練天數、正式組數、總訓練量（定義同 US-09，顯示單位跟隨設定）
+- 各部位組數：10 大篩選分類全部列出（0 組也列），依動作的主要部位歸類，一個動作屬於多個分類時各算一次；以長條呈現相對多寡
+- 這段期間沒有訓練時顯示「這段期間沒有訓練」，不列出各部位組數
+
 ### 4.4 設定與資料
 
 #### US-16 匯出資料 `[E2E-05]`
@@ -495,6 +504,7 @@ export interface ExportFile {
 | `calculateBmi` / `formatBmi` | BMI 計算與顯示格式化 |
 | `buildBodyWeightTrend(entries)` | 每筆體重的 7 日平均與比上週增減 |
 | `estimateOneRepMaxKg` / `buildExerciseRecords(workouts, exerciseId)` | 估算 1RM；個人紀錄與每次的進度（US-23） |
+| `periodRange(period, date)` / `summarizePeriod(workouts, exercisesById)` | 每週／每月統計的區間與統計（US-24） |
 
 ---
 
@@ -645,6 +655,7 @@ export interface WorkoutRepository {
   delete(date: LocalDate): Promise<void>;
   listByExercise(exerciseId: string, options?: { before?: LocalDate; limit?: number; offset?: number }): Promise<Workout[]>;
   listDatesInRange(from: LocalDate, to: LocalDate): Promise<LocalDate[]>;
+  listInRange(from: LocalDate, to: LocalDate): Promise<Workout[]>;
   hasAnyWithExercise(exerciseId: string): Promise<boolean>;
 }
 ```
@@ -762,7 +773,7 @@ push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artif
 | 功能 | 說明 |
 | --- | --- |
 | 訓練範本／課表 | 例如「推日」，一鍵帶入多個動作 |
-| 進度圖表 | 單一動作的最大重量、估算 1RM、訓練量趨勢圖（數值清單已在 US-23 完成）；每週訓練量依部位統計 |
+| 進度圖表 | 單一動作的最大重量、估算 1RM、訓練量趨勢圖（數值清單已在 US-23 完成）；各部位組數的長期趨勢（單週／單月統計已在 US-24 完成） |
 | 個人最佳紀錄（PR） | 記錄當下在訓練頁標示新 PR（動作詳情的個人紀錄與歷史標示已在 US-23 完成） |
 | 組間休息計時器 | 記錄一組後自動開始倒數，支援通知與震動 |
 | RPE／RIR | 每組強度記錄 |
