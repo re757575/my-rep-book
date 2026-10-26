@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-寫測試或 E2E 前，先讀 `docs/agents/testing.md`。
+寫接縫 A 測試（Vitest + RTL）前，先讀 `docs/agents/testing.md`。
+
+寫或改 E2E、新增動態載入或碰到首次載入的效能預算前，先讀 `docs/agents/testing-e2e.md`。
 
 確認畫面版面時用 `npm run screenshot -- <路徑>` 截手機截圖（內建示範資料），不用開瀏覽器；選項見 `scripts/screenshot.ts` 開頭。
 

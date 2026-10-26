@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// 多個 worktree 平行跑 E2E 時，各自用 E2E_PORT 指定不同的 port（見 docs/agents/testing.md）
+// 多個 worktree 平行跑 E2E 時，各自用 E2E_PORT 指定不同的 port（見 docs/agents/testing-e2e.md）
 const PORT = Number(process.env.E2E_PORT ?? 4173)
 const BASE_PATH = '/my-rep-book/'
 

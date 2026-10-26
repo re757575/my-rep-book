@@ -37,7 +37,7 @@ export default defineConfig(
     files: ['src/domain/**/*.{ts,tsx}'],
     rules: {
       // domain 經由 `@/domain` 進入首頁：模組最上層的 new Intl.* 是副作用，打包工具（rolldown）
-      // 會因此改變 chunk 的切分，首次載入的 JS 多約 3 KB（見 docs/agents/testing.md）
+      // 會因此改變 chunk 的切分，首次載入的 JS 多約 3 KB（見 docs/agents/testing-e2e.md）
       'no-restricted-syntax': [
         'error',
         {
