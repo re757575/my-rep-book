@@ -105,6 +105,45 @@ describe('記錄其他三種類型，重新整理後仍在', () => {
     ).toHaveValue('25:00')
   })
 
+  it('時間欄位只打數字就自動補上冒號（手機的數字鍵盤沒有冒號），退格也跟著退', async () => {
+    const { user, reload } = renderApp()
+    const plank = await addExercise(user, '平板支撐')
+    const duration = within(plank).getByRole('textbox', { name: '第 1 組時間（mm:ss）' })
+
+    await user.type(duration, '1')
+    expect(duration).toHaveValue('00:01')
+    await user.type(duration, '3')
+    expect(duration).toHaveValue('00:13')
+    await user.type(duration, '0')
+    expect(duration).toHaveValue('01:30')
+    await user.type(duration, '5')
+    expect(duration).toHaveValue('13:05')
+    await user.type(duration, '{Backspace}')
+    expect(duration).toHaveValue('01:30')
+
+    reload()
+
+    expect(
+      within(await screen.findByRole('region', { name: '平板支撐' })).getByRole('textbox', {
+        name: '第 1 組時間（mm:ss）',
+      }),
+    ).toHaveValue('01:30')
+  })
+
+  it('時間欄位超過 999:59 放不下的數字會被忽略；自己打冒號時照打的來', async () => {
+    const { user } = renderApp()
+    const plank = await addExercise(user, '平板支撐')
+    const duration = within(plank).getByRole('textbox', { name: '第 1 組時間（mm:ss）' })
+
+    await user.type(duration, '123456')
+    expect(duration).toHaveValue('123:45')
+
+    await user.clear(duration)
+    expect(duration).toHaveValue('')
+    await user.type(duration, '2:05')
+    expect(duration).toHaveValue('2:05')
+  })
+
   it('「新增一組」複製上一組的時間', async () => {
     const { user } = renderApp()
     const plank = await addExercise(user, '平板支撐')

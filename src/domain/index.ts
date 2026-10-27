@@ -32,7 +32,12 @@ export {
   type SetRecordKind,
   type WeightRepsSet,
 } from './exerciseRecords'
-export { formatDuration, parseDuration } from './duration'
+export {
+  durationTextAfterColon,
+  formatDuration,
+  maskDurationInput,
+  parseDuration,
+} from './duration'
 export {
   PROGRESS_METRICS,
   buildProgressSeries,

@@ -1,29 +1,33 @@
 {
-  "totalGzipBytes": 199050,
+  "totalGzipBytes": 200072,
   "chunks": {
     "AddExerciseDialog": {
       "count": 1,
-      "gzipBytes": 2229
+      "gzipBytes": 2228
     },
     "ExerciseList": {
       "count": 1,
-      "gzipBytes": 985
+      "gzipBytes": 999
+    },
+    "categories": {
+      "count": 1,
+      "gzipBytes": 233
     },
     "data": {
       "count": 1,
-      "gzipBytes": 38199
+      "gzipBytes": 38531
     },
     "dist": {
       "count": 5,
-      "gzipBytes": 22581
+      "gzipBytes": 22587
     },
     "es2015": {
       "count": 1,
-      "gzipBytes": 8252
+      "gzipBytes": 8244
     },
     "index": {
       "count": 1,
-      "gzipBytes": 121942
+      "gzipBytes": 122559
     },
     "labels": {
       "count": 1,
@@ -39,7 +43,7 @@
     },
     "toggle-group": {
       "count": 1,
-      "gzipBytes": 1707
+      "gzipBytes": 1536
     },
     "workbox-window.prod.es5": {
       "count": 1,

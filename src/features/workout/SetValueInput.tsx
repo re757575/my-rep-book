@@ -3,9 +3,11 @@ import { useId, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  durationTextAfterColon,
   formatDuration,
   formatWeight,
   isSteppableField,
+  maskDurationInput,
   parseSetInput,
   stepSetValue,
   type SetField,
@@ -41,6 +43,7 @@ function formatValue(field: SetField, value: number | null, weightUnit: WeightUn
  * 不合法時在欄位下方顯示錯誤且不寫入，儲存的仍是上一個合法值或 null。
  * 畫面上的文字由欄位自己保存，避免輸入到一半（例如「62.」）被儲存後的數值蓋掉。
  * 重量以目前的重量單位輸入與顯示，交給 `onChange` 的一律是 kg；切換單位時欄位重新掛載，以新的單位顯示。
+ * 時間欄位輸入數字時自動補上冒號（手機的數字鍵盤沒有冒號，見 `maskDurationInput`）。
  * 重量與次數欄位下方有 −／+，單手不叫出鍵盤就能微調（`stepSetValue`）；鎖定時不顯示。
  */
 export function SetValueInput(props: SetValueInputProps) {
@@ -70,6 +73,8 @@ function SetValueInputField({
   // 最後一個合法的值。連按 −／+ 時，從這裡算而不是等寫入資料庫後回來的 `value`
   const [current, setCurrent] = useState(value)
   const [error, setError] = useState<string>()
+  // 時間欄位：使用者自己打了冒號之後，照他打的來，不再自動補冒號；欄位清空後恢復
+  const [typedColon, setTypedColon] = useState(false)
 
   function step(direction: 1 | -1) {
     if (!isSteppableField(field)) return
@@ -92,8 +97,21 @@ function SetValueInputField({
         readOnly={readOnly}
         value={text}
         onChange={(event) => {
-          setText(event.target.value)
-          const parsed = parseSetInput(field, event.target.value, weightUnit)
+          let next = event.target.value
+          if (field === 'durationSec') {
+            if (!typedColon && (event.nativeEvent as InputEvent).data === ':') {
+              setTypedColon(true)
+              next = durationTextAfterColon(next)
+            } else if (!typedColon) {
+              const masked = maskDurationInput(next)
+              // 超過 999:59 放不下的數字：忽略這次輸入，欄位維持原樣
+              if (masked === undefined) return
+              next = masked
+            }
+            if (next === '') setTypedColon(false)
+          }
+          setText(next)
+          const parsed = parseSetInput(field, next, weightUnit)
           setError(parsed.ok ? undefined : parsed.error)
           if (parsed.ok) {
             setCurrent(parsed.value)

@@ -90,6 +90,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - **Given** 記錄類型為 `duration` 的動作（如平板支撐）　**Then** 該組只顯示「時間（mm:ss）」欄位
 - **Given** 記錄類型為 `distance_duration` 的動作（如跑步機）　**Then** 該組顯示「距離（km）」與「時間（mm:ss）」欄位
 - **Given** 記錄類型為 `reps` 的動作（如引體向上）　**Then** 該組顯示「次數」與選填的「額外負重」欄位
+- 時間欄位只打數字就會自動補上冒號（手機的數字鍵盤沒有冒號）：依序打 `1`、`3`、`0` 顯示 `00:01`、`00:13`、`01:30`，退格也一位一位退；超過 `999:59` 放不下的數字會被忽略。自己打冒號（桌機鍵盤）時照打的來，不再自動補
 - 頁面不提供「儲存」按鈕，也沒有每組的「完成」勾選
 
 #### US-02 自動帶入上次數據 `[E2E-02]`
@@ -443,7 +444,7 @@ export type SetValues =
 | `weightKg` | 是 | ≥ 0；以顯示單位輸入時最多 2 位小數 | `inputmode="decimal"` |
 | `reps` | 是 | 正整數，1–9999 | `inputmode="numeric"` |
 | `addedWeightKg` | 否 | ≥ 0；最多 2 位小數 | `inputmode="decimal"` |
-| `durationSec` | 是 | > 0；以 `mm:ss` 輸入，mm 為 0–999，ss 為 0–59。也接受只輸入數字，最後兩位當作秒數（`130` 即 1:30），因為 iOS 數字鍵盤沒有冒號；儲存後一律顯示成 `mm:ss`（如 `01:30`） | `inputmode="numeric"` |
+| `durationSec` | 是 | > 0；以 `mm:ss` 輸入，mm 為 0–999，ss 為 0–59。手機的數字鍵盤沒有冒號，所以輸入數字時自動補上冒號，數字由右往左填入、最後兩位當作秒數（打 `130` 即顯示 `01:30`），也可以直接打冒號；儲存後一律顯示成 `mm:ss`（如 `01:30`） | `inputmode="numeric"` |
 | `distanceKm` | 是 | ≥ 0；最多 2 位小數 | `inputmode="decimal"` |
 
 不合法的輸入在欄位下方即時顯示錯誤，且不寫入儲存（保留上一個合法值或 null）。
@@ -612,6 +613,7 @@ export interface ExportFile {
 | --- | --- |
 | `kgToLb` / `lbToKg` / `formatWeight` | 單位換算與顯示格式化 |
 | `parseDuration('mm:ss') / formatDuration(sec)` | 時間輸入解析與顯示 |
+| `maskDurationInput(text)` / `durationTextAfterColon(text)` | 時間欄位輸入數字時自動補冒號；使用者自己打冒號時還原已打的分鐘 |
 | `validateSetValues(values)` | 回傳各欄位錯誤；判斷是否為完整的組 |
 | `findLastPerformance(workouts, exerciseId, beforeDate)` | 回傳上次紀錄的日期與完整正式組 |
 | `buildInitialSet(lastPerformance, trackingType)` | 依 US-02 規則產生第一組 |

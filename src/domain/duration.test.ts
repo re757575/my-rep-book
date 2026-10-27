@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, parseDuration } from './duration'
+import {
+  durationTextAfterColon,
+  formatDuration,
+  maskDurationInput,
+  parseDuration,
+} from './duration'
 
 describe('parseDuration：mm:ss 轉成秒數', () => {
   it.each([
@@ -63,5 +68,59 @@ describe('formatDuration：秒數轉成 mm:ss', () => {
 
   it.each([1, 90, 1200, 59999])('格式化後再解析，回到原本的 %i 秒', (seconds) => {
     expect(parseDuration(formatDuration(seconds))).toEqual({ ok: true, value: seconds })
+  })
+})
+
+describe('maskDurationInput：輸入數字時自動補冒號', () => {
+  it.each([
+    ['1', '00:01'],
+    ['13', '00:13'],
+    ['130', '01:30'],
+    ['2500', '25:00'],
+    ['99959', '999:59'],
+    ['0', '00:00'],
+    ['000', '00:00'],
+  ])('%j → %j', (text, expected) => {
+    expect(maskDurationInput(text)).toBe(expected)
+  })
+
+  it('接著上一次顯示的值再打一位，數字繼續往左推，不會多出前面的 0', () => {
+    // 01:30 → 打 5 → 01:305 → 13:05
+    expect(maskDurationInput('01:305')).toBe('13:05')
+    // 退格：01:30 → 01:3 → 00:13
+    expect(maskDurationInput('01:3')).toBe('00:13')
+    expect(maskDurationInput('00:0')).toBe('00:00')
+  })
+
+  it('貼上帶冒號的時間也得到同樣的結果', () => {
+    expect(maskDurationInput('1:30')).toBe('01:30')
+    expect(maskDurationInput('01:30')).toBe('01:30')
+  })
+
+  it('沒有數字時是空字串', () => {
+    expect(maskDurationInput('')).toBe('')
+    expect(maskDurationInput(':')).toBe('')
+  })
+
+  it('超過 5 位數時回傳 undefined（忽略這次輸入）', () => {
+    expect(maskDurationInput('999:591')).toBeUndefined()
+  })
+
+  it('顯示的值和只打數字的解析一致', () => {
+    for (const digits of ['1', '45', '130', '2500', '12345']) {
+      const masked = maskDurationInput(digits)!
+      expect(parseDuration(masked)).toEqual(parseDuration(digits))
+    }
+  })
+})
+
+describe('durationTextAfterColon：自己打了冒號', () => {
+  it.each([
+    ['00:01:', '1:'],
+    ['01:30:', '130:'],
+    ['00:00:', '0:'],
+    [':', '0:'],
+  ])('%j → %j', (text, expected) => {
+    expect(durationTextAfterColon(text)).toBe(expected)
   })
 })

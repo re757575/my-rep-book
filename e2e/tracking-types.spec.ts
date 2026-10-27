@@ -21,6 +21,8 @@ test('記錄跑步機與引體向上；不合法的輸入顯示錯誤且重新�
   await distance.pressSequentially('5.25')
   // 手機的數字鍵盤沒有冒號：只打數字，最後兩位是秒
   await duration.pressSequentially('2500')
+  // 只打數字也會自動補上冒號
+  await expect(duration).toHaveValue('25:00')
 
   const pullUp = await addExercise(page, '引體向上')
   const reps = pullUp.getByRole('textbox', { name: '第 1 組次數' })
