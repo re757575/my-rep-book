@@ -115,6 +115,8 @@ export interface WorkoutSet {
   /** UUID */
   id: string
   setType: SetType
+  /** 強度（RPE，整數 1–10，US-39）；沒有填就沒有這個欄位。RIR = 10 − RPE */
+  rpe?: number
   values: SetValues
 }
 

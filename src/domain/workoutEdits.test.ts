@@ -11,6 +11,7 @@ import {
   removeWorkoutExercise,
   removeWorkoutExercises,
   restoreSet,
+  setSetRpe,
   restoreWorkoutExercise,
 } from './workoutEdits'
 import type { Workout, WorkoutExercise, WorkoutSet } from './types'
@@ -488,5 +489,58 @@ describe('cycleSetType：把一組換成下一個組類型', () => {
       })(),
     })
     expect(copied?.exercises[0].sets.map((set) => set.setType)).toEqual(['regular', 'drop'])
+  })
+})
+
+describe('setSetRpe：設定與取消一組的強度', () => {
+  const workout: Workout = {
+    date: '2026-10-24',
+    exercises: [
+      {
+        id: 'we-1',
+        exerciseId: 'barbell-bench-press',
+        note: '',
+        sets: [
+          { id: 'a', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+          {
+            id: 'b',
+            setType: 'regular',
+            rpe: 9,
+            values: { type: 'weight_reps', weightKg: 60, reps: 8 },
+          },
+        ],
+      },
+    ],
+    createdAt: CREATED,
+    updatedAt: CREATED,
+  }
+
+  it('設定指定那一組的強度，其他組與數值不動，更新時間更新', () => {
+    const next = setSetRpe(workout, 'we-1', 'a', 8, NOW)
+    expect(next.exercises[0].sets.map((set) => set.rpe)).toEqual([8, 9])
+    expect(next.exercises[0].sets[0].values).toEqual(workout.exercises[0].sets[0].values)
+    expect(next.updatedAt).toBe(NOW)
+  })
+
+  it('取消時連欄位一起移除', () => {
+    const next = setSetRpe(workout, 'we-1', 'b', undefined, NOW)
+    expect('rpe' in next.exercises[0].sets[1]).toBe(false)
+  })
+
+  it('找不到該組時訓練內容不變', () => {
+    const next = setSetRpe(workout, 'we-1', 'nope', 8, NOW)
+    expect(next.exercises).toEqual(workout.exercises)
+  })
+
+  it('「新增一組」與複製訓練都不帶強度：每一組做得多吃力要重新記', () => {
+    expect('rpe' in cloneSetForNext(workout.exercises[0].sets[1])).toBe(false)
+    const { workout: copied } = copyWorkoutExercises(workout, undefined, '2026-10-25', {
+      now: NOW,
+      createId: (() => {
+        let n = 0
+        return () => `new-${++n}`
+      })(),
+    })
+    expect(copied?.exercises[0].sets.some((set) => 'rpe' in set)).toBe(false)
   })
 })

@@ -9,6 +9,7 @@ import {
   completesSet,
   findNewRecordSets,
   moveWorkoutExercise,
+  setSetRpe,
   cycleSetType,
   type EditContext,
   type LastPerformance,
@@ -173,6 +174,11 @@ export function TodayPage({ date }: { date: LocalDate }) {
                   )
                   startRestIfToday()
                 }}
+                onSetRpe={(setId, rpe) =>
+                  editWorkout((current) =>
+                    setSetRpe(current, workoutExercise.id, setId, rpe, editContext().now),
+                  )
+                }
                 onCycleSetType={(setId) =>
                   editWorkout((current) =>
                     cycleSetType(current, workoutExercise.id, setId, editContext().now),

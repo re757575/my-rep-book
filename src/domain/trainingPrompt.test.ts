@@ -214,3 +214,36 @@ describe('訓練明細的組類型', () => {
     expect(prompt).toContain('- 槓鈴臥推：熱身 40kg×10、60kg×8、遞減 50kg×8、力竭 40kg×6')
   })
 })
+
+describe('訓練明細的強度', () => {
+  const withEffort = (rpe: number | undefined) => ({
+    ...input,
+    workouts: [
+      {
+        ...workout('2026-10-20', [
+          { exerciseId: 'barbell-bench-press', sets: [[wr(40, 10), 'warmup'], [wr(60, 8)]] },
+        ]),
+      },
+    ].map((item) => ({
+      ...item,
+      exercises: item.exercises.map((exercise) => ({
+        ...exercise,
+        sets: exercise.sets.map((set, index) =>
+          index === 1 && rpe !== undefined ? { ...set, rpe } : set,
+        ),
+      })),
+    })),
+  })
+
+  it('有強度的組在數值後面標示 RPE，並在說明裡解釋 RPE 與 RIR', () => {
+    const prompt = buildTrainingPrompt(withEffort(8))
+    expect(prompt).toContain('- 槓鈴臥推：熱身 40kg×10、60kg×8 RPE 8')
+    expect(prompt).toContain('RPE 是自覺強度（10 是做到極限），RIR（還能再做幾下）= 10 − RPE。')
+  })
+
+  it('沒有任何組記了強度時，不標示也不解釋', () => {
+    const prompt = buildTrainingPrompt(withEffort(undefined))
+    expect(prompt).toContain('- 槓鈴臥推：熱身 40kg×10、60kg×8\n')
+    expect(prompt).not.toContain('RPE')
+  })
+})

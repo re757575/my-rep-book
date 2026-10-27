@@ -86,6 +86,32 @@ export function addSetToWorkoutExercise(
   )
 }
 
+/**
+ * 設定某一組的強度（RPE，US-39）；`rpe` 為 undefined 時取消，欄位一併移除。
+ * 找不到該組時訓練不變。
+ */
+export function setSetRpe(
+  workout: Workout,
+  workoutExerciseId: string,
+  setId: string,
+  rpe: number | undefined,
+  now: Timestamp,
+): Workout {
+  return updateWorkoutExercise(
+    workout,
+    workoutExerciseId,
+    (item) => ({
+      ...item,
+      sets: item.sets.map((set) => {
+        if (set.id !== setId) return set
+        const { rpe: _previous, ...rest } = set
+        return rpe === undefined ? rest : { ...rest, rpe }
+      }),
+    }),
+    now,
+  )
+}
+
 /** 把某一組換成下一個組類型：正式 → 熱身 → 遞減 → 力竭 → 正式（US-37） */
 export function cycleSetType(
   workout: Workout,

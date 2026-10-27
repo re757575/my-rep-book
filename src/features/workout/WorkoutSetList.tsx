@@ -1,10 +1,12 @@
-import { formatSetValues, SET_TYPE_LABELS, type WorkoutSet } from '@/domain'
+import { formatEffort, formatSetValues, SET_TYPE_LABELS, type WorkoutSet } from '@/domain'
+import { useEffortSettings } from '@/features/effort/effortStore'
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { cn } from '@/lib/utils'
 
-/** 唯讀的組清單：每組一列，熱身、遞減、力竭的組前面標示類型，正式組不標。動作歷史與歷史的日明細共用 */
+/** 唯讀的組清單：每組一列，熱身、遞減、力竭的組前面標示類型，正式組不標；有強度的組後面標示 RPE 或 RIR（US-39）。動作歷史與歷史的日明細共用 */
 export function WorkoutSetList({ sets }: { sets: readonly WorkoutSet[] }) {
   const weightUnit = useWeightUnit()
+  const { scale } = useEffortSettings()
   return (
     <ol aria-label="組" className="flex flex-col gap-1">
       {sets.map((set) => (
@@ -20,7 +22,10 @@ export function WorkoutSetList({ sets }: { sets: readonly WorkoutSet[] }) {
               {SET_TYPE_LABELS[set.setType]}
             </span>
           )}
-          <span>{formatSetValues(set.values, weightUnit)}</span>
+          <span>
+            {formatSetValues(set.values, weightUnit)}
+            {set.rpe !== undefined && ` · ${formatEffort(set.rpe, scale)}`}
+          </span>
         </li>
       ))}
     </ol>

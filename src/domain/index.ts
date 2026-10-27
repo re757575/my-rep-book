@@ -9,6 +9,17 @@ export {
   migrateWorkoutSetTypes,
   nextSetType,
 } from './setTypes'
+export {
+  EFFORT_SCALES,
+  MAX_RPE,
+  MIN_RPE,
+  RPE_OPTIONS,
+  effortOptionLabel,
+  formatEffort,
+  isValidRpe,
+  rpeToRir,
+  type EffortScale,
+} from './effort'
 export { CATEGORY_MUSCLES, exercisesInCategory } from './categories'
 export { filterExercises, matchesSearch, type CategoryFilter } from './search'
 export {
@@ -86,6 +97,7 @@ export {
   removeSet,
   removeWorkoutExercise,
   removeWorkoutExercises,
+  setSetRpe,
   restoreSet,
   restoreWorkoutExercise,
   cycleSetType,

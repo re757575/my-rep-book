@@ -349,6 +349,29 @@ describe('schema 版本與遷移', () => {
     })
   })
 
+  it('每一組的強度（rpe）是選填的 1–10 整數：沒有這個欄位的舊備份照常匯入，不需要遷移', () => {
+    const withRpe = fileWith((file) => {
+      ;(file.data.workouts[0].exercises[0].sets[1] as { rpe?: number }).rpe = 8
+    })
+    const result = parse(withRpe)
+    expect(result.ok && result.data.workouts[0].exercises[0].sets.map((set) => set.rpe)).toEqual([
+      undefined,
+      8,
+    ])
+    // sampleData 的組都沒有 rpe：照樣是合法的目前版本
+    expect(parse(fileWith(() => {}))).toEqual({ ok: true, data: sampleData })
+  })
+
+  it.each([0, 11, 8.5, '8'])('強度 %j 不合法時指出錯誤位置', (rpe) => {
+    const file = fileWith((file) => {
+      ;(file.data.workouts[0].exercises[0].sets[1] as { rpe?: unknown }).rpe = rpe
+    })
+    expect(parse(file)).toEqual({
+      ok: false,
+      error: 'workouts[0].exercises[0].sets[1].rpe 格式錯誤',
+    })
+  })
+
   it('v1 的設定格式錯誤時，遷移後照樣指出錯誤位置', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1

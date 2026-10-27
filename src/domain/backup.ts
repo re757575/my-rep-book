@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { isValidBirthDate } from './age'
 import { isValidBodyWeightKg, isValidHeightCm } from './bodyMetrics'
 import { isValidLocalDate } from './dates'
+import { MAX_RPE, MIN_RPE } from './effort'
 import { PRESET_EXERCISES } from './presets'
 import { migrateWorkoutSetTypes } from './setTypes'
 import { validateSetValues } from './setValues'
@@ -82,7 +83,13 @@ const workoutSchema = z.object({
         exerciseId: z.string().min(1),
         note: z.string(),
         sets: z.array(
-          z.object({ id: z.string().min(1), setType: z.enum(SET_TYPES), values: setValuesSchema }),
+          z.object({
+            id: z.string().min(1),
+            setType: z.enum(SET_TYPES),
+            // 強度（US-39）：選填的整數 1–10；舊備份沒有這個欄位
+            rpe: z.number().int().min(MIN_RPE).max(MAX_RPE).optional(),
+            values: setValuesSchema,
+          }),
         ),
       }),
     )

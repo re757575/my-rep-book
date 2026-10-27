@@ -2,6 +2,7 @@ import { SET_TYPE_LABELS } from './setTypes'
 import { calculateAge } from './age'
 import { buildBodyWeightTrend, type BodyWeightTrendEntry } from './bodyWeightTrend'
 import { addDays, formatDateWithYear } from './dates'
+import { formatEffort } from './effort'
 import type { ExerciseRecords } from './exerciseRecords'
 import { formatSetValues, formatWeightReps } from './formatSet'
 import { BROWSE_CATEGORY_LABELS } from './labels'
@@ -56,7 +57,11 @@ export function hasPromptData({
   return workouts.length > 0 || bodyWeights.some(({ date }) => from <= date && date <= to)
 }
 
-function introduction({ from, to, weightUnit }: TrainingPromptInput): string[] {
+function introduction({ from, to, weightUnit, workouts }: TrainingPromptInput): string[] {
+  // 有組記了強度才解釋 RPE 與 RIR，沒有用到時不佔提示詞的篇幅
+  const hasEffort = workouts.some((workout) =>
+    workout.exercises.some((item) => item.sets.some((set) => set.rpe !== undefined)),
+  )
   return [
     `你是一位專業的肌力與體能教練。以下是我在 ${formatDateWithYear(from)}到 ${formatDateWithYear(to)}的健身紀錄，請根據這些資料：`,
     '',
@@ -64,7 +69,7 @@ function introduction({ from, to, weightUnit }: TrainingPromptInput): string[] {
     '2. 找出進步中與停滯的動作，說明可能的原因',
     '3. 建議接下來一週的訓練安排，包含動作、組數、次數與重量',
     '',
-    `說明：重量單位為 ${weightUnit}，距離為 km；標示「熱身」的是熱身組，不計入統計；估算 1RM 以 Epley 公式計算：重量 ×（1 + 次數 ÷ 30）。`,
+    `說明：重量單位為 ${weightUnit}，距離為 km；標示「熱身」的是熱身組，不計入統計；估算 1RM 以 Epley 公式計算：重量 ×（1 + 次數 ÷ 30）。${hasEffort ? 'RPE 是自覺強度（10 是做到極限），RIR（還能再做幾下）= 10 − RPE。' : ''}`,
   ]
 }
 
@@ -122,7 +127,10 @@ function workoutDetails({ workouts, exercises, weightUnit }: TrainingPromptInput
     for (const item of workout.exercises) {
       const sets = item.sets
         .filter((set) => isCompleteSet(set.values))
-        .map((set) => `${setTypeLabel(set)}${formatSetValues(set.values, weightUnit)}`)
+        .map(
+          (set) =>
+            `${setTypeLabel(set)}${formatSetValues(set.values, weightUnit)}${set.rpe === undefined ? '' : ` ${formatEffort(set.rpe, 'rpe')}`}`,
+        )
       const note = item.note.trim()
       if (sets.length === 0 && note === '') continue
       const name = exercises.get(item.exerciseId)?.nameZh ?? item.exerciseId

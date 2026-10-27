@@ -9,8 +9,8 @@ import type {
   Workout,
 } from '../domain/types.ts'
 
-/** fixture 中的一組：組數值，可指定組類型（預設正式） */
-export type FixtureSet = SetValues & { setType?: SetType }
+/** fixture 中的一組：組數值，可指定組類型（預設正式）與強度（RPE） */
+export type FixtureSet = SetValues & { setType?: SetType; rpe?: number }
 
 export interface FixtureExercise {
   exerciseId: string
@@ -36,9 +36,10 @@ export function fixtureWorkout(date: string, exercises: FixtureExercise[]): Work
       id: `fixture-${date}-${e + 1}`,
       exerciseId,
       note,
-      sets: sets.map(({ setType = 'regular', ...values }, s) => ({
+      sets: sets.map(({ setType = 'regular', rpe, ...values }, s) => ({
         id: `fixture-${date}-${e + 1}-${s + 1}`,
         setType,
+        ...(rpe === undefined ? {} : { rpe }),
         values: values as SetValues,
       })),
     })),

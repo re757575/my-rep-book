@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useRepositories } from '@/data'
 import { THEMES, WEIGHT_UNITS, type Theme, type WeightUnit } from '@/domain'
+import { EffortSection } from '@/features/effort/EffortSection'
 import { RestTimerSection } from '@/features/restTimer/RestTimerSection'
 import { BackupSection } from './BackupSection'
 import { BirthDateSection } from './BirthDateSection'
@@ -74,6 +75,7 @@ export function SettingsPage() {
             onChange={(weightUnit) => repositories.settings.update({ weightUnit })}
           />
           <RestTimerSection />
+          <EffortSection />
           <HeightSection heightCm={settings.heightCm} />
           <BirthDateSection birthDate={settings.birthDate} />
           <SettingOptions
