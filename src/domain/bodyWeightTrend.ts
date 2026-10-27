@@ -40,3 +40,29 @@ export function buildBodyWeightTrend(entries: readonly BodyWeightEntry[]): BodyW
     }
   })
 }
+
+/** 體重趨勢圖的區間（US-36）：從今天往前算的天數（含今天），`all` 是全部 */
+export const BODY_WEIGHT_CHART_RANGES = ['30d', '90d', '1y', 'all'] as const
+export type BodyWeightChartRange = (typeof BODY_WEIGHT_CHART_RANGES)[number]
+
+const RANGE_DAYS: Readonly<Record<Exclude<BodyWeightChartRange, 'all'>, number>> = {
+  '30d': 30,
+  '90d': 90,
+  '1y': 365,
+}
+
+/**
+ * 趨勢圖區間內的點，由舊到新，每一點帶 7 日平均。平均以全部體重計算，
+ * 所以區間最前面幾筆的平均仍然包含區間之前的體重，不會因為切區間而改變。
+ * `entries` 不需事先排序。
+ */
+export function buildBodyWeightChart(
+  entries: readonly BodyWeightEntry[],
+  range: BodyWeightChartRange,
+  today: LocalDate,
+): BodyWeightTrendEntry[] {
+  const trend = buildBodyWeightTrend(entries).sort((a, b) => a.date.localeCompare(b.date))
+  if (range === 'all') return trend
+  const start = addDays(today, -(RANGE_DAYS[range] - 1))
+  return trend.filter((entry) => entry.date >= start && entry.date <= today)
+}

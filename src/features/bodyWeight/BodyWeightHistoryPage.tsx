@@ -12,6 +12,7 @@ import {
 } from '@/domain'
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { dayPath, UNLOCKED } from '@/features/workout/dayPath'
+import { BodyWeightChart } from './BodyWeightChart'
 import { Bmi } from './Bmi'
 
 /** 7 日平均與比上週增減，例如 `7 日平均 72.3 kg · 比上週 -0.4 kg` */
@@ -47,7 +48,7 @@ function BodyWeightRow({ entry }: { entry: BodyWeightTrendEntry }) {
 
 /**
  * 體重紀錄：所有體重由新到舊，以目前的重量單位顯示；有身高時每筆附上 BMI。
- * 每筆下方顯示 7 日平均與比上週增減
+ * 每筆下方顯示 7 日平均與比上週增減；清單上方有趨勢圖（US-36）
  */
 export function BodyWeightHistoryPage() {
   const entries = useLiveData((repositories) => repositories.bodyWeights.listAll(), [])
@@ -68,11 +69,15 @@ export function BodyWeightHistoryPage() {
             還沒有體重紀錄，可以在訓練頁輸入當天的體重
           </p>
         ) : (
-          <ol aria-label="體重紀錄" className="divide-y">
-            {buildBodyWeightTrend(entries).map((entry) => (
-              <BodyWeightRow key={entry.date} entry={entry} />
-            ))}
-          </ol>
+          <>
+            {/* 至少 2 筆才連得成線 */}
+            {entries.length >= 2 && <BodyWeightChart entries={entries} />}
+            <ol aria-label="體重紀錄" className="divide-y">
+              {buildBodyWeightTrend(entries).map((entry) => (
+                <BodyWeightRow key={entry.date} entry={entry} />
+              ))}
+            </ol>
+          </>
         ))}
     </div>
   )

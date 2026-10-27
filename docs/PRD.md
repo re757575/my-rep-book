@@ -417,6 +417,18 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - AI 提示詞的基本資料只帶入年齡，不放生日本身（US-25）
 - 生日包含在匯出檔中（schema v3）
 
+#### US-36 體重趨勢圖
+
+> 身為使用者，我想在體重紀錄頁看到體重隨時間的走勢，以便看出長期的增減，而不只是一份清單。
+
+- 體重紀錄頁（US-22）在標題與清單之間顯示趨勢圖，清單照舊；選取的區間內至少有 2 筆體重才畫圖
+- 折線圖有兩條線，同一個軸、同一個單位（目前的重量單位）：「每日體重」用淡色，「7 日平均」（定義同 US-22）用主題前景色、較突出，因為每天的體重會上下跳動，看平均比看單日準。圖下方有圖例：兩條線各一小段線樣加名稱
+- 區間用「30 天」「90 天」「1 年」「全部」切換，預設 90 天；區間是從今天往前算（含今天）。區間內少於 2 筆體重時不畫圖，顯示「這段期間少於 2 筆體重」。切換不記住，每次進入頁面回到預設
+- Y 軸取乾淨的刻度，不一定從 0 開始；X 軸依實際的日期間隔排列，沒記體重的日子不補點，線直接連過去
+- 圖上方顯示選取那一筆的日期、體重與 7 日平均，預設是最新一筆；點擊或滑過圖上任一處選取最近的一筆，鍵盤聚焦圖後用左右鍵移動（同 US-34）。數值都不需要靠滑過才讀得到（圖上方的數值、隱藏的表格與清單）
+- 體重筆數 ≤ 24 時每一筆都畫點；更多時只畫最新一筆與選取的那一筆
+- 圖有文字替代：名稱與範圍的摘要，以及列出每筆日期、體重、7 日平均的表格（只給螢幕閱讀器）
+
 ---
 
 ## 5. 資料模型
@@ -631,6 +643,7 @@ export interface ExportFile {
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `stepSetValue(field, value, direction, weightUnit)` / `completesSet(values, field, value)` | −／+ 微調後的值（US-29）；這次編輯是否讓組變完整（US-30 的觸發條件） |
+| `buildBodyWeightChart(entries, range, today)` | 體重趨勢圖區間內的點（由舊到新，含 7 日平均）（US-36） |
 | `buildProgressSeries(sessions, metric, weightUnit)` / `niceTicks(min, max, count)` | 進度圖表的資料點（由舊到新、顯示單位）與乾淨的 Y 軸刻度（US-34） |
 | `copyWorkoutExercises(source, target, date, context)` / `removeWorkoutExercises(workout, ids, now)` | 把另一天的訓練動作複製到訓練的最後面；復原時移除複製進來的動作（US-33） |
 | `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |

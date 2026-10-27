@@ -117,7 +117,13 @@ export {
   parseBodyWeightInput,
   parseHeightInput,
 } from './bodyMetrics'
-export { buildBodyWeightTrend, type BodyWeightTrendEntry } from './bodyWeightTrend'
+export {
+  BODY_WEIGHT_CHART_RANGES,
+  buildBodyWeightChart,
+  buildBodyWeightTrend,
+  type BodyWeightChartRange,
+  type BodyWeightTrendEntry,
+} from './bodyWeightTrend'
 export { calculateAge, isValidBirthDate, parseBirthDateInput } from './age'
 // 匯出檔的解析與驗證（./backup）用到 zod，只有設定頁需要。為了不讓 zod 進入首次載入的 JS（PRD §7），
 // 不從這裡匯出，改由使用端直接 import '@/domain/backup'。

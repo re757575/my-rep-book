@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildBodyWeightTrend } from './bodyWeightTrend'
+import { buildBodyWeightChart, buildBodyWeightTrend } from './bodyWeightTrend'
 import type { BodyWeightEntry } from './types'
 
 const T = '2026-10-01T00:00:00.000Z'
@@ -71,5 +71,59 @@ describe('buildBodyWeightTrend：7 日平均與比上週增減', () => {
     const result = buildBodyWeightTrend([entry('2027-01-02', 70), entry('2026-12-28', 72)])
     // 2027-01-02 往前 7 天是 12/27–1/2
     expect(result[0].averageKg).toBeCloseTo(71, 10)
+  })
+})
+
+describe('buildBodyWeightChart：趨勢圖區間內的點', () => {
+  const entries = [
+    entry('2026-10-24', 72),
+    entry('2026-10-20', 73),
+    entry('2026-09-25', 74), // 29 天前：30 天區間的第一天
+    entry('2026-09-24', 75), // 30 天前：不在 30 天區間
+    entry('2026-07-27', 76), // 89 天前：90 天區間的第一天
+    entry('2026-07-26', 77), // 90 天前：不在 90 天區間
+    entry('2025-10-25', 80), // 364 天前：1 年區間的第一天
+    entry('2025-10-24', 81), // 365 天前：不在 1 年區間
+  ]
+
+  const dates = (range: Parameters<typeof buildBodyWeightChart>[1]) =>
+    buildBodyWeightChart(entries, range, '2026-10-24').map((item) => item.date)
+
+  it('由舊到新，區間從今天往前算（含今天）', () => {
+    expect(dates('30d')).toEqual(['2026-09-25', '2026-10-20', '2026-10-24'])
+    expect(dates('90d')).toEqual([
+      '2026-07-27',
+      '2026-09-24',
+      '2026-09-25',
+      '2026-10-20',
+      '2026-10-24',
+    ])
+    expect(dates('1y')).toEqual([
+      '2025-10-25',
+      '2026-07-26',
+      '2026-07-27',
+      '2026-09-24',
+      '2026-09-25',
+      '2026-10-20',
+      '2026-10-24',
+    ])
+    expect(dates('all')).toHaveLength(8)
+    expect(dates('all')[0]).toBe('2025-10-24')
+  })
+
+  it('7 日平均以全部體重計算，不因切換區間而改變', () => {
+    const [first] = buildBodyWeightChart(entries, '30d', '2026-10-24')
+    const full = buildBodyWeightChart(entries, 'all', '2026-10-24').find(
+      (item) => item.date === first.date,
+    )
+    expect(first.averageKg).toBe(full?.averageKg)
+    // 區間第一天 9/25 往前 7 天內有區間之前的 9/24（75）與 9/25（74）
+    expect(first.averageKg).toBe(74.5)
+  })
+
+  it('不需事先排序，區間內沒有體重時是空的；未來的體重不算', () => {
+    expect(buildBodyWeightChart([], '90d', '2026-10-24')).toEqual([])
+    expect(buildBodyWeightChart([entry('2026-01-01', 70)], '30d', '2026-10-24')).toEqual([])
+    expect(buildBodyWeightChart([entry('2026-10-30', 70)], '30d', '2026-10-24')).toEqual([])
   })
 })
