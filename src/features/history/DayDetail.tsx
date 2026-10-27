@@ -1,14 +1,15 @@
-import { Pencil } from 'lucide-react'
+import { CopyPlus, Pencil } from 'lucide-react'
 import { useId } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { useLiveData } from '@/data'
+import { useLiveData, useRepositories } from '@/data'
 import { formatDateTitle, type LocalDate, type WorkoutExercise } from '@/domain'
 import { BodyWeightSummary } from '@/features/bodyWeight/BodyWeightSummary'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { DailySummary } from '@/features/workout/DailySummary'
-import { dayPath, UNLOCKED } from '@/features/workout/dayPath'
+import { dayPath, today, UNLOCKED } from '@/features/workout/dayPath'
 import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
+import { copyWorkoutToToday } from './copyWorkoutToToday'
 
 function DayDetailExercise({
   workoutExercise,
@@ -34,6 +35,8 @@ function DayDetailExercise({
 /** 歷史的日明細：當天的體重、每日摘要、每個動作的每一組與備註 */
 export function DayDetail({ date }: { date: LocalDate }) {
   const headingId = useId()
+  const { workouts } = useRepositories()
+  const navigate = useNavigate()
   const workout = useLiveData(
     async (repositories) => (await repositories.workouts.getByDate(date)) ?? null,
     [date],
@@ -54,15 +57,29 @@ export function DayDetail({ date }: { date: LocalDate }) {
         <h2 id={headingId} className="font-semibold">
           {formatDateTitle(date)}
         </h2>
-        {(workout || bodyWeight) && (
-          <Button asChild variant="outline" className="h-11">
-            {/* 明確要修改，一進入就解鎖 */}
-            <Link to={dayPath(date)} state={UNLOCKED}>
-              <Pencil aria-hidden="true" />
-              編輯
-            </Link>
-          </Button>
-        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          {workout && date !== today() && (
+            <Button
+              variant="outline"
+              className="h-11"
+              onClick={async () => {
+                if (await copyWorkoutToToday(workouts, workout)) void navigate(dayPath(today()))
+              }}
+            >
+              <CopyPlus aria-hidden="true" />
+              複製到今天
+            </Button>
+          )}
+          {(workout || bodyWeight) && (
+            <Button asChild variant="outline" className="h-11">
+              {/* 明確要修改，一進入就解鎖 */}
+              <Link to={dayPath(date)} state={UNLOCKED}>
+                <Pencil aria-hidden="true" />
+                編輯
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
       {bodyWeight && <BodyWeightSummary entry={bodyWeight} />}
       {workout === null ? (

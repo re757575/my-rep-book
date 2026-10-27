@@ -320,6 +320,19 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 無法寫入剪貼簿時選取全文，顯示「無法自動複製，請長按文字手動複製」
 - 資料只寫進剪貼簿，App 不會傳送到任何地方
 
+#### US-33 從過去某天複製訓練
+
+> 身為使用者，我想把過去某天的訓練複製到今天，以便不用另外維護範本就能重複上次的課表。
+
+- **Given** 歷史的日明細（US-14）是今天以外、有訓練的日期　**Then** 明細有「複製到今天」按鈕；今天的明細與沒有訓練的日期不顯示
+- **When** 點「複製到今天」　**Then** 那天的訓練動作依原本的順序加到今天訓練的最後面，並前往今天的訓練頁，顯示 toast「已複製 N 個動作到今天」附「復原」按鈕（約 5 秒，同 US-07）
+- 今天已經有訓練時接在後面，不取代也不合併同名的動作，同一個動作可以出現兩次
+- 複製的內容：各動作的完整組（重量、次數等數值與熱身標記），依原本的順序；不複製備註與體重，也不複製不完整的組。沒有任何完整的組的動作不複製
+- 複製出來的動作與組都是新的，和原本的紀錄互相獨立，之後改任何一邊都不影響另一邊
+- 那天沒有任何可複製的動作時，不新增也不離開歷史，toast「這天沒有可複製的組」
+- **When** 點「復原」　**Then** 移除這次複製進來的動作；今天原本沒有訓練時，今天的訓練一併移除，月曆不再標點
+- 被封存或隱藏的動作照常複製（過去的紀錄不受影響）
+
 ### 4.4 設定與資料
 
 #### US-16 匯出資料 `[E2E-05]`
@@ -593,6 +606,7 @@ export interface ExportFile {
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `stepSetValue(field, value, direction, weightUnit)` / `completesSet(values, field, value)` | −／+ 微調後的值（US-29）；這次編輯是否讓組變完整（US-30 的觸發條件） |
+| `copyWorkoutExercises(source, target, date, context)` / `removeWorkoutExercises(workout, ids, now)` | 把另一天的訓練動作複製到訓練的最後面；復原時移除複製進來的動作（US-33） |
 | `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |
 | `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
 | `startRest` / `restTimerPhase` / `adjustRest` | 組間休息的開始、此刻的階段（倒數中、剛結束、沒有）與增減秒數（US-30） |

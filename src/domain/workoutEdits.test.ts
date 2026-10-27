@@ -4,9 +4,11 @@ import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
   cloneSetForNext,
+  copyWorkoutExercises,
   moveWorkoutExercise,
   removeSet,
   removeWorkoutExercise,
+  removeWorkoutExercises,
   restoreSet,
   restoreWorkoutExercise,
 } from './workoutEdits'
@@ -302,5 +304,138 @@ describe('removeWorkoutExercise／restoreWorkoutExercise：刪除動作與復原
       'a',
       'b',
     ])
+  })
+})
+
+describe('copyWorkoutExercises：複製另一天的訓練', () => {
+  const weightReps = (weightKg: number | null, reps: number | null) =>
+    ({ type: 'weight_reps', weightKg, reps }) as const
+
+  const source: Workout = {
+    date: '2026-10-20',
+    exercises: [
+      {
+        id: 'src-bench',
+        exerciseId: 'barbell-bench-press',
+        note: '左肩不適',
+        sets: [
+          { id: 'b1', isWarmup: true, values: weightReps(40, 10) },
+          { id: 'b2', isWarmup: false, values: weightReps(60, 8) },
+          { id: 'b3', isWarmup: false, values: weightReps(60, null) },
+        ],
+      },
+      {
+        id: 'src-empty',
+        exerciseId: 'barbell-back-squat',
+        note: '',
+        sets: [{ id: 'e1', isWarmup: false, values: weightReps(null, null) }],
+      },
+      {
+        id: 'src-plank',
+        exerciseId: 'plank',
+        note: '',
+        sets: [{ id: 'p1', isWarmup: false, values: { type: 'duration', durationSec: 90 } }],
+      },
+    ],
+    createdAt: CREATED,
+    updatedAt: CREATED,
+  }
+
+  let counter = 0
+  const context = { now: NOW, createId: () => `new-${++counter}` }
+
+  it('今天還沒有訓練時建立訓練：只複製完整的組與熱身標記，不複製備註與沒有完整組的動作', () => {
+    counter = 0
+    const { workout, copiedIds } = copyWorkoutExercises(source, undefined, '2026-10-24', context)
+
+    expect(workout).toEqual({
+      date: '2026-10-24',
+      exercises: [
+        {
+          id: 'new-1',
+          exerciseId: 'barbell-bench-press',
+          note: '',
+          sets: [
+            { id: 'new-2', isWarmup: true, values: weightReps(40, 10) },
+            { id: 'new-3', isWarmup: false, values: weightReps(60, 8) },
+          ],
+        },
+        {
+          id: 'new-4',
+          exerciseId: 'plank',
+          note: '',
+          sets: [{ id: 'new-5', isWarmup: false, values: { type: 'duration', durationSec: 90 } }],
+        },
+      ],
+      createdAt: NOW,
+      updatedAt: NOW,
+    })
+    expect(copiedIds).toEqual(['new-1', 'new-4'])
+  })
+
+  it('今天已經有訓練時接在最後面，同一個動作可以出現兩次', () => {
+    counter = 0
+    const today: Workout = {
+      date: '2026-10-24',
+      exercises: [{ id: 'mine', exerciseId: 'barbell-bench-press', note: '', sets: [] }],
+      createdAt: CREATED,
+      updatedAt: CREATED,
+    }
+    const { workout } = copyWorkoutExercises(source, today, '2026-10-24', context)
+
+    expect(workout?.exercises.map((item) => [item.id, item.exerciseId])).toEqual([
+      ['mine', 'barbell-bench-press'],
+      ['new-1', 'barbell-bench-press'],
+      ['new-4', 'plank'],
+    ])
+    expect(workout?.createdAt).toBe(CREATED)
+    expect(workout?.updatedAt).toBe(NOW)
+  })
+
+  it('複製出來的組與原本互相獨立', () => {
+    const { workout } = copyWorkoutExercises(source, undefined, '2026-10-24', context)
+    const copiedValues = workout?.exercises[0].sets[1].values
+    expect(copiedValues).toEqual(source.exercises[0].sets[1].values)
+    expect(copiedValues).not.toBe(source.exercises[0].sets[1].values)
+  })
+
+  it('沒有可複製的動作時，今天的訓練不變', () => {
+    const empty: Workout = {
+      ...source,
+      exercises: [source.exercises[1]],
+    }
+    const today: Workout = { ...source, date: '2026-10-24' }
+    expect(copyWorkoutExercises(empty, undefined, '2026-10-24', context)).toEqual({
+      workout: undefined,
+      copiedIds: [],
+    })
+    expect(copyWorkoutExercises(empty, today, '2026-10-24', context).workout).toBe(today)
+  })
+})
+
+describe('removeWorkoutExercises：復原複製', () => {
+  const workout: Workout = {
+    date: '2026-10-24',
+    exercises: [
+      { id: 'a', exerciseId: 'x', note: '', sets: [] },
+      { id: 'b', exerciseId: 'y', note: '', sets: [] },
+      { id: 'c', exerciseId: 'z', note: '', sets: [] },
+    ],
+    createdAt: CREATED,
+    updatedAt: CREATED,
+  }
+
+  it('移除指定的動作，其他動作的順序不變', () => {
+    const result = removeWorkoutExercises(workout, ['b', 'c'], NOW)
+    expect(result?.exercises.map((item) => item.id)).toEqual(['a'])
+    expect(result?.updatedAt).toBe(NOW)
+  })
+
+  it('全部移除時整筆訓練一併刪除', () => {
+    expect(removeWorkoutExercises(workout, ['a', 'b', 'c'], NOW)).toBeUndefined()
+  })
+
+  it('指定的動作都不在訓練中時不變', () => {
+    expect(removeWorkoutExercises(workout, ['nope'], NOW)).toBe(workout)
   })
 })

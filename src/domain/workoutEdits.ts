@@ -1,4 +1,5 @@
 import { buildInitialSet, type LastPerformance } from './lastPerformance'
+import { isCompleteSet } from './setValues'
 import type {
   ExerciseBase,
   LocalDate,
@@ -278,4 +279,61 @@ export function restoreWorkoutExercise(
     ),
     updatedAt: now,
   }
+}
+
+/**
+ * 把 `source`（另一天的訓練）的動作依順序複製到 `target` 的最後面；`target` 為 undefined 時建立 `date` 的訓練。
+ * 只複製完整的組（數值與熱身標記），不複製備註；沒有完整的組的動作跳過。
+ * 複製出來的動作與組都有新的 ID。沒有任何可複製的動作時 `target` 不變，`copiedIds` 為空。
+ */
+export function copyWorkoutExercises(
+  source: Workout,
+  target: Workout | undefined,
+  date: LocalDate,
+  { now, createId }: EditContext,
+): { workout: Workout | undefined; copiedIds: string[] } {
+  const copies: WorkoutExercise[] = source.exercises.flatMap((item) => {
+    const sets = item.sets.filter((set) => isCompleteSet(set.values))
+    if (sets.length === 0) return []
+    return [
+      {
+        id: createId(),
+        exerciseId: item.exerciseId,
+        note: '',
+        sets: sets.map((set) => ({
+          id: createId(),
+          isWarmup: set.isWarmup,
+          values: { ...set.values },
+        })),
+      },
+    ]
+  })
+  if (copies.length === 0) return { workout: target, copiedIds: [] }
+
+  const copiedIds = copies.map((item) => item.id)
+  if (!target) {
+    return {
+      workout: { date, exercises: copies, createdAt: now, updatedAt: now },
+      copiedIds,
+    }
+  }
+  return {
+    workout: { ...target, exercises: [...target.exercises, ...copies], updatedAt: now },
+    copiedIds,
+  }
+}
+
+/**
+ * 移除指定的訓練動作（復原複製用）。全部移除後整筆訓練一併刪除（回傳 undefined）；
+ * 其中沒有任何一個還在訓練中時，訓練不變。
+ */
+export function removeWorkoutExercises(
+  workout: Workout,
+  workoutExerciseIds: readonly string[],
+  now: Timestamp,
+): Workout | undefined {
+  const ids = new Set(workoutExerciseIds)
+  const exercises = workout.exercises.filter((item) => !ids.has(item.id))
+  if (exercises.length === workout.exercises.length) return workout
+  return exercises.length > 0 ? { ...workout, exercises, updatedAt: now } : undefined
 }
