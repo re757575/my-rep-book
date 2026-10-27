@@ -1,15 +1,17 @@
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Toggle } from '@/components/ui/toggle'
 import {
   formatLastPerformance,
   formatSetValues,
   formatWorkoutExerciseSummary,
   pairSetsWithLast,
+  SET_TYPE_LABELS,
+  SET_TYPE_SHORT_LABELS,
   type LastPerformance,
   type SetField,
   type SetRecordKind,
+  type SetType,
   type SetValues,
   type WeightUnit,
   type WorkoutExercise,
@@ -22,11 +24,11 @@ import { useCollapsedWorkoutExercise } from './useCollapsedWorkoutExercise'
 import { useWorkoutReadOnly } from './workoutReadOnly'
 
 /**
- * 訓練動作：動作名稱、上次紀錄、各組的熱身標記與輸入欄位，以及「新增一組」。
+ * 訓練動作：動作名稱、上次紀錄、各組的類型按鈕與輸入欄位，以及「新增一組」。
  * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
  * 點動作名稱可以收合：收合後只留名稱、操作與這個動作的總計（`formatWorkoutExerciseSummary`）。
  * 破了紀錄的組在欄位下方標示「重量新紀錄」「1RM 新紀錄」（US-31）。
- * 訓練頁鎖定時各組只能看：熱身標記停用，刪除組與新增一組不顯示。
+ * 訓練頁鎖定時各組只能看：類型按鈕停用，刪除組與新增一組不顯示。
  */
 export function WorkoutExerciseCard({
   workoutExercise,
@@ -37,7 +39,7 @@ export function WorkoutExerciseCard({
   children,
   onAddSet,
   onChangeSetField,
-  onToggleWarmup,
+  onCycleSetType,
   onDeleteSet,
 }: {
   workoutExercise: WorkoutExercise
@@ -50,7 +52,8 @@ export function WorkoutExerciseCard({
   children?: ReactNode
   onAddSet: () => void
   onChangeSetField: (setId: string, field: SetField, value: number | null) => void
-  onToggleWarmup: (setId: string) => void
+  /** 把這一組換成下一個組類型（US-37） */
+  onCycleSetType: (setId: string) => void
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
@@ -99,22 +102,22 @@ export function WorkoutExerciseCard({
               key={set.id}
               className={cn(
                 'flex items-start gap-2 rounded-md',
-                set.isWarmup && 'bg-muted text-muted-foreground',
+                set.setType === 'warmup' && 'bg-muted text-muted-foreground',
               )}
             >
               <span className="flex h-11 w-6 shrink-0 items-center justify-center text-sm text-muted-foreground">
                 {index + 1}
               </span>
-              <Toggle
-                variant="outline"
-                className="size-11 shrink-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                aria-label={`第 ${index + 1} 組熱身`}
-                pressed={set.isWarmup}
+              {/* 按一下換成下一個類型：正式 → 熱身 → 遞減 → 力竭，標熱身仍然只要一下 */}
+              <Button
+                variant={set.setType === 'regular' ? 'outline' : 'default'}
+                className="size-11 shrink-0"
+                aria-label={`第 ${index + 1} 組類型：${SET_TYPE_LABELS[set.setType]}`}
                 disabled={readOnly}
-                onPressedChange={() => onToggleWarmup(set.id)}
+                onClick={() => onCycleSetType(set.id)}
               >
-                熱
-              </Toggle>
+                {SET_TYPE_SHORT_LABELS[set.setType]}
+              </Button>
               <div className="flex min-w-0 flex-col gap-1">
                 <SetFields
                   values={set.values}
@@ -122,6 +125,7 @@ export function WorkoutExerciseCard({
                   onChange={(field, value) => onChangeSetField(set.id, field, value)}
                 />
                 <SetHints
+                  setType={set.setType}
                   last={lastSets.get(set.id)}
                   records={setRecords.get(set.id)}
                   weightUnit={weightUnit}
@@ -160,17 +164,27 @@ const RECORD_LABELS: Readonly<Record<SetRecordKind, string>> = {
 
 /** 組的欄位下方：上次同一組的數值（淡色），以及破了哪些紀錄 */
 function SetHints({
+  setType,
   last,
   records,
   weightUnit,
 }: {
+  setType: SetType
   last: SetValues | undefined
   records: readonly SetRecordKind[] | undefined
   weightUnit: WeightUnit
 }) {
-  if (!last && !records) return null
+  // 熱身整列已經淡色、正式是預設，所以只有遞減與力竭在這裡加標籤
+  const typeLabel =
+    setType === 'drop' || setType === 'failure' ? SET_TYPE_LABELS[setType] : undefined
+  if (!last && !records && !typeLabel) return null
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {typeLabel && (
+        <span className="rounded-sm bg-muted px-1.5 text-xs text-muted-foreground">
+          {typeLabel}
+        </span>
+      )}
       {last && (
         <p className="text-xs text-muted-foreground tabular-nums">
           {`上次 ${formatSetValues(last, weightUnit)}`}

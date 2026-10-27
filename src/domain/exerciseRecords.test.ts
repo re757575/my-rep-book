@@ -15,7 +15,7 @@ type FixtureSet = [weightKg: number | null, reps: number | null, warmup?: 'warmu
 function sets(items: FixtureSet[]): WorkoutSet[] {
   return items.map(([weightKg, reps, warmup], index) => ({
     id: `s-${index}`,
-    isWarmup: warmup === 'warmup',
+    setType: warmup === 'warmup' ? ('warmup' as const) : ('regular' as const),
     values: { type: 'weight_reps', weightKg, reps },
   }))
 }
@@ -34,7 +34,7 @@ function workout(
         id: `${date}-${index}`,
         exerciseId,
         note: '',
-        sets: [{ id: `${date}-${index}-1`, isWarmup: false, values }],
+        sets: [{ id: `${date}-${index}-1`, setType: 'regular' as const, values }],
       })),
     ],
     createdAt: T,
@@ -266,7 +266,11 @@ describe('buildRecordBaseline／findNewRecordSets：記錄當下的新紀錄標�
       exerciseId: BENCH,
       note: '',
       sets: [
-        { id: 'again-1', isWarmup: false, values: { type: 'weight_reps', weightKg: 65, reps: 5 } },
+        {
+          id: 'again-1',
+          setType: 'regular',
+          values: { type: 'weight_reps', weightKg: 65, reps: 5 },
+        },
       ],
     })
     expect(findNewRecordSets(baseline, today, BENCH)).toEqual(new Map([['s-0', ['maxWeight']]]))

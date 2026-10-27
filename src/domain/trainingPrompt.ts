@@ -1,3 +1,4 @@
+import { SET_TYPE_LABELS } from './setTypes'
 import { calculateAge } from './age'
 import { buildBodyWeightTrend, type BodyWeightTrendEntry } from './bodyWeightTrend'
 import { addDays, formatDateWithYear } from './dates'
@@ -13,6 +14,7 @@ import {
   type LocalDate,
   type WeightUnit,
   type Workout,
+  type WorkoutSet,
 } from './types'
 import { formatRoundedWeight, formatWeight, formatWeightChange } from './units'
 
@@ -120,7 +122,7 @@ function workoutDetails({ workouts, exercises, weightUnit }: TrainingPromptInput
     for (const item of workout.exercises) {
       const sets = item.sets
         .filter((set) => isCompleteSet(set.values))
-        .map((set) => `${set.isWarmup ? '熱身 ' : ''}${formatSetValues(set.values, weightUnit)}`)
+        .map((set) => `${setTypeLabel(set)}${formatSetValues(set.values, weightUnit)}`)
       const note = item.note.trim()
       if (sets.length === 0 && note === '') continue
       const name = exercises.get(item.exerciseId)?.nameZh ?? item.exerciseId
@@ -143,6 +145,11 @@ function bodyWeightLog(
         `- ${formatDateWithYear(entry.date)}：${formatWeight(entry.weightKg, unit)} ${unit}（7 日平均 ${formatRoundedWeight(entry.averageKg, unit)} ${unit}）`,
     ),
   ]
+}
+
+/** 正式組不標；熱身、遞減、力竭在數值前面標示，例如 `熱身 40kg×10` */
+function setTypeLabel(set: WorkoutSet): string {
+  return set.setType === 'regular' ? '' : `${SET_TYPE_LABELS[set.setType]} `
 }
 
 /**

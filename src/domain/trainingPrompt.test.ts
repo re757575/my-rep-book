@@ -6,11 +6,11 @@ import {
   promptRange,
   type TrainingPromptInput,
 } from './trainingPrompt'
-import type { BodyWeightEntry, ExerciseBase, SetValues, Workout } from './types'
+import type { BodyWeightEntry, ExerciseBase, SetType, SetValues, Workout } from './types'
 
 const T = '2026-10-01T00:00:00.000Z'
 
-type FixtureSet = [values: SetValues, warmup?: 'warmup']
+type FixtureSet = [values: SetValues, setType?: SetType]
 const wr = (weightKg: number | null, reps: number | null): SetValues => ({
   type: 'weight_reps',
   weightKg,
@@ -27,9 +27,9 @@ function workout(
       id: `${date}-${e}`,
       exerciseId,
       note,
-      sets: sets.map(([values, warmup], s) => ({
+      sets: sets.map(([values, setType], s) => ({
         id: `${date}-${e}-${s}`,
-        isWarmup: warmup === 'warmup',
+        setType: setType ?? 'regular',
         values,
       })),
     })),
@@ -190,5 +190,27 @@ describe('hasPromptData：期間內有沒有可以分析的紀錄', () => {
     expect(hasPromptData({ ...range, workouts: [], bodyWeights: [weight('2026-10-18', 72)] })).toBe(
       false,
     )
+  })
+})
+
+describe('訓練明細的組類型', () => {
+  it('熱身、遞減、力竭在數值前面標示，正式不標', () => {
+    const prompt = buildTrainingPrompt({
+      ...input,
+      workouts: [
+        workout('2026-10-20', [
+          {
+            exerciseId: 'barbell-bench-press',
+            sets: [
+              [wr(40, 10), 'warmup'],
+              [wr(60, 8)],
+              [wr(50, 8), 'drop'],
+              [wr(40, 6), 'failure'],
+            ],
+          },
+        ]),
+      ],
+    })
+    expect(prompt).toContain('- 槓鈴臥推：熱身 40kg×10、60kg×8、遞減 50kg×8、力竭 40kg×6')
   })
 })

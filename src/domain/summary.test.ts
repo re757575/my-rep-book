@@ -25,7 +25,7 @@ const distanceDuration = (distanceKm: number | null, durationSec: number | null)
 let nextId = 0
 function set(values: SetValues, isWarmup = false): WorkoutSet {
   nextId += 1
-  return { id: `set-${nextId}`, isWarmup, values }
+  return { id: `set-${nextId}`, setType: isWarmup ? 'warmup' : 'regular', values }
 }
 
 function workout(exercises: [string, WorkoutSet[]][]): Workout {
@@ -153,5 +153,30 @@ describe('summarizeWorkout：每日摘要', () => {
       volumeKg: 480,
       cardioDurationSec: 1200,
     })
+  })
+})
+
+describe('組類型與摘要', () => {
+  it('遞減與力竭算正式組，熱身不算', () => {
+    const typed = (setType: WorkoutSet['setType']): WorkoutSet => ({
+      ...set(weightReps(60, 10)),
+      setType,
+    })
+    const workout: Workout = {
+      date: '2026-10-24',
+      exercises: [
+        {
+          id: 'we',
+          exerciseId: BENCH,
+          note: '',
+          sets: [typed('regular'), typed('warmup'), typed('drop'), typed('failure')],
+        },
+      ],
+      createdAt: '2026-10-24T01:00:00.000Z',
+      updatedAt: '2026-10-24T01:00:00.000Z',
+    }
+    const summary = summarizeWorkout(workout)
+    expect(summary.workingSetCount).toBe(3)
+    expect(summary.volumeKg).toBe(1800)
   })
 })

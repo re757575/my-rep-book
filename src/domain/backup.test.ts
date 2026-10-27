@@ -30,8 +30,16 @@ const sampleData: BackupData = {
           exerciseId: 'barbell-bench-press',
           note: '左肩不適',
           sets: [
-            { id: 's-1', isWarmup: true, values: { type: 'weight_reps', weightKg: 40, reps: 10 } },
-            { id: 's-2', isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+            {
+              id: 's-1',
+              setType: 'warmup',
+              values: { type: 'weight_reps', weightKg: 40, reps: 10 },
+            },
+            {
+              id: 's-2',
+              setType: 'regular',
+              values: { type: 'weight_reps', weightKg: 60, reps: 8 },
+            },
           ],
         },
         {
@@ -41,7 +49,7 @@ const sampleData: BackupData = {
           sets: [
             {
               id: 's-3',
-              isWarmup: false,
+              setType: 'regular',
               values: { type: 'distance_duration', distanceKm: 5, durationSec: null },
             },
           ],
@@ -80,10 +88,10 @@ function parse(file: unknown) {
 }
 
 describe('匯出檔解析', () => {
-  it('匯出檔包含 app 識別、schemaVersion 3、匯出時間與 data', () => {
+  it('匯出檔包含 app 識別、schemaVersion 4、匯出時間與 data', () => {
     expect(createExportFile(sampleData, '2026-10-24T04:00:00.000Z')).toEqual({
       app: 'my-rep-book',
-      schemaVersion: 3,
+      schemaVersion: 4,
       exportedAt: '2026-10-24T04:00:00.000Z',
       data: sampleData,
     })
@@ -240,7 +248,7 @@ describe('格式錯誤時指出錯誤位置', () => {
 
 describe('schema 版本與遷移', () => {
   it('版本比目前 App 新時拒絕', () => {
-    expect(parse(fileWith((file) => (file.schemaVersion = 4)))).toEqual({
+    expect(parse(fileWith((file) => (file.schemaVersion = 5)))).toEqual({
       ok: false,
       error: '此備份來自較新版本的 App，請先更新 App',
     })
@@ -270,7 +278,7 @@ describe('schema 版本與遷移', () => {
     ).toThrow('缺少 v2 → v3 的遷移')
   })
 
-  it('v1 的檔案（還沒有體重、身高與生日）依序遷移到 v3', () => {
+  it('v1 的檔案（還沒有體重、身高與生日）依序遷移到目前版本', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
       delete (file.data as Partial<BackupData>).bodyWeights
@@ -298,6 +306,49 @@ describe('schema 版本與遷移', () => {
     })
   })
 
+  /** 舊版的組是 `isWarmup: boolean`：把 sampleData 的第一個動作換回舊格式 */
+  function withLegacyWarmupFlags(file: { schemaVersion: unknown; data: BackupData }) {
+    for (const exercise of file.data.workouts[0].exercises) {
+      exercise.sets = exercise.sets.map(({ setType, ...rest }) => ({
+        ...rest,
+        isWarmup: setType === 'warmup',
+      })) as never
+    }
+  }
+
+  it('v3 的檔案（組是 isWarmup）遷移成 setType：true 變熱身，false 變正式', () => {
+    const v3 = fileWith((file) => {
+      file.schemaVersion = 3
+      withLegacyWarmupFlags(file)
+    })
+    expect(parse(v3)).toEqual({ ok: true, data: sampleData })
+  })
+
+  it('v1 的檔案也一路遷移到 setType', () => {
+    const v1 = fileWith((file) => {
+      file.schemaVersion = 1
+      delete (file.data as Partial<BackupData>).bodyWeights
+      delete (file.data.settings as { heightCm?: unknown }).heightCm
+      delete (file.data.settings as { birthDate?: unknown }).birthDate
+      withLegacyWarmupFlags(file)
+    })
+    expect(parse(v1)).toMatchObject({ ok: true })
+    const result = parse(v1)
+    expect(
+      result.ok && result.data.workouts[0].exercises[0].sets.map((set) => set.setType),
+    ).toEqual(['warmup', 'regular'])
+  })
+
+  it('組類型不是四種之一時指出錯誤位置', () => {
+    const file = fileWith((file) => {
+      ;(file.data.workouts[0].exercises[0].sets[0] as { setType: string }).setType = 'superset'
+    })
+    expect(parse(file)).toEqual({
+      ok: false,
+      error: 'workouts[0].exercises[0].sets[0].setType 格式錯誤',
+    })
+  })
+
   it('v1 的設定格式錯誤時，遷移後照樣指出錯誤位置', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
@@ -307,20 +358,20 @@ describe('schema 版本與遷移', () => {
   })
 
   it('舊版的檔案先遷移再驗證', () => {
-    // 假設 v3 的設定以 unit 記錄重量單位，v4 改名為 weightUnit
-    const v3 = fileWith((file) => {
+    // 假設 v4 的設定以 unit 記錄重量單位，v5 改名為 weightUnit
+    const v4 = fileWith((file) => {
       const { weightUnit, ...rest } = file.data.settings
       ;(file.data as { settings: unknown }).settings = { ...rest, unit: weightUnit }
     })
     const migrations: BackupMigrations = {
-      3: (data) => {
+      4: (data) => {
         const { unit, ...settings } = data.settings as Record<string, unknown>
         return { ...data, settings: { ...settings, weightUnit: unit } }
       },
     }
 
-    expect(parse(v3)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
-    expect(parseBackupFile(JSON.stringify(v3), { migrations, currentVersion: 4 })).toEqual({
+    expect(parse(v4)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
+    expect(parseBackupFile(JSON.stringify(v4), { migrations, currentVersion: 5 })).toEqual({
       ok: true,
       data: sampleData,
     })

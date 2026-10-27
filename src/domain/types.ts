@@ -106,11 +106,15 @@ export type ParsedInput = { ok: true; value: number | null } | { ok: false; erro
 /** 解析日期欄位的輸入：空白為 null；不合法時帶錯誤訊息，呼叫端不寫入 */
 export type ParsedDateInput = { ok: true; value: LocalDate | null } | { ok: false; error: string }
 
+/** 組類型：正式（預設）、熱身、遞減（Drop set）、力竭。只有熱身不算正式組 */
+export const SET_TYPES = ['regular', 'warmup', 'drop', 'failure'] as const
+export type SetType = (typeof SET_TYPES)[number]
+
 /** 組 */
 export interface WorkoutSet {
   /** UUID */
   id: string
-  isWarmup: boolean
+  setType: SetType
   values: SetValues
 }
 

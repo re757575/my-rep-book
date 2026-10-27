@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { addDays, formatDateTitle } from '@/domain'
 import { renderApp } from '@/test/renderApp'
 import { unlockDay } from '@/test/unlockDay'
+import { setSetType } from '@/test/setType'
 
 const dateHeading = (name: string) => screen.findByRole('heading', { level: 1, name })
 
@@ -138,22 +139,10 @@ describe('動作歷史', () => {
     const { user } = renderApp('/day/2026-10-20')
     const card = await addExercise(user, '槓鈴臥推')
     await fillWeightReps(user, card, 1, '40', '10')
-    await user.click(within(card).getByRole('button', { name: '第 1 組熱身' }))
-    await waitFor(() =>
-      expect(within(card).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
-    )
+    await setSetType(user, card, 1, '熱身')
     await user.click(within(card).getByRole('button', { name: '新增一組' }))
     await fillWeightReps(user, card, 2, '60', '8')
-    await user.click(within(card).getByRole('button', { name: '第 2 組熱身' }))
-    await waitFor(() =>
-      expect(within(card).getByRole('button', { name: '第 2 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
-    )
+    await setSetType(user, card, 2, '正式')
     await user.type(within(card).getByRole('textbox', { name: '備註' }), '左肩不適')
 
     await openDetail(user, '槓鈴臥推')

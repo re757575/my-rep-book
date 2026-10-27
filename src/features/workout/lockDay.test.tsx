@@ -4,6 +4,7 @@ import { backupFixture, fixtureBodyWeight, fixtureWorkout } from '@/test/backupF
 import { renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 import { unlockDay } from '@/test/unlockDay'
+import { setTypeButton } from '@/test/setType'
 
 /** 10/20：臥推熱身 40×10、60×8，備註「左肩不適」；體重 72.5 kg */
 const backup = backupFixture({
@@ -13,7 +14,7 @@ const backup = backupFixture({
         exerciseId: 'barbell-bench-press',
         note: '左肩不適',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
         ],
       },
@@ -45,7 +46,7 @@ describe('鎖定訓練頁', () => {
     expect(weight).toHaveAttribute('readonly')
     expect(within(bench).getByRole('textbox', { name: '備註' })).toHaveAttribute('readonly')
     expect(screen.getByRole('textbox', { name: '體重（kg）' })).toHaveAttribute('readonly')
-    expect(within(bench).getByRole('button', { name: '第 1 組熱身' })).toBeDisabled()
+    expect(setTypeButton(bench, 1)).toBeDisabled()
     for (const name of ['新增一組', '刪除第 1 組', '上移', '下移', '刪除動作']) {
       expect(within(bench).queryByRole('button', { name })).not.toBeInTheDocument()
     }

@@ -4,12 +4,13 @@ import type {
   BackupData,
   BodyWeightEntry,
   CustomExercise,
+  SetType,
   SetValues,
   Workout,
 } from '../domain/types.ts'
 
-/** fixture 中的一組：組數值，可加上熱身標記 */
-export type FixtureSet = SetValues & { isWarmup?: boolean }
+/** fixture 中的一組：組數值，可指定組類型（預設正式） */
+export type FixtureSet = SetValues & { setType?: SetType }
 
 export interface FixtureExercise {
   exerciseId: string
@@ -35,9 +36,9 @@ export function fixtureWorkout(date: string, exercises: FixtureExercise[]): Work
       id: `fixture-${date}-${e + 1}`,
       exerciseId,
       note,
-      sets: sets.map(({ isWarmup = false, ...values }, s) => ({
+      sets: sets.map(({ setType = 'regular', ...values }, s) => ({
         id: `fixture-${date}-${e + 1}-${s + 1}`,
-        isWarmup,
+        setType,
         values: values as SetValues,
       })),
     })),

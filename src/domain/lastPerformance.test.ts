@@ -12,7 +12,7 @@ function weightReps(weightKg: number | null, reps: number | null): SetValues {
 let nextId = 0
 function set(values: SetValues, isWarmup = false): WorkoutSet {
   nextId += 1
-  return { id: `set-${nextId}`, isWarmup, values }
+  return { id: `set-${nextId}`, setType: isWarmup ? 'warmup' : 'regular', values }
 }
 
 function workout(date: LocalDate, exercises: [string, WorkoutSet[]][]): Workout {
@@ -122,7 +122,7 @@ describe('buildInitialSet：第一組預填', () => {
 
   it('帶入上次紀錄中第一個完整的正式組，而且是正式組', () => {
     expect(buildInitialSet(lastPerformance, 'weight_reps')).toEqual({
-      isWarmup: false,
+      setType: 'regular',
       values: weightReps(60, 8),
     })
   })
@@ -133,12 +133,12 @@ describe('buildInitialSet：第一組預填', () => {
     ['duration', { type: 'duration', durationSec: null }],
     ['distance_duration', { type: 'distance_duration', distanceKm: null, durationSec: null }],
   ] as const)('沒有上次紀錄時，%s 的所有欄位為空白', (trackingType, empty) => {
-    expect(buildInitialSet(undefined, trackingType)).toEqual({ isWarmup: false, values: empty })
+    expect(buildInitialSet(undefined, trackingType)).toEqual({ setType: 'regular', values: empty })
   })
 
   it('上次紀錄的記錄類型和動作不同時，欄位為空白', () => {
     expect(buildInitialSet(lastPerformance, 'reps')).toEqual({
-      isWarmup: false,
+      setType: 'regular',
       values: { type: 'reps', reps: null, addedWeightKg: null },
     })
   })
@@ -173,7 +173,7 @@ describe('pairSetsWithLast：每個正式組對照上次的哪一組', () => {
   it('刪除或切換熱身後依順序重新對齊', () => {
     const sets = [set(weightReps(60, 8)), set(weightReps(60, 8)), set(weightReps(65, 5))]
     expect(pairSetsWithLast(sets.slice(1), last).get(sets[2].id)).toEqual(weightReps(60, 8))
-    const warmedUp = [{ ...sets[0], isWarmup: true }, sets[1], sets[2]]
+    const warmedUp = [{ ...sets[0], setType: 'warmup' as const }, sets[1], sets[2]]
     expect(pairSetsWithLast(warmedUp, last).has(sets[0].id)).toBe(false)
     expect(pairSetsWithLast(warmedUp, last).get(sets[1].id)).toEqual(weightReps(60, 8))
   })

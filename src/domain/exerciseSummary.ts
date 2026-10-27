@@ -1,3 +1,4 @@
+import { isWorkingSet } from './setTypes'
 import { formatDuration } from './duration'
 import { heaviestSet } from './exerciseRecords'
 import { formatWeightReps } from './formatSet'
@@ -26,7 +27,7 @@ export function formatWorkoutExerciseSummary(
   weightUnit: WeightUnit,
 ): string {
   const values = sets
-    .filter((set) => !set.isWarmup && isCompleteSet(set.values))
+    .filter((set) => isWorkingSet(set) && isCompleteSet(set.values))
     .map((set) => set.values)
   if (values.length === 0) return '尚未記錄正式組'
   const count = `${values.length} 組`

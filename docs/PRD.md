@@ -62,8 +62,9 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 | 訓練動作（Workout Exercise） | 某次訓練中做的某個動作，包含多組與一則備註 |
 | 組（Set） | 一組的數值紀錄，欄位依動作的記錄類型決定 |
 | 記錄類型（Tracking Type） | `weight_reps`（重量×次數）、`reps`（次數，可選負重）、`duration`（時間）、`distance_duration`（距離＋時間） |
-| 熱身組 | 標記為熱身的組，不計入訓練量、不作為「上次紀錄」 |
-| 正式組 | 非熱身組 |
+| 組類型（Set Type） | 一組是怎麼做的：`regular`（正式）、`warmup`（熱身）、`drop`（遞減，Drop set）、`failure`（力竭），見 US-37 |
+| 熱身組 | 組類型為熱身的組，不計入訓練量、不作為「上次紀錄」 |
+| 正式組 | 非熱身組：組類型為正式、遞減或力竭的組 |
 | 完整的組 | 所有必填欄位都已填寫且合法的組 |
 | 上次紀錄 | 在**目前檢視日期之前**，最近一次含有該動作的訓練中，該動作的所有完整正式組 |
 | 訓練量（Volume） | `weight_reps` 類型的完整正式組之 Σ(重量 × 次數) |
@@ -107,12 +108,12 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 
 > 身為使用者，我想快速新增下一組，以便組間只需最少操作。
 
-- **Given** 某動作已有至少一組　**When** 點「新增一組」　**Then** 新增一組，數值與熱身標記複製自本次的最後一組
+- **Given** 某動作已有至少一組　**When** 點「新增一組」　**Then** 新增一組，數值與組類型複製自本次的最後一組
 - **Given** 某動作目前沒有任何組（全部被刪除）　**When** 點「新增一組」　**Then** 依 US-02 規則預填上次第一個正式組，沒有上次紀錄則為空白
 
 #### US-04 熱身組標記
 
-- **Given** 任一組　**When** 切換「熱身」標記　**Then** 該組以視覺區隔（例如顯示「熱」標籤與較淡色），並不計入摘要與上次紀錄
+- **Given** 任一組　**When** 把組類型換成「熱身」（US-37）　**Then** 該組以視覺區隔（顯示「熱」並整列較淡色），並不計入摘要與上次紀錄
 
 #### US-05 動作備註
 
@@ -226,6 +227,18 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 收合與展開的結果、儲存方式同 US-27（記在本機，重新整理後保留）；每個動作收合後仍顯示自己的總計
 - 全部收合之後新加入的動作是展開的，按鈕變回「全部收合」
 - 訓練頁鎖定（US-28）與過去的日期照常可用，因為收合只是畫面狀態，不修改紀錄
+
+#### US-37 組類型
+
+> 身為使用者，我想標記每一組是正式組、熱身組、遞減組還是力竭組，以便紀錄看得出這一組是怎麼做的。
+
+- 每一組有「組類型」：**正式**（預設）、**熱身**、**遞減**（Drop set：做完上一組後減輕重量接著做）、**力竭**（做到力竭為止）。加入動作時建立的第一組與沒有特別標記的組都是正式
+- 每一組左邊的類型按鈕顯示目前的類型：「正」「熱」「遞」「竭」，名稱是「第 N 組類型：正式」這種格式。按一下換成下一個，順序是正式 → 熱身 → 遞減 → 力竭 → 正式，所以標熱身仍然只要按一下（G1）
+- 熱身組不計入每日摘要、統計、上次紀錄、個人紀錄與新紀錄（同 US-04）。遞減與力竭和正式組一樣計入，它們都是「正式組」（不是熱身的組），所以預填（US-02）、逐組對照上次（US-32）、摘要與統計的規則都不用改
+- 畫面：熱身組整列淡色；遞減與力竭在組的欄位下方加「遞減」「力竭」標籤（與「上次」同一列）。歷史的日明細與動作歷史在各組前面標示「熱身」「遞減」「力竭」，正式組不標
+- 「新增一組」複製上一組的組類型（同 US-03）；複製訓練（US-33）保留組類型；AI 提示詞的訓練明細在各組前面標示「熱身」「遞減」「力竭」（US-25）
+- 訓練頁鎖定（US-28）時類型按鈕停用，仍看得出每組的類型
+- 舊資料：原本標記為熱身的組變成熱身，其他的變成正式。匯出檔升到 schema v4、IndexedDB 升到 v3，匯入舊版備份與開啟舊資料庫時自動轉換（§5.6、§5.7）
 
 ### 4.2 動作庫
 
@@ -554,9 +567,11 @@ export interface CustomExercise extends ExerciseBase {
 
 export type Exercise = PresetExercise | CustomExercise;
 
+export type SetType = 'regular' | 'warmup' | 'drop' | 'failure'; // 正式、熱身、遞減、力竭
+
 export interface WorkoutSet {
   id: string; // UUID
-  isWarmup: boolean;
+  setType: SetType;
   values: SetValues;
 }
 
@@ -601,6 +616,7 @@ export interface Settings {
 | `bodyWeights` | `&date` | — | `BodyWeightEntry`（IndexedDB v2 新增） |
 
 - IndexedDB v1 建立前 4 張資料表，v2 新增 `bodyWeights`；v1 時存的設定沒有 `heightCm`，讀取時以預設值 `null` 補上
+- IndexedDB v3 把組的 `isWarmup: boolean` 換成 `setType`（`true` → `warmup`，`false` → `regular`）：升級時轉換 `workouts` 的每一組，資料表與索引不變
 - 體重與組的數值一樣經由待寫清單寫入（`FieldEdit` 的 `bodyWeight`），輸入後立刻重新整理也不會遺失
 
 - `exerciseIds` 由 repository 在寫入時從 `exercises` 推導，用於查詢「上次紀錄」、「動作歷史」及「自訂動作是否已有紀錄」
@@ -611,7 +627,7 @@ export interface Settings {
 ```ts
 export interface ExportFile {
   app: 'my-rep-book';
-  schemaVersion: 3;
+  schemaVersion: 4;
   exportedAt: Timestamp;
   data: {
     workouts: Workout[];             // 不含衍生欄位 exerciseIds
@@ -625,6 +641,7 @@ export interface ExportFile {
 
 - v1 → v2：加上空的 `bodyWeights`，`settings.heightCm` 設為 `null`
 - v2 → v3：`settings.birthDate` 設為 `null`
+- v3 → v4：各組的 `isWarmup` 換成 `setType`（`true` → `warmup`，`false` → `regular`）
 
 - 以 zod schema 驗證；遷移函式以 `migrations[from]` 形式逐版升級：`v1 → v2 → … → current`
 - 匯入時若 workouts 引用了不存在的 `exerciseId`（例如未知的預設 slug），拒絕匯入並列出缺少的 ID
@@ -635,6 +652,7 @@ export interface ExportFile {
 | --- | --- |
 | `kgToLb` / `lbToKg` / `formatWeight` | 單位換算與顯示格式化 |
 | `parseDuration('mm:ss') / formatDuration(sec)` | 時間輸入解析與顯示 |
+| `nextSetType(type)` / `isWarmupSet(set)` | 組類型按一下的下一個（正式 → 熱身 → 遞減 → 力竭 → 正式）；是否為熱身組（US-37） |
 | `maskDurationInput(text)` / `durationTextAfterColon(text)` | 時間欄位輸入數字時自動補冒號；使用者自己打冒號時還原已打的分鐘 |
 | `validateSetValues(values)` | 回傳各欄位錯誤；判斷是否為完整的組 |
 | `findLastPerformance(workouts, exerciseId, beforeDate)` | 回傳上次紀錄的日期與完整正式組 |
@@ -930,7 +948,7 @@ push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artif
 | 訓練範本／課表 | 例如「推日」，一鍵帶入多個動作 |
 | 進度圖表 | 各部位組數的長期趨勢（單週／單月統計已在 US-24 完成；單一動作的趨勢圖已在 US-34 完成） |
 | RPE／RIR | 每組強度記錄 |
-| Drop set、超級組 | 組類型與動作群組 |
+| 超級組 | 動作群組（組類型已在 US-37 完成） |
 | 拖曳排序 | 取代上移／下移按鈕 |
 | 合併匯入、CSV 匯出 | 匯入時與現有資料合併；匯出成試算表 |
 | 帳號與雲端同步 | 替換 Repository 實作，支援多裝置 |

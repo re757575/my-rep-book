@@ -1,4 +1,5 @@
 import { Dexie, type EntityTable } from 'dexie'
+import { migrateWorkoutSetTypes } from '@/domain'
 import type { BodyWeightEntry, CustomExercise, Settings, Workout } from '@/domain'
 
 /** workouts 的一列：加上衍生欄位 exerciseIds（multiEntry 索引），由 repository 寫入時推導 */
@@ -36,6 +37,17 @@ export function createDb(name = DB_NAME): MyRepBookDb {
   })
   // v2：新增體重；其他資料表沿用 v1
   db.version(2).stores({ bodyWeights: 'date' })
+  // v3：組的 isWarmup 換成 setType（US-37）；資料表與索引不變，只轉換 workouts 每一組的欄位
+  db.version(3)
+    .stores({})
+    .upgrade((transaction) =>
+      transaction
+        .table('workouts')
+        .toCollection()
+        .modify((row: WorkoutRow) => {
+          row.exercises = (migrateWorkoutSetTypes(row) as WorkoutRow).exercises
+        }),
+    )
   return db
 }
 

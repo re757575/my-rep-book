@@ -24,7 +24,7 @@ const FIXTURE = backupFixture({
         exerciseId: 'barbell-bench-press',
         note: '換了握法',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
         ],
       },
@@ -34,7 +34,7 @@ const FIXTURE = backupFixture({
         exerciseId: 'barbell-bench-press',
         note: '左肩不適',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           // 比 10/20 重：動作詳情會顯示「新紀錄」標記，一併檢查它的對比
           { type: 'weight_reps', weightKg: 62.5, reps: 8 },
         ],

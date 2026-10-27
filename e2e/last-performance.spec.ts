@@ -25,22 +25,25 @@ test('E2E-02 補記 10/20 後，10/24 顯示上次紀錄並預填，10/15 沒有
   const history = await addBench(page)
   const weight = (n: number) => history.getByRole('textbox', { name: `第 ${n} 組重量（kg）` })
   const reps = (n: number) => history.getByRole('textbox', { name: `第 ${n} 組次數` })
-  const warmup = (n: number) => history.getByRole('button', { name: `第 ${n} 組熱身` })
+  const setType = (n: number) =>
+    history.getByRole('button', { name: new RegExp(`^第 ${n} 組類型：`) })
   const addSet = history.getByRole('button', { name: '新增一組' })
 
   await weight(1).fill('40')
   await reps(1).fill('10')
-  await warmup(1).click()
-  await expect(warmup(1)).toHaveAttribute('aria-pressed', 'true')
-  const toggleBox = await warmup(1).boundingBox()
+  await setType(1).click()
+  await expect(setType(1)).toHaveAccessibleName('第 1 組類型：熱身')
+  const toggleBox = await setType(1).boundingBox()
   expect(toggleBox?.height).toBeGreaterThanOrEqual(44)
   expect(toggleBox?.width).toBeGreaterThanOrEqual(44)
 
-  // 新增一組連同熱身標記一起複製，改回正式組
+  // 新增一組連同組類型一起複製；再按 3 下（熱身 → 遞減 → 力竭 → 正式）改回正式組
   await addSet.click()
-  await expect(warmup(2)).toHaveAttribute('aria-pressed', 'true')
-  await warmup(2).click()
-  await expect(warmup(2)).toHaveAttribute('aria-pressed', 'false')
+  await expect(setType(2)).toHaveAccessibleName('第 2 組類型：熱身')
+  for (const label of ['遞減', '力竭', '正式']) {
+    await setType(2).click()
+    await expect(setType(2)).toHaveAccessibleName(`第 2 組類型：${label}`)
+  }
   await weight(2).fill('60')
   await reps(2).fill('8')
   await addSet.click()
@@ -56,9 +59,8 @@ test('E2E-02 補記 10/20 後，10/24 顯示上次紀錄並預填，10/15 沒有
   await expect(today.getByText('上次（10/20）：60kg×8、60kg×8、62.5kg×6')).toBeVisible()
   await expect(today.getByRole('textbox', { name: '第 1 組重量（kg）' })).toHaveValue('60')
   await expect(today.getByRole('textbox', { name: '第 1 組次數' })).toHaveValue('8')
-  await expect(today.getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-    'aria-pressed',
-    'false',
+  await expect(today.getByRole('button', { name: /^第 1 組類型：/ })).toHaveAccessibleName(
+    '第 1 組類型：正式',
   )
 
   await page.goto('day/2026-10-15')

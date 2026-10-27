@@ -28,7 +28,7 @@ function exercise(exerciseId: string): FixtureExercise {
   return {
     exerciseId,
     sets: [
-      { type: 'weight_reps', weightKg: 20, reps: 12, isWarmup: true },
+      { type: 'weight_reps', weightKg: 20, reps: 12, setType: 'warmup' },
       { type: 'weight_reps', weightKg: 60, reps: 8 },
       { type: 'weight_reps', weightKg: 60, reps: 8 },
       { type: 'weight_reps', weightKg: 62.5, reps: 6 },

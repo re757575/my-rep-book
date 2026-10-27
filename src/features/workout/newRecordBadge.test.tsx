@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
 import { renderAppWithBackup } from '@/test/importBackup'
 import { unlockDay } from '@/test/unlockDay'
+import { setSetType } from '@/test/setType'
 
 /** 10/15：62.5×5（1RM 72.9，第一次訓練）；10/20：60×10（1RM 80）→ 之前的最大重量 62.5×5、最高 1RM 80 */
 const backup = backupFixture({
@@ -71,7 +72,7 @@ describe('記錄當下標示新紀錄', () => {
     expect(within(card).getAllByText('1RM 新紀錄')).toHaveLength(1)
 
     // 第 1 組改成熱身：不計入，標示換到第 2 組
-    await user.click(within(card).getByRole('button', { name: '第 1 組熱身' }))
+    await setSetType(user, card, 1, '熱身')
     await waitFor(() => {
       const rows = within(card).getAllByRole('listitem')
       expect(within(rows[0]).queryByText('重量新紀錄')).not.toBeInTheDocument()

@@ -9,7 +9,7 @@ import {
   completesSet,
   findNewRecordSets,
   moveWorkoutExercise,
-  toggleSetWarmup,
+  cycleSetType,
   type EditContext,
   type LastPerformance,
   type LocalDate,
@@ -173,9 +173,9 @@ export function TodayPage({ date }: { date: LocalDate }) {
                   )
                   startRestIfToday()
                 }}
-                onToggleWarmup={(setId) =>
+                onCycleSetType={(setId) =>
                   editWorkout((current) =>
-                    toggleSetWarmup(current, workoutExercise.id, setId, editContext().now),
+                    cycleSetType(current, workoutExercise.id, setId, editContext().now),
                   )
                 }
                 onChangeSetField={(setId, field, value) => {

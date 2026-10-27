@@ -1,8 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
+import { renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 import { unlockDay } from '@/test/unlockDay'
+import { setSetType } from '@/test/setType'
 
 /** 訓練頁上的訓練動作數（每個訓練動作的標題是 h2） */
 function workoutExerciseCount() {
@@ -139,22 +142,10 @@ describe('日明細', () => {
     const { user } = renderApp('/day/2026-10-20')
     const bench = await addExercise(user, '槓鈴臥推')
     await fillWeightReps(user, bench, 1, '40', '10')
-    await user.click(within(bench).getByRole('button', { name: '第 1 組熱身' }))
-    await waitFor(() =>
-      expect(within(bench).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
-    )
+    await setSetType(user, bench, 1, '熱身')
     await user.click(within(bench).getByRole('button', { name: '新增一組' }))
     await fillWeightReps(user, bench, 2, '60', '8')
-    await user.click(within(bench).getByRole('button', { name: '第 2 組熱身' }))
-    await waitFor(() =>
-      expect(within(bench).getByRole('button', { name: '第 2 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
-    )
+    await setSetType(user, bench, 2, '正式')
     await user.type(within(bench).getByRole('textbox', { name: '備註' }), '左肩不適')
     const pullUp = await addExercise(user, '引體向上')
     await user.type(within(pullUp).getByRole('textbox', { name: '第 1 組次數' }), '10')
@@ -274,5 +265,33 @@ describe('歷史預設選取今天', () => {
     await user.click(await calendarDay('9月15日'))
     expect(await dayDetail('9/15（二）')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: '10/24（六）' })).not.toBeInTheDocument()
+  })
+})
+
+describe('日明細的組類型', () => {
+  it('熱身、遞減、力竭的組前面標示類型，正式組不標', async () => {
+    const { user } = await renderAppWithBackup(
+      backupFixture({
+        workouts: [
+          fixtureWorkout('2026-10-20', [
+            {
+              exerciseId: 'barbell-bench-press',
+              sets: [
+                { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
+                { type: 'weight_reps', weightKg: 60, reps: 8 },
+                { type: 'weight_reps', weightKg: 50, reps: 8, setType: 'drop' },
+                { type: 'weight_reps', weightKg: 40, reps: 6, setType: 'failure' },
+              ],
+            },
+          ]),
+        ],
+      }),
+      '/history',
+    )
+    await user.click(await calendarDay('10月20日'))
+
+    const detail = await dayDetail('10/20（二）')
+    const bench = await within(detail).findByRole('article', { name: '槓鈴臥推' })
+    expect(setTexts(bench)).toEqual(['熱身40kg×10', '60kg×8', '遞減50kg×8', '力竭40kg×6'])
   })
 })

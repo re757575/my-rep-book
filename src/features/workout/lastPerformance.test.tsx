@@ -3,6 +3,7 @@ import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
 import { unlockDay } from '@/test/unlockDay'
+import { expectSetType, setSetType, setTypeButton } from '@/test/setType'
 
 const dateHeading = (name: string) => screen.findByRole('heading', { level: 1, name })
 
@@ -127,22 +128,10 @@ describe('上次紀錄與第一組預填', () => {
     const { user } = renderApp('/day/2026-10-20')
     const history = await addExercise(user, '槓鈴臥推')
     await fillWeightReps(user, history, 1, '40', '10')
-    await user.click(within(history).getByRole('button', { name: '第 1 組熱身' }))
-    await waitFor(() =>
-      expect(within(history).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
-    )
+    await setSetType(user, history, 1, '熱身')
     await user.click(within(history).getByRole('button', { name: '新增一組' }))
     await fillWeightReps(user, history, 2, '60', '8')
-    await user.click(within(history).getByRole('button', { name: '第 2 組熱身' }))
-    await waitFor(() =>
-      expect(within(history).getByRole('button', { name: '第 2 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
-    )
+    await setSetType(user, history, 2, '正式')
     await user.click(screen.getByRole('button', { name: '回到今天' }))
     expect(await dateHeading('10/24（六）')).toBeInTheDocument()
 
@@ -151,10 +140,7 @@ describe('上次紀錄與第一組預填', () => {
     expect(await within(card).findByText('上次（10/20）：60kg×8')).toBeInTheDocument()
     expect(field(card, '第 1 組重量（kg）')).toHaveValue('60')
     expect(field(card, '第 1 組次數')).toHaveValue('8')
-    expect(within(card).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
+    expect(setTypeButton(card, 1)).toHaveAccessibleName('第 1 組類型：正式')
   })
 
   it('某個動作的組全部刪光後，按「新增一組」依上次紀錄預填', async () => {
@@ -178,57 +164,66 @@ describe('上次紀錄與第一組預填', () => {
   })
 })
 
-describe('熱身組', () => {
-  it('可以切換某一組的熱身標記，重新整理後仍在', async () => {
+describe('組類型', () => {
+  it('類型按鈕按一下換成下一個：正式 → 熱身 → 遞減 → 力竭 → 正式，重新整理後仍在', async () => {
     const { user, reload } = renderApp()
     const card = await addExercise(user, '槓鈴臥推')
-    const toggle = within(card).getByRole('button', { name: '第 1 組熱身' })
-    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    // 加入動作建立的第一組是正式；按鈕上的字是目前的類型
+    expect(setTypeButton(card, 1)).toHaveAccessibleName('第 1 組類型：正式')
+    expect(setTypeButton(card, 1)).toHaveTextContent('正')
 
-    await user.click(toggle)
+    await user.click(setTypeButton(card, 1))
+    await expectSetType(card, 1, '熱身')
+    expect(setTypeButton(card, 1)).toHaveTextContent('熱')
 
-    await waitFor(() =>
-      expect(within(card).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
-    )
     reload()
     const reloaded = await screen.findByRole('region', { name: '槓鈴臥推' })
-    expect(within(reloaded).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    await expectSetType(reloaded, 1, '熱身')
 
-    await user.click(within(reloaded).getByRole('button', { name: '第 1 組熱身' }))
+    await user.click(setTypeButton(reloaded, 1))
+    await expectSetType(reloaded, 1, '遞減')
+    expect(setTypeButton(reloaded, 1)).toHaveTextContent('遞')
+    // 遞減與力竭在欄位下方加標籤，正式與熱身不加
+    expect(within(reloaded).getByText('遞減', { selector: 'span' })).toBeInTheDocument()
 
-    await waitFor(() =>
-      expect(within(reloaded).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
-    )
+    await user.click(setTypeButton(reloaded, 1))
+    await expectSetType(reloaded, 1, '力竭')
+    expect(within(reloaded).getByText('力竭', { selector: 'span' })).toBeInTheDocument()
+    expect(within(reloaded).queryByText('遞減', { selector: 'span' })).not.toBeInTheDocument()
+
+    await user.click(setTypeButton(reloaded, 1))
+    await expectSetType(reloaded, 1, '正式')
+    expect(within(reloaded).queryByText('力竭', { selector: 'span' })).not.toBeInTheDocument()
   })
 
-  it('按「新增一組」時，連同熱身標記一起複製', async () => {
+  it('按「新增一組」時，連同組類型一起複製', async () => {
     const { user } = renderApp()
     const card = await addExercise(user, '槓鈴臥推')
     await fillWeightReps(user, card, 1, '40', '10')
-    await user.click(within(card).getByRole('button', { name: '第 1 組熱身' }))
-    await waitFor(() =>
-      expect(within(card).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      ),
-    )
+    await setSetType(user, card, 1, '遞減')
 
     await user.click(within(card).getByRole('button', { name: '新增一組' }))
 
-    expect(await within(card).findByRole('button', { name: '第 2 組熱身' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    await expectSetType(card, 2, '遞減')
     expect(field(card, '第 2 組重量（kg）')).toHaveValue('40')
     expect(field(card, '第 2 組次數')).toHaveValue('10')
+  })
+
+  it('遞減組與力竭組算正式組，計入每日摘要；熱身組不計入', async () => {
+    const { user } = renderApp()
+    const card = await addExercise(user, '槓鈴臥推')
+    await fillWeightReps(user, card, 1, '60', '8')
+    for (const label of ['熱身', '遞減', '力竭']) {
+      await user.click(within(card).getByRole('button', { name: '新增一組' }))
+      const n = (await within(card).findAllByRole('textbox', { name: /^第 \d+ 組次數/ })).length
+      await setSetType(user, card, n, label)
+    }
+
+    const summary = within(await screen.findByRole('region', { name: '每日摘要' }))
+    // 4 組都是 60kg×8，其中 1 組熱身：正式組 3 組、訓練量 3 × 480
+    await waitFor(() =>
+      expect(summary.getByRole('definition', { name: '正式組數' }).textContent).toBe('3'),
+    )
+    expect(summary.getByRole('definition', { name: '總訓練量' }).textContent).toBe('1,440 kg')
   })
 })

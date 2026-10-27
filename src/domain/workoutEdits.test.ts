@@ -5,6 +5,7 @@ import {
   addSetToWorkoutExercise,
   cloneSetForNext,
   copyWorkoutExercises,
+  cycleSetType,
   moveWorkoutExercise,
   removeSet,
   removeWorkoutExercise,
@@ -18,21 +19,21 @@ describe('cloneSetForNext：新增一組時複製上一組', () => {
   it.each<[string, WorkoutSet]>([
     [
       '正式組的重量×次數',
-      { id: 'a', isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+      { id: 'a', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
     ],
     [
       '熱身組也保留熱身標記',
-      { id: 'b', isWarmup: true, values: { type: 'weight_reps', weightKg: 40, reps: 10 } },
+      { id: 'b', setType: 'warmup', values: { type: 'weight_reps', weightKg: 40, reps: 10 } },
     ],
     [
       '不完整的組照樣複製空白欄位',
-      { id: 'c', isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: null } },
+      { id: 'c', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: null } },
     ],
     [
       '距離＋時間',
       {
         id: 'd',
-        isWarmup: false,
+        setType: 'regular',
         values: { type: 'distance_duration', distanceKm: 5, durationSec: 1500 },
       },
     ],
@@ -48,7 +49,7 @@ const NOW = '2026-10-24T02:00:00.000Z'
 const LATER = '2026-10-24T02:00:05.000Z'
 
 function set(id: string, weightKg: number): WorkoutSet {
-  return { id, isWarmup: false, values: { type: 'weight_reps', weightKg, reps: 8 } }
+  return { id, setType: 'regular', values: { type: 'weight_reps', weightKg, reps: 8 } }
 }
 
 function workoutExercise(id: string, sets: WorkoutSet[] = [set(`${id}-1`, 60)]): WorkoutExercise {
@@ -79,7 +80,7 @@ function sequentialIds() {
 const setsOf = (target: Workout, workoutExerciseId: string) =>
   target.exercises
     .find((item) => item.id === workoutExerciseId)
-    ?.sets.map(({ isWarmup, values }) => ({ isWarmup, values }))
+    ?.sets.map(({ setType, values }) => ({ setType, values }))
 
 describe('addExerciseToWorkout：加入動作時第一組預填', () => {
   const bench = { id: 'barbell-bench-press', trackingType: 'weight_reps' } as const
@@ -91,7 +92,7 @@ describe('addExerciseToWorkout：加入動作時第一組預填', () => {
     })
 
     expect(setsOf(result, 'new-1')).toEqual([
-      { isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+      { setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
     ])
   })
 
@@ -108,7 +109,7 @@ describe('addExerciseToWorkout：加入動作時第一組預填', () => {
     )
 
     expect(setsOf(result, 'new-1')).toEqual([
-      { isWarmup: false, values: { type: 'weight_reps', weightKg: null, reps: null } },
+      { setType: 'regular', values: { type: 'weight_reps', weightKg: null, reps: null } },
     ])
   })
 })
@@ -116,11 +117,11 @@ describe('addExerciseToWorkout：加入動作時第一組預填', () => {
 describe('addSetToWorkoutExercise：新增一組', () => {
   const warmup: WorkoutSet = {
     id: 'a-1',
-    isWarmup: true,
+    setType: 'warmup',
     values: { type: 'weight_reps', weightKg: 40, reps: 10 },
   }
 
-  it('複製本次最後一組的數值與熱身標記，不看上次紀錄', () => {
+  it('複製本次最後一組的數值與組類型，不看上次紀錄', () => {
     const result = addSetToWorkoutExercise(
       workout([workoutExercise('a', [set('a-0', 20), warmup])]),
       'a',
@@ -130,7 +131,7 @@ describe('addSetToWorkoutExercise：新增一組', () => {
     )
 
     expect(setsOf(result, 'a')?.at(-1)).toEqual({
-      isWarmup: true,
+      setType: 'warmup',
       values: { type: 'weight_reps', weightKg: 40, reps: 10 },
     })
   })
@@ -155,7 +156,7 @@ describe('addSetToWorkoutExercise：新增一組', () => {
       { now: NOW, createId: sequentialIds() },
     )
 
-    expect(setsOf(result, 'a')).toEqual([{ isWarmup: false, values: expected }])
+    expect(setsOf(result, 'a')).toEqual([{ setType: 'regular', values: expected }])
   })
 })
 
@@ -319,22 +320,22 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
         exerciseId: 'barbell-bench-press',
         note: '左肩不適',
         sets: [
-          { id: 'b1', isWarmup: true, values: weightReps(40, 10) },
-          { id: 'b2', isWarmup: false, values: weightReps(60, 8) },
-          { id: 'b3', isWarmup: false, values: weightReps(60, null) },
+          { id: 'b1', setType: 'warmup', values: weightReps(40, 10) },
+          { id: 'b2', setType: 'regular', values: weightReps(60, 8) },
+          { id: 'b3', setType: 'regular', values: weightReps(60, null) },
         ],
       },
       {
         id: 'src-empty',
         exerciseId: 'barbell-back-squat',
         note: '',
-        sets: [{ id: 'e1', isWarmup: false, values: weightReps(null, null) }],
+        sets: [{ id: 'e1', setType: 'regular', values: weightReps(null, null) }],
       },
       {
         id: 'src-plank',
         exerciseId: 'plank',
         note: '',
-        sets: [{ id: 'p1', isWarmup: false, values: { type: 'duration', durationSec: 90 } }],
+        sets: [{ id: 'p1', setType: 'regular', values: { type: 'duration', durationSec: 90 } }],
       },
     ],
     createdAt: CREATED,
@@ -344,7 +345,7 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
   let counter = 0
   const context = { now: NOW, createId: () => `new-${++counter}` }
 
-  it('今天還沒有訓練時建立訓練：只複製完整的組與熱身標記，不複製備註與沒有完整組的動作', () => {
+  it('今天還沒有訓練時建立訓練：只複製完整的組與組類型，不複製備註與沒有完整組的動作', () => {
     counter = 0
     const { workout, copiedIds } = copyWorkoutExercises(source, undefined, '2026-10-24', context)
 
@@ -356,15 +357,17 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
           exerciseId: 'barbell-bench-press',
           note: '',
           sets: [
-            { id: 'new-2', isWarmup: true, values: weightReps(40, 10) },
-            { id: 'new-3', isWarmup: false, values: weightReps(60, 8) },
+            { id: 'new-2', setType: 'warmup', values: weightReps(40, 10) },
+            { id: 'new-3', setType: 'regular', values: weightReps(60, 8) },
           ],
         },
         {
           id: 'new-4',
           exerciseId: 'plank',
           note: '',
-          sets: [{ id: 'new-5', isWarmup: false, values: { type: 'duration', durationSec: 90 } }],
+          sets: [
+            { id: 'new-5', setType: 'regular', values: { type: 'duration', durationSec: 90 } },
+          ],
         },
       ],
       createdAt: NOW,
@@ -437,5 +440,53 @@ describe('removeWorkoutExercises：復原複製', () => {
 
   it('指定的動作都不在訓練中時不變', () => {
     expect(removeWorkoutExercises(workout, ['nope'], NOW)).toBe(workout)
+  })
+})
+
+describe('cycleSetType：把一組換成下一個組類型', () => {
+  const workout: Workout = {
+    date: '2026-10-24',
+    exercises: [
+      {
+        id: 'we-1',
+        exerciseId: 'barbell-bench-press',
+        note: '',
+        sets: [
+          { id: 'a', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+          { id: 'b', setType: 'drop', values: { type: 'weight_reps', weightKg: 50, reps: 8 } },
+        ],
+      },
+    ],
+    createdAt: CREATED,
+    updatedAt: CREATED,
+  }
+
+  it('只換指定的那一組，數值不動，更新時間更新', () => {
+    const next = cycleSetType(workout, 'we-1', 'a', NOW)
+    expect(next.exercises[0].sets.map((set) => set.setType)).toEqual(['warmup', 'drop'])
+    expect(next.exercises[0].sets[0].values).toEqual(workout.exercises[0].sets[0].values)
+    expect(next.updatedAt).toBe(NOW)
+  })
+
+  it('依序換一圈回到原本的類型', () => {
+    let current = workout
+    const seen: string[] = []
+    for (let i = 0; i < 4; i++) {
+      current = cycleSetType(current, 'we-1', 'b', NOW)
+      seen.push(current.exercises[0].sets[1].setType)
+    }
+    expect(seen).toEqual(['failure', 'regular', 'warmup', 'drop'])
+  })
+
+  it('複製與複製訓練都保留組類型', () => {
+    expect(cloneSetForNext(workout.exercises[0].sets[1]).setType).toBe('drop')
+    const { workout: copied } = copyWorkoutExercises(workout, undefined, '2026-10-25', {
+      now: NOW,
+      createId: (() => {
+        let n = 0
+        return () => `new-${++n}`
+      })(),
+    })
+    expect(copied?.exercises[0].sets.map((set) => set.setType)).toEqual(['regular', 'drop'])
   })
 })

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
 import { renderAppWithBackup } from '@/test/importBackup'
 import { unlockDay } from '@/test/unlockDay'
+import { setSetType } from '@/test/setType'
 
 /** 10/20：槓鈴臥推熱身 40×10，正式組 60×8、60×8、62.5×6；引體向上 8 下 */
 const backup = backupFixture({
@@ -12,7 +13,7 @@ const backup = backupFixture({
       {
         exerciseId: 'barbell-bench-press',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
           { type: 'weight_reps', weightKg: 62.5, reps: 6 },
@@ -64,7 +65,7 @@ describe('逐組對照上次', () => {
     await user.click(within(card).getByRole('button', { name: '新增一組' }))
     await waitFor(() => expect(lastHints(card)).toHaveLength(3))
 
-    await user.click(within(card).getByRole('button', { name: '第 1 組熱身' }))
+    await setSetType(user, card, 1, '熱身')
     await waitFor(() => expect(lastHints(card)).toEqual([null, '上次 60kg×8', '上次 60kg×8']))
 
     await user.click(within(card).getByRole('button', { name: '刪除第 2 組' }))

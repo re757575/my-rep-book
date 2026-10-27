@@ -43,13 +43,13 @@ test('只用鍵盤加入動作並記錄一組，重新整理後仍在', async ({
   await tabTo(page, reps, tab)
   await page.keyboard.type('8')
 
-  // 熱身標記也能用鍵盤切換：Space 標記、再按一次取消
-  const warmup = card.getByRole('button', { name: '第 1 組熱身' })
-  await tabTo(page, warmup, tab)
-  await page.keyboard.press('Space')
-  await expect(warmup).toHaveAttribute('aria-pressed', 'true')
-  await page.keyboard.press('Space')
-  await expect(warmup).toHaveAttribute('aria-pressed', 'false')
+  // 組類型也能用鍵盤切換：每按一次 Space 換成下一個（熱身 → 遞減 → 力竭 → 正式）
+  const setType = card.getByRole('button', { name: /^第 1 組類型：/ })
+  await tabTo(page, setType, tab)
+  for (const label of ['熱身', '遞減', '力竭', '正式']) {
+    await page.keyboard.press('Space')
+    await expect(setType).toHaveAccessibleName(`第 1 組類型：${label}`)
+  }
 
   await page.reload()
   await expect(weight).toHaveValue('60')

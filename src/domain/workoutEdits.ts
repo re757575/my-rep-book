@@ -1,4 +1,5 @@
 import { buildInitialSet, type LastPerformance } from './lastPerformance'
+import { nextSetType } from './setTypes'
 import { isCompleteSet } from './setValues'
 import type {
   ExerciseBase,
@@ -17,9 +18,9 @@ export interface EditContext {
   createId: () => string
 }
 
-/** 「新增一組」：複製上一組的數值與熱身標記 */
+/** 「新增一組」：複製上一組的數值與組類型 */
 export function cloneSetForNext(previousSet: WorkoutSet): Omit<WorkoutSet, 'id'> {
-  return { isWarmup: previousSet.isWarmup, values: { ...previousSet.values } }
+  return { setType: previousSet.setType, values: { ...previousSet.values } }
 }
 
 /**
@@ -61,7 +62,7 @@ function updateWorkoutExercise(
 }
 
 /**
- * 「新增一組」：複製本次最後一組的數值與熱身標記；
+ * 「新增一組」：複製本次最後一組的數值與組類型；
  * 這個動作目前沒有任何組時，改用第一組預填的規則（依上次紀錄，沒有時欄位為空白）。
  */
 export function addSetToWorkoutExercise(
@@ -85,8 +86,8 @@ export function addSetToWorkoutExercise(
   )
 }
 
-/** 切換某一組的熱身標記：熱身組改成正式組，正式組改成熱身組 */
-export function toggleSetWarmup(
+/** 把某一組換成下一個組類型：正式 → 熱身 → 遞減 → 力竭 → 正式（US-37） */
+export function cycleSetType(
   workout: Workout,
   workoutExerciseId: string,
   setId: string,
@@ -97,7 +98,9 @@ export function toggleSetWarmup(
     workoutExerciseId,
     (item) => ({
       ...item,
-      sets: item.sets.map((set) => (set.id === setId ? { ...set, isWarmup: !set.isWarmup } : set)),
+      sets: item.sets.map((set) =>
+        set.id === setId ? { ...set, setType: nextSetType(set.setType) } : set,
+      ),
     }),
     now,
   )
@@ -283,7 +286,7 @@ export function restoreWorkoutExercise(
 
 /**
  * 把 `source`（另一天的訓練）的動作依順序複製到 `target` 的最後面；`target` 為 undefined 時建立 `date` 的訓練。
- * 只複製完整的組（數值與熱身標記），不複製備註；沒有完整的組的動作跳過。
+ * 只複製完整的組（數值與組類型），不複製備註；沒有完整的組的動作跳過。
  * 複製出來的動作與組都有新的 ID。沒有任何可複製的動作時 `target` 不變，`copiedIds` 為空。
  */
 export function copyWorkoutExercises(
@@ -302,7 +305,7 @@ export function copyWorkoutExercises(
         note: '',
         sets: sets.map((set) => ({
           id: createId(),
-          isWarmup: set.isWarmup,
+          setType: set.setType,
           values: { ...set.values },
         })),
       },

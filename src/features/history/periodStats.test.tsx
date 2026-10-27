@@ -8,7 +8,7 @@ const ws = (weightKg: number, reps: number, isWarmup = false): FixtureSet => ({
   type: 'weight_reps',
   weightKg,
   reps,
-  isWarmup,
+  setType: isWarmup ? 'warmup' : 'regular',
 })
 
 /**

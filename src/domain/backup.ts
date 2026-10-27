@@ -3,10 +3,12 @@ import { isValidBirthDate } from './age'
 import { isValidBodyWeightKg, isValidHeightCm } from './bodyMetrics'
 import { isValidLocalDate } from './dates'
 import { PRESET_EXERCISES } from './presets'
+import { migrateWorkoutSetTypes } from './setTypes'
 import { validateSetValues } from './setValues'
 import {
   EQUIPMENTS,
   MUSCLES,
+  SET_TYPES,
   THEMES,
   TRACKING_TYPES,
   WEIGHT_UNITS,
@@ -20,7 +22,7 @@ import {
 export const BACKUP_APP_ID = 'my-rep-book'
 
 /** 目前 App 的匯出檔 schema 版本 */
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 /** 匯出檔（PRD §5.7） */
 export interface ExportFile {
@@ -80,7 +82,7 @@ const workoutSchema = z.object({
         exerciseId: z.string().min(1),
         note: z.string(),
         sets: z.array(
-          z.object({ id: z.string().min(1), isWarmup: z.boolean(), values: setValuesSchema }),
+          z.object({ id: z.string().min(1), setType: z.enum(SET_TYPES), values: setValuesSchema }),
         ),
       }),
     )
@@ -201,6 +203,13 @@ export const BACKUP_MIGRATIONS: BackupMigrations = {
   2: (data) => ({
     ...data,
     settings: isRecord(data.settings) ? { ...data.settings, birthDate: null } : data.settings,
+  }),
+  // v4 把組的 isWarmup 換成 setType（true → warmup，false → regular）；格式不對的資料原樣保留，留給驗證指出錯誤
+  3: (data) => ({
+    ...data,
+    workouts: Array.isArray(data.workouts)
+      ? data.workouts.map(migrateWorkoutSetTypes)
+      : data.workouts,
   }),
 }
 

@@ -1,3 +1,4 @@
+import { isWorkingSet } from './setTypes'
 import { isCompleteSet } from './setValues'
 import type { Workout } from './types'
 
@@ -21,7 +22,7 @@ function sum(numbers: number[]) {
 export function summarizeWorkout(workout: Workout): WorkoutSummary {
   const workingSets = workout.exercises
     .flatMap((item) => item.sets)
-    .filter((set) => !set.isWarmup && isCompleteSet(set.values))
+    .filter((set) => isWorkingSet(set) && isCompleteSet(set.values))
   return {
     exerciseCount: new Set(workout.exercises.map((item) => item.exerciseId)).size,
     workingSetCount: workingSets.length,

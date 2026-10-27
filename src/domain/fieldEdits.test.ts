@@ -91,8 +91,8 @@ describe('applyFieldEdits：把待寫的編輯套用到訓練', () => {
         exerciseId: 'barbell-bench-press',
         note: '',
         sets: [
-          { id: 's1', isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
-          { id: 's2', isWarmup: false, values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+          { id: 's1', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
+          { id: 's2', setType: 'regular', values: { type: 'weight_reps', weightKg: 60, reps: 8 } },
         ],
       },
     ],

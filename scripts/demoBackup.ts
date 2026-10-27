@@ -13,7 +13,7 @@ const ws = (weightKg: number, reps: number, isWarmup = false): FixtureSet => ({
   type: 'weight_reps',
   weightKg,
   reps,
-  isWarmup,
+  setType: isWarmup ? 'warmup' : 'regular',
 })
 
 /** 推日：臥推（每週 +2.5 kg）、肩推、三頭下壓 */

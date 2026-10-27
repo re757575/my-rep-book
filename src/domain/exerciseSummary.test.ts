@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { formatWorkoutExerciseSummary } from './exerciseSummary'
-import type { SetValues, WorkoutSet } from './types'
+import type { SetType, SetValues, WorkoutSet } from './types'
 
-function sets(items: (SetValues & { isWarmup?: boolean })[]): WorkoutSet[] {
-  return items.map(({ isWarmup = false, ...values }, index) => ({
+function sets(items: (SetValues & { setType?: SetType })[]): WorkoutSet[] {
+  return items.map(({ setType = 'regular', ...values }, index) => ({
     id: `s-${index}`,
-    isWarmup,
+    setType,
     values: values as SetValues,
   }))
 }
@@ -14,7 +14,7 @@ describe('formatWorkoutExerciseSummary：收合時顯示的訓練動作總計', 
   it('重量×次數：組數、最重的一組與訓練量；熱身組與不完整的組不計入', () => {
     const summary = formatWorkoutExerciseSummary(
       sets([
-        { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+        { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
         { type: 'weight_reps', weightKg: 60, reps: 8 },
         { type: 'weight_reps', weightKg: 62.5, reps: 6 },
         { type: 'weight_reps', weightKg: 62.5, reps: 5 },
@@ -72,7 +72,7 @@ describe('formatWorkoutExerciseSummary：收合時顯示的訓練動作總計', 
     expect(
       formatWorkoutExerciseSummary(
         sets([
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: null, reps: null },
         ]),
         'kg',

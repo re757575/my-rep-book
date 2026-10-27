@@ -1,6 +1,14 @@
 // Domain 模組進入點：只放純 TypeScript（型別、規則、計算），不得 import React、Dexie 或 feature 模組。
 export * from './types'
 export { PRESET_EXERCISES } from './presets'
+export {
+  SET_TYPE_LABELS,
+  SET_TYPE_SHORT_LABELS,
+  isWarmupSet,
+  isWorkingSet,
+  migrateWorkoutSetTypes,
+  nextSetType,
+} from './setTypes'
 export { CATEGORY_MUSCLES, exercisesInCategory } from './categories'
 export { filterExercises, matchesSearch, type CategoryFilter } from './search'
 export {
@@ -80,7 +88,7 @@ export {
   removeWorkoutExercises,
   restoreSet,
   restoreWorkoutExercise,
-  toggleSetWarmup,
+  cycleSetType,
   updateSetValues,
   updateWorkoutExerciseNote,
   type EditContext,

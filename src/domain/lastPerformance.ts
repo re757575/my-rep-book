@@ -1,3 +1,4 @@
+import { isWorkingSet } from './setTypes'
 import { emptySetValues, isCompleteSet } from './setValues'
 import type { LocalDate, SetValues, TrackingType, Workout, WorkoutSet } from './types'
 
@@ -28,7 +29,7 @@ export function findLastPerformance(
   const sets = last.exercises
     .filter((item) => item.exerciseId === exerciseId)
     .flatMap((item) => item.sets)
-    .filter((set) => !set.isWarmup && isCompleteSet(set.values))
+    .filter((set) => isWorkingSet(set) && isCompleteSet(set.values))
     .map((set) => set.values)
   return sets.length > 0 ? { date: last.date, sets } : undefined
 }
@@ -43,7 +44,7 @@ export function buildInitialSet(
 ): Omit<WorkoutSet, 'id'> {
   const first = lastPerformance?.sets[0]
   const values = first?.type === trackingType ? { ...first } : emptySetValues(trackingType)
-  return { isWarmup: false, values }
+  return { setType: 'regular', values }
 }
 
 /**
@@ -59,7 +60,7 @@ export function pairSetsWithLast(
   if (!lastPerformance) return pairs
   let position = 0
   for (const set of sets) {
-    if (set.isWarmup) continue
+    if (!isWorkingSet(set)) continue
     const last = lastPerformance.sets[position++]
     if (last && last.type === set.values.type) pairs.set(set.id, last)
   }

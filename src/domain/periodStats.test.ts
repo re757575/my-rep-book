@@ -39,7 +39,7 @@ function workout(date: string, items: { exerciseId: string; sets: Sets }[]): Wor
       note: '',
       sets: sets.map(([values, warmup], s) => ({
         id: `${date}-${e}-${s}`,
-        isWarmup: warmup === 'warmup',
+        setType: warmup === 'warmup' ? 'warmup' : 'regular',
         values,
       })),
     })),

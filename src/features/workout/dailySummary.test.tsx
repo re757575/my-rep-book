@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/renderApp'
+import { setSetType } from '@/test/setType'
 
 /** 從加入動作選單加入一個動作，回傳該訓練動作的區塊 */
 async function addExercise(user: UserEvent, name: string) {
@@ -28,9 +29,8 @@ describe('訓練頁頂部的每日摘要', () => {
     await user.click(within(bench).getByRole('button', { name: '新增一組' }))
     await within(bench).findByRole('textbox', { name: '第 2 組重量（kg）' })
     await user.click(within(bench).getByRole('button', { name: '新增一組' }))
-    const warmup = await within(bench).findByRole('button', { name: '第 3 組熱身' })
-    await user.click(warmup)
-    await waitFor(() => expect(warmup).toHaveAttribute('aria-pressed', 'true'))
+    await within(bench).findByRole('textbox', { name: '第 3 組重量（kg）' })
+    await setSetType(user, bench, 3, '熱身')
     // 引體向上：額外負重不計入訓練量
     const pullUp = await addExercise(user, '引體向上')
     await user.type(within(pullUp).getByRole('textbox', { name: '第 1 組次數' }), '10')

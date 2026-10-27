@@ -19,7 +19,7 @@ const backup = backupFixture({
         exerciseId: 'barbell-bench-press',
         note: '左肩不適',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
         ],
       },

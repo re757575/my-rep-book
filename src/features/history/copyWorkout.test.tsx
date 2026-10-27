@@ -3,6 +3,7 @@ import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
 import { renderAppWithBackup } from '@/test/importBackup'
+import { setTypeButton } from '@/test/setType'
 
 /** 10/20：臥推熱身 40×10、60×8、一組沒填完的 60×?，備註「左肩不適」；深蹲只有空白的組；平板支撐 90 秒 */
 const backup = backupFixture({
@@ -12,7 +13,7 @@ const backup = backupFixture({
         exerciseId: 'barbell-bench-press',
         note: '左肩不適',
         sets: [
-          { type: 'weight_reps', weightKg: 40, reps: 10, isWarmup: true },
+          { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           { type: 'weight_reps', weightKg: 60, reps: 8 },
           { type: 'weight_reps', weightKg: 60, reps: null },
         ],
@@ -64,10 +65,7 @@ describe('從過去某天複製訓練', () => {
     const bench = screen.getByRole('region', { name: '槓鈴臥推' })
     expect(within(bench).getAllByRole('textbox', { name: /^第 \d+ 組/ })).toHaveLength(4)
     expect(within(bench).getByRole('textbox', { name: '第 1 組重量（kg）' })).toHaveValue('40')
-    expect(within(bench).getByRole('button', { name: '第 1 組熱身' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    expect(setTypeButton(bench, 1)).toHaveAccessibleName('第 1 組類型：熱身')
     expect(within(bench).getByRole('textbox', { name: '第 2 組重量（kg）' })).toHaveValue('60')
     expect(within(bench).getByRole('textbox', { name: '第 2 組次數' })).toHaveValue('8')
     expect(within(bench).getByRole('textbox', { name: '備註' })).toHaveValue('')

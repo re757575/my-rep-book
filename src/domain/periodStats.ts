@@ -1,3 +1,4 @@
+import { isWorkingSet } from './setTypes'
 import { CATEGORY_MUSCLES } from './categories'
 import { addDays, fromLocalDate, toLocalDate } from './dates'
 import { isCompleteSet } from './setValues'
@@ -66,7 +67,7 @@ export function summarizePeriod(
     for (const item of workout.exercises) {
       const exercise = exercisesById.get(item.exerciseId)
       if (!exercise) continue
-      const count = item.sets.filter((set) => !set.isWarmup && isCompleteSet(set.values)).length
+      const count = item.sets.filter((set) => isWorkingSet(set) && isCompleteSet(set.values)).length
       for (const category of categoriesOf(exercise)) setsByCategory[category] += count
     }
   }

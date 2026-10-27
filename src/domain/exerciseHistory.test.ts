@@ -6,7 +6,11 @@ const BENCH = 'barbell-bench-press'
 const SQUAT = 'barbell-back-squat'
 
 function set(id: string, weightKg: number, reps: number, isWarmup = false): WorkoutSet {
-  return { id, isWarmup, values: { type: 'weight_reps', weightKg, reps } }
+  return {
+    id,
+    setType: isWarmup ? 'warmup' : 'regular',
+    values: { type: 'weight_reps', weightKg, reps },
+  }
 }
 
 function workout(
