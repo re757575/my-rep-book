@@ -10,6 +10,8 @@
 //   --fixture <檔案>    匯入這個備份檔，取代示範資料
 //   --empty             不匯入任何資料
 //   --click <名稱>      截圖前依序點擊這個名稱的按鈕、連結、選項或分頁，可重複，例如 --click 月
+//   --storage <鍵=值>   載入前先寫入 localStorage，可重複，例如開啟強度記錄：
+//                       --storage 'my-rep-book:effort-settings={"enabled":true,"scale":"rpe"}'
 //   --viewport          只截可視範圍（預設截整頁）
 //   --no-build          沿用現有的 dist/，不重新建置
 //
@@ -37,6 +39,7 @@ const { values, positionals } = parseArgs({
     fixture: { type: 'string' },
     empty: { type: 'boolean', default: false },
     click: { type: 'string', multiple: true, default: [] },
+    storage: { type: 'string', multiple: true, default: [] },
     viewport: { type: 'boolean', default: false },
     'no-build': { type: 'boolean', default: false },
   },
@@ -83,6 +86,15 @@ try {
     // 每次都從網路載入最新的建置，不經過 Service Worker
     serviceWorkers: 'block',
   })
+  // 在每個畫面載入前寫入 localStorage（App 的畫面偏好存在這裡）
+  const storage = values.storage.map((entry) => {
+    const separator = entry.indexOf('=')
+    if (separator === -1) throw new Error(`--storage 要寫成 鍵=值：${entry}`)
+    return [entry.slice(0, separator), entry.slice(separator + 1)] as const
+  })
+  await context.addInitScript((entries) => {
+    for (const [key, value] of entries) localStorage.setItem(key, value)
+  }, storage)
   const page = await context.newPage()
   await page.clock.setFixedTime(FIXED_TODAY)
 
