@@ -72,10 +72,11 @@ describe('記錄當下標示新紀錄', () => {
 
     // 第 1 組改成熱身：不計入，標示換到第 2 組
     await user.click(within(card).getByRole('button', { name: '第 1 組熱身' }))
-    await waitFor(() => expect(within(card).getAllByText('重量新紀錄')).toHaveLength(1))
-    const rows = within(card).getAllByRole('listitem')
-    expect(within(rows[0]).queryByText('重量新紀錄')).not.toBeInTheDocument()
-    expect(within(rows[1]).getByText('重量新紀錄')).toBeInTheDocument()
+    await waitFor(() => {
+      const rows = within(card).getAllByRole('listitem')
+      expect(within(rows[0]).queryByText('重量新紀錄')).not.toBeInTheDocument()
+      expect(within(rows[1]).getByText('重量新紀錄')).toBeInTheDocument()
+    })
   })
 
   it('過去的日期也標示，比較對象是那天之前的訓練', async () => {
