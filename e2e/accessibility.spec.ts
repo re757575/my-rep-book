@@ -66,6 +66,17 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
     },
   },
   {
+    name: '今天（組間休息倒數中）',
+    open: async (page) => {
+      await page.goto('./')
+      await page
+        .getByRole('region', { name: '槓鈴臥推' })
+        .getByRole('button', { name: '新增一組' })
+        .click()
+      await expect(page.getByRole('region', { name: '組間休息' }).getByRole('timer')).toBeVisible()
+    },
+  },
+  {
     name: '過去的訓練（鎖定）',
     open: async (page) => {
       await page.goto('day/2026-10-20')

@@ -30,6 +30,19 @@ export {
 } from './exerciseRecords'
 export { formatDuration, parseDuration } from './duration'
 export {
+  DEFAULT_REST_DURATION_SEC,
+  REST_DURATIONS_SEC,
+  REST_FINISHED_VISIBLE_MS,
+  adjustRest,
+  formatRemaining,
+  formatRestDuration,
+  restTimerPhase,
+  startRest,
+  type RestTimer,
+  type RestTimerPhase,
+} from './restTimer'
+export {
+  completesSet,
   emptySetValues,
   isCompleteSet,
   isSteppableField,

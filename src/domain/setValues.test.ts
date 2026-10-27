@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  completesSet,
   isCompleteSet,
   isSteppableField,
   parseSetInput,
@@ -214,5 +215,38 @@ describe('stepSetValue：−／+ 微調', () => {
     expect(isSteppableField('reps')).toBe(true)
     expect(isSteppableField('durationSec')).toBe(false)
     expect(isSteppableField('distanceKm')).toBe(false)
+  })
+})
+
+describe('completesSet：這次編輯讓組變完整', () => {
+  const weightReps = (weightKg: number | null, reps: number | null): SetValues => ({
+    type: 'weight_reps',
+    weightKg,
+    reps,
+  })
+
+  it('補上最後一個必填欄位時為 true', () => {
+    expect(completesSet(weightReps(60, null), 'reps', 8)).toBe(true)
+    expect(completesSet(weightReps(null, 8), 'weightKg', 60)).toBe(true)
+  })
+
+  it('還缺欄位，或原本就完整，或把欄位清空時為 false', () => {
+    expect(completesSet(weightReps(null, null), 'reps', 8)).toBe(false)
+    expect(completesSet(weightReps(60, 8), 'reps', 9)).toBe(false)
+    expect(completesSet(weightReps(60, 8), 'reps', null)).toBe(false)
+  })
+
+  it('新的值不合法時為 false', () => {
+    expect(completesSet(weightReps(60, null), 'reps', 0)).toBe(false)
+  })
+
+  it('額外負重是選填：次數填完組就完整，之後補額外負重不算', () => {
+    const pullUp = (reps: number | null, addedWeightKg: number | null): SetValues => ({
+      type: 'reps',
+      reps,
+      addedWeightKg,
+    })
+    expect(completesSet(pullUp(null, null), 'reps', 8)).toBe(true)
+    expect(completesSet(pullUp(8, null), 'addedWeightKg', 10)).toBe(false)
   })
 })

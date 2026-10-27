@@ -6,6 +6,7 @@ import { useLiveData, useRepositories } from '@/data'
 import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
+  completesSet,
   moveWorkoutExercise,
   toggleSetWarmup,
   type EditContext,
@@ -13,6 +14,7 @@ import {
   type LocalDate,
   type Workout,
 } from '@/domain'
+import { startRestTimerIfEnabled } from '@/features/restTimer/restTimerStore'
 import { BodyWeightField } from '@/features/bodyWeight/BodyWeightField'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
@@ -85,6 +87,11 @@ export function TodayPage({ date }: { date: LocalDate }) {
     })
   }
 
+  /** 組間休息只在記錄今天的訓練時自動開始；補記過去的日期時不會 */
+  function startRestIfToday() {
+    if (date === today() && !locked) startRestTimerIfEnabled()
+  }
+
   return (
     <WorkoutReadOnlyContext value={locked}>
       <div className="flex flex-col gap-4">
@@ -143,14 +150,17 @@ export function TodayPage({ date }: { date: LocalDate }) {
                       editContext(),
                     ),
                   )
+                  startRestIfToday()
                 }}
                 onToggleWarmup={(setId) =>
                   editWorkout((current) =>
                     toggleSetWarmup(current, workoutExercise.id, setId, editContext().now),
                   )
                 }
-                onChangeSetField={(setId, field, value) =>
-                  workouts.editField({
+                onChangeSetField={(setId, field, value) => {
+                  const set = workoutExercise.sets.find((item) => item.id === setId)
+                  if (set && completesSet(set.values, field, value)) startRestIfToday()
+                  return workouts.editField({
                     kind: 'setValue',
                     date,
                     workoutExerciseId: workoutExercise.id,
@@ -158,7 +168,7 @@ export function TodayPage({ date }: { date: LocalDate }) {
                     field,
                     value,
                   })
-                }
+                }}
                 onDeleteSet={(setId) =>
                   deleteSetWithUndo(workouts, date, workoutExercise.id, setId)
                 }

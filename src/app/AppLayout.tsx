@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { Outlet } from 'react-router'
+import { RestTimerBar } from '@/features/restTimer/RestTimerBar'
 import { BottomTabBar } from './BottomTabBar'
 
 export function AppLayout() {
@@ -11,6 +12,7 @@ export function AppLayout() {
           <Outlet />
         </Suspense>
       </main>
+      <RestTimerBar />
       <BottomTabBar />
     </div>
   )

@@ -158,3 +158,8 @@ export function stepSetValue(
   const next = Math.max(0, Math.round((shown + direction * WEIGHT_STEP[weightUnit]) * 100) / 100)
   return next === shown ? value : toKg(next, weightUnit)
 }
+
+/** 把某個欄位改成 `value` 之後，這組是否從「不完整」變成「完整」；原本就完整的組不算 */
+export function completesSet(values: SetValues, field: SetField, value: number | null): boolean {
+  return !isCompleteSet(values) && isCompleteSet({ ...values, [field]: value } as SetValues)
+}
