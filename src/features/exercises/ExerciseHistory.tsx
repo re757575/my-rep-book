@@ -15,15 +15,10 @@ import {
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { dayPath } from '@/features/workout/dayPath'
 import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
+import { RecordBadge } from './RecordBadge'
 
 /** 首批與每次「載入更多」的筆數 */
 const HISTORY_PAGE_SIZE = 20
-
-function RecordBadge({ children }: { children: string }) {
-  return (
-    <span className="rounded-sm bg-primary px-1.5 text-xs text-primary-foreground">{children}</span>
-  )
-}
 
 /** 當次的進度：最重的一組、估算 1RM、訓練量，破紀錄時加上標記 */
 function SessionProgress({ progress }: { progress: ExerciseSessionProgress }) {

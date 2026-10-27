@@ -22,10 +22,14 @@ export {
 export { buildExerciseHistory, type ExerciseHistoryEntry } from './exerciseHistory'
 export {
   buildExerciseRecords,
+  buildRecordBaseline,
   estimateOneRepMaxKg,
+  findNewRecordSets,
   type ExerciseRecords,
   type ExerciseSessionProgress,
   type PersonalRecord,
+  type RecordBaseline,
+  type SetRecordKind,
   type WeightRepsSet,
 } from './exerciseRecords'
 export { formatDuration, parseDuration } from './duration'

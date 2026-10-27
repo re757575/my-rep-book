@@ -55,17 +55,24 @@ export function heaviestSet<T extends WeightRepsSet>(sets: readonly T[]): T {
   return sets.reduce((best, set) => (isHeavier(set, best) ? set : best))
 }
 
-/** 這一天這個動作的完整正式組（重量×次數）；同一天加入多次這個動作時合併 */
-function workingSetsOf(workout: Workout, exerciseId: string): WeightRepsSet[] {
-  const sets: WeightRepsSet[] = []
+/** 這一天這個動作的完整正式組（重量×次數），依組的順序；同一天加入多次這個動作時合併 */
+function workingSetsWithIds(
+  workout: Workout,
+  exerciseId: string,
+): (WeightRepsSet & { id: string })[] {
+  const sets: (WeightRepsSet & { id: string })[] = []
   for (const item of workout.exercises) {
     if (item.exerciseId !== exerciseId) continue
-    for (const { isWarmup, values } of item.sets) {
+    for (const { id, isWarmup, values } of item.sets) {
       if (isWarmup || values.type !== 'weight_reps' || !isCompleteSet(values)) continue
-      sets.push({ weightKg: values.weightKg ?? 0, reps: values.reps ?? 0 })
+      sets.push({ id, weightKg: values.weightKg ?? 0, reps: values.reps ?? 0 })
     }
   }
   return sets
+}
+
+function workingSetsOf(workout: Workout, exerciseId: string): WeightRepsSet[] {
+  return workingSetsWithIds(workout, exerciseId).map(({ weightKg, reps }) => ({ weightKg, reps }))
 }
 
 /**
@@ -110,4 +117,59 @@ export function buildExerciseRecords(
 
   if (!maxWeight || !oneRepMax) return undefined
   return { maxWeight, oneRepMax, sessions: sessions.reverse() }
+}
+
+/** 檢視日期之前，這個動作的最大重量（同重量取次數多的）與最高的估算 1RM */
+export interface RecordBaseline {
+  maxWeight: WeightRepsSet
+  oneRepMaxKg: number
+}
+
+/** 訓練頁上一組破了哪一種紀錄 */
+export type SetRecordKind = 'maxWeight' | 'oneRepMax'
+
+/** 從 `before` 之前（不含當天）的訓練算出基準；之前沒有可計算的組時回傳 undefined */
+export function buildRecordBaseline(
+  workouts: readonly Workout[],
+  exerciseId: string,
+  before: LocalDate,
+): RecordBaseline | undefined {
+  const sets = workouts
+    .filter((workout) => workout.date < before)
+    .flatMap((workout) => workingSetsOf(workout, exerciseId))
+  if (sets.length === 0) return undefined
+  return {
+    maxWeight: heaviestSet(sets),
+    oneRepMaxKg: Math.max(...sets.map(estimateOneRepMaxKg)),
+  }
+}
+
+/**
+ * 這一天這個動作每一組的新紀錄標示，key 是組的 ID；沒有標示的組不出現。
+ * 一組要比 `baseline`（之前的訓練）以及當天排在它前面的組都更好才標示，所以追平不算；
+ * `baseline` 為 undefined（第一次訓練）時都不標示。結果與 `buildExerciseRecords` 的
+ * 當次標示一致：某天有任何一組標示，那天的 `isMaxWeightRecord`／`isOneRepMaxRecord` 就為 true。
+ */
+export function findNewRecordSets(
+  baseline: RecordBaseline | undefined,
+  workout: Workout,
+  exerciseId: string,
+): Map<string, SetRecordKind[]> {
+  const records = new Map<string, SetRecordKind[]>()
+  if (!baseline) return records
+  let { maxWeight, oneRepMaxKg } = baseline
+  for (const set of workingSetsWithIds(workout, exerciseId)) {
+    const kinds: SetRecordKind[] = []
+    if (isHeavier(set, maxWeight)) {
+      kinds.push('maxWeight')
+      maxWeight = set
+    }
+    const estimated = estimateOneRepMaxKg(set)
+    if (estimated > oneRepMaxKg) {
+      kinds.push('oneRepMax')
+      oneRepMaxKg = estimated
+    }
+    if (kinds.length > 0) records.set(set.id, kinds)
+  }
+  return records
 }

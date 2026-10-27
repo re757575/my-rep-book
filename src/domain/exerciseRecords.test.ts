@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildExerciseRecords, estimateOneRepMaxKg } from './exerciseRecords'
+import {
+  buildExerciseRecords,
+  buildRecordBaseline,
+  estimateOneRepMaxKg,
+  findNewRecordSets,
+} from './exerciseRecords'
 import type { SetValues, Workout, WorkoutSet } from './types'
 
 const T = '2026-10-01T00:00:00.000Z'
@@ -173,5 +178,123 @@ describe('buildExerciseRecords：個人紀錄與每一次的進度', () => {
       topSet: { weightKg: 70, reps: 3 },
       volumeKg: 60 * 8 + 70 * 3,
     })
+  })
+})
+
+describe('buildRecordBaseline／findNewRecordSets：記錄當下的新紀錄標示', () => {
+  /** 10/15：62.5×5（1RM 72.9）、10/20：60×10（1RM 80）→ 最大重量 62.5×5、1RM 80 */
+  const history = [workout('2026-10-15', [[62.5, 5]]), workout('2026-10-20', [[60, 10]])]
+  const baseline = buildRecordBaseline(history, BENCH, '2026-10-24')
+
+  it('基準取檢視日期之前的最大重量與最高 1RM；當天與之後的訓練不算', () => {
+    expect(baseline).toEqual({ maxWeight: { weightKg: 62.5, reps: 5 }, oneRepMaxKg: 80 })
+    const withLater = [
+      ...history,
+      workout('2026-10-24', [[100, 5]]),
+      workout('2026-10-30', [[90, 5]]),
+    ]
+    expect(buildRecordBaseline(withLater, BENCH, '2026-10-24')).toEqual(baseline)
+  })
+
+  it('之前沒有可計算的組（沒做過、只有熱身或不完整的組）時沒有基準，也不標示', () => {
+    expect(buildRecordBaseline([], BENCH, '2026-10-24')).toBeUndefined()
+    const unusable = [
+      workout('2026-10-20', [
+        [100, 5, 'warmup'],
+        [100, null],
+      ]),
+    ]
+    expect(buildRecordBaseline(unusable, BENCH, '2026-10-24')).toBeUndefined()
+    expect(findNewRecordSets(undefined, workout('2026-10-24', [[100, 5]]), BENCH).size).toBe(0)
+  })
+
+  it('比之前每一次都重標示「重量」，估算 1RM 更高標示「1RM」，可同時標示', () => {
+    const today = workout('2026-10-24', [
+      [65, 3], // 比 62.5 重；1RM 71.5 沒超過 80
+      [60, 12], // 沒有更重；1RM 84 超過 80
+      [70, 5], // 更重；1RM 81.7 沒有超過 84
+      [80, 8], // 更重；1RM 101.3 超過 84
+    ])
+    expect(findNewRecordSets(baseline, today, BENCH)).toEqual(
+      new Map([
+        ['s-0', ['maxWeight']],
+        ['s-1', ['oneRepMax']],
+        ['s-2', ['maxWeight']],
+        ['s-3', ['maxWeight', 'oneRepMax']],
+      ]),
+    )
+  })
+
+  it('追平不標示；同一天連續兩組一樣的只標示第一組', () => {
+    const today = workout('2026-10-24', [
+      [62.5, 5],
+      [65, 5],
+      [65, 5],
+      [65, 4],
+    ])
+    expect(findNewRecordSets(baseline, today, BENCH)).toEqual(
+      new Map([['s-1', ['maxWeight']]]), // 65×5 的 1RM 75.8 沒超過 80,
+    )
+  })
+
+  it('同重量次數多算更重', () => {
+    expect(findNewRecordSets(baseline, workout('2026-10-24', [[62.5, 6]]), BENCH)).toEqual(
+      new Map([['s-0', ['maxWeight']]]),
+    )
+  })
+
+  it('熱身組、不完整的組與其他動作不標示，也不影響後面的組', () => {
+    const today = workout(
+      '2026-10-24',
+      [
+        [100, 5, 'warmup'],
+        [100, null],
+        [70, 5],
+      ],
+      [{ exerciseId: 'deadlift', values: { type: 'weight_reps', weightKg: 200, reps: 5 } }],
+    )
+    // 70×5 的 1RM 81.7 超過 80
+    expect(findNewRecordSets(baseline, today, BENCH)).toEqual(
+      new Map([['s-2', ['maxWeight', 'oneRepMax']]]),
+    )
+  })
+
+  it('同一天加入多次同一個動作時，依順序累計', () => {
+    const today = workout('2026-10-24', [[65, 5]])
+    today.exercises.push({
+      id: 'again',
+      exerciseId: BENCH,
+      note: '',
+      sets: [
+        { id: 'again-1', isWarmup: false, values: { type: 'weight_reps', weightKg: 65, reps: 5 } },
+      ],
+    })
+    expect(findNewRecordSets(baseline, today, BENCH)).toEqual(new Map([['s-0', ['maxWeight']]]))
+  })
+
+  it('與 buildExerciseRecords 一致：某天有組標示，動作歷史那天就有對應的新紀錄', () => {
+    const days: [string, FixtureSet[]][] = [
+      ['2026-10-01', [[50, 8]]],
+      ['2026-10-05', [[50, 8]]], // 追平
+      [
+        '2026-10-10',
+        [
+          [45, 15],
+          [50, 7],
+        ],
+      ], // 只有 1RM 更高
+      ['2026-10-15', [[55, 5]]], // 更重
+      ['2026-10-20', [[40, 5]]], // 都沒有
+    ]
+    const all = days.map(([date, items]) => workout(date, items))
+    const sessions = buildExerciseRecords(all, BENCH)?.sessions ?? []
+    for (const day of all) {
+      const marks = [
+        ...findNewRecordSets(buildRecordBaseline(all, BENCH, day.date), day, BENCH).values(),
+      ].flat()
+      const session = sessions.find((item) => item.date === day.date)
+      expect(marks.includes('maxWeight'), day.date).toBe(session?.isMaxWeightRecord)
+      expect(marks.includes('oneRepMax'), day.date).toBe(session?.isOneRepMaxRecord)
+    }
   })
 })

@@ -193,6 +193,19 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 設定與倒數狀態是畫面狀態，存在 localStorage，不寫進資料庫、不包含在匯出檔
 - 限制：倒數由頁面本身計時，App 在背景被系統暫停（例如 iOS 鎖定螢幕）時，震動與通知會等到回到前景才發出；iOS Safari 不支援震動
 
+#### US-31 記錄當下標示新紀錄
+
+> 身為使用者，我想在記錄某一組時馬上看到它破了紀錄，以便不用等到動作詳情才知道。
+
+- 只適用於 `weight_reps` 的動作，只看完整的正式組（熱身組、不完整的組不標示）
+- **Given** 訓練頁某一組的重量比這個動作之前每一次訓練的最大重量都重（同重量時次數多也算，同 US-23）　**Then** 該組旁標示「重量新紀錄」
+- **Given** 某一組的估算 1RM 比之前每一次都高　**Then** 該組旁標示「1RM 新紀錄」；一組可以同時有兩個標示
+- 「之前」是檢視日期之前的訓練（不含當天、不含之後的日期）；這個動作之前沒有可計算的組（第一次訓練）時，不標示
+- 同一天內依組的順序累計：一組要超過之前每一次訓練，以及當天排在它前面的組，才標示。所以追平不標示，連續兩組做同樣的重量與次數只標示第一組
+- 標示隨輸入、−／+、刪除組、切換熱身即時重新計算；某一天只要有一組標示，動作歷史（US-23）那天就有同樣的標示
+- 過去的日期（鎖定或補記）也顯示，比較對象是那天之前的訓練
+- 只在畫面上標示，不震動、不通知，也不另外儲存；以 kg 比較，不受重量單位影響
+
 ### 4.2 動作庫
 
 #### US-10 瀏覽與搜尋動作
@@ -570,6 +583,7 @@ export interface ExportFile {
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `stepSetValue(field, value, direction, weightUnit)` / `completesSet(values, field, value)` | −／+ 微調後的值（US-29）；這次編輯是否讓組變完整（US-30 的觸發條件） |
+| `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
 | `startRest` / `restTimerPhase` / `adjustRest` | 組間休息的開始、此刻的階段（倒數中、剛結束、沒有）與增減秒數（US-30） |
 | `matchesSearch(exercise, query)` / `exercisesInCategory(...)` | 搜尋與分類篩選 |
 | `getRecentExerciseIds(workouts, limit = 8)` | 最近使用 |
@@ -851,7 +865,6 @@ push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artif
 | --- | --- |
 | 訓練範本／課表 | 例如「推日」，一鍵帶入多個動作 |
 | 進度圖表 | 單一動作的最大重量、估算 1RM、訓練量趨勢圖（數值清單已在 US-23 完成）；各部位組數的長期趨勢（單週／單月統計已在 US-24 完成） |
-| 個人最佳紀錄（PR） | 記錄當下在訓練頁標示新 PR（動作詳情的個人紀錄與歷史標示已在 US-23 完成） |
 | RPE／RIR | 每組強度記錄 |
 | Drop set、超級組 | 組類型與動作群組 |
 | 拖曳排序 | 取代上移／下移按鈕 |

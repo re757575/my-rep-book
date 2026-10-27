@@ -7,8 +7,10 @@ import {
   formatWorkoutExerciseSummary,
   type LastPerformance,
   type SetField,
+  type SetRecordKind,
   type WorkoutExercise,
 } from '@/domain'
+import { RecordBadge } from '@/features/exercises/RecordBadge'
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { cn } from '@/lib/utils'
 import { SetFields } from './SetFields'
@@ -19,12 +21,14 @@ import { useWorkoutReadOnly } from './workoutReadOnly'
  * 訓練動作：動作名稱、上次紀錄、各組的熱身標記與輸入欄位，以及「新增一組」。
  * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
  * 點動作名稱可以收合：收合後只留名稱、操作與這個動作的總計（`formatWorkoutExerciseSummary`）。
+ * 破了紀錄的組在欄位下方標示「重量新紀錄」「1RM 新紀錄」（US-31）。
  * 訓練頁鎖定時各組只能看：熱身標記停用，刪除組與新增一組不顯示。
  */
 export function WorkoutExerciseCard({
   workoutExercise,
   exerciseName,
   lastPerformance,
+  setRecords,
   actions,
   children,
   onAddSet,
@@ -36,6 +40,8 @@ export function WorkoutExerciseCard({
   exerciseName: string
   /** 沒有上次紀錄時不顯示「上次」那一列 */
   lastPerformance: LastPerformance | undefined
+  /** 破了紀錄的組（key 是組的 ID），標示在那一組旁；沒有時傳空的 Map */
+  setRecords: ReadonlyMap<string, readonly SetRecordKind[]>
   actions?: ReactNode
   children?: ReactNode
   onAddSet: () => void
@@ -104,11 +110,14 @@ export function WorkoutExerciseCard({
               >
                 熱
               </Toggle>
-              <SetFields
-                values={set.values}
-                setNumber={index + 1}
-                onChange={(field, value) => onChangeSetField(set.id, field, value)}
-              />
+              <div className="flex flex-col gap-1">
+                <SetFields
+                  values={set.values}
+                  setNumber={index + 1}
+                  onChange={(field, value) => onChangeSetField(set.id, field, value)}
+                />
+                <SetRecordBadges kinds={setRecords.get(set.id)} />
+              </div>
               {!readOnly && (
                 <Button
                   variant="ghost"
@@ -132,5 +141,21 @@ export function WorkoutExerciseCard({
         {children}
       </div>
     </section>
+  )
+}
+
+const RECORD_LABELS: Readonly<Record<SetRecordKind, string>> = {
+  maxWeight: '重量新紀錄',
+  oneRepMax: '1RM 新紀錄',
+}
+
+function SetRecordBadges({ kinds }: { kinds: readonly SetRecordKind[] | undefined }) {
+  if (!kinds) return null
+  return (
+    <div className="flex flex-wrap gap-1">
+      {kinds.map((kind) => (
+        <RecordBadge key={kind}>{RECORD_LABELS[kind]}</RecordBadge>
+      ))}
+    </div>
   )
 }

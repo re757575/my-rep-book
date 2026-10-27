@@ -7,6 +7,7 @@ import {
   addExerciseToWorkout,
   addSetToWorkoutExercise,
   completesSet,
+  findNewRecordSets,
   moveWorkoutExercise,
   toggleSetWarmup,
   type EditContext,
@@ -23,6 +24,7 @@ import { today, type DayRouteState } from './dayPath'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
 import { ExerciseNoteField } from './ExerciseNoteField'
 import { queryLastPerformance } from './queryLastPerformance'
+import { useRecordBaselines } from './useRecordBaselines'
 import { WorkoutDateHeader } from './WorkoutDateHeader'
 import { WorkoutExerciseActions } from './WorkoutExerciseActions'
 import { WorkoutExerciseCard } from './WorkoutExerciseCard'
@@ -79,6 +81,16 @@ export function TodayPage({ date }: { date: LocalDate }) {
     [date, exerciseIdsKey],
   )
 
+  // 重量×次數的動作才有新紀錄；動作庫載入後才知道記錄類型
+  const weightRepsIds = [
+    ...new Set(
+      workout?.exercises
+        .filter((item) => exercisesById.get(item.exerciseId)?.trackingType === 'weight_reps')
+        .map((item) => item.exerciseId),
+    ),
+  ]
+  const recordBaselines = useRecordBaselines(workouts, date, weightRepsIds)
+
   /** 編輯已存在的訓練：在 repository 的 transaction 中以最新資料套用變更 */
   function editWorkout(change: (current: Workout) => Workout) {
     return workouts.update(date, (current) => {
@@ -111,6 +123,11 @@ export function TodayPage({ date }: { date: LocalDate }) {
                 workoutExercise={workoutExercise}
                 exerciseName={exerciseName}
                 lastPerformance={lastPerformances?.get(workoutExercise.exerciseId)}
+                setRecords={findNewRecordSets(
+                  recordBaselines.get(workoutExercise.exerciseId),
+                  workout,
+                  workoutExercise.exerciseId,
+                )}
                 actions={
                   !locked && (
                     <WorkoutExerciseActions
