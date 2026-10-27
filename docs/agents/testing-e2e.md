@@ -1,6 +1,6 @@
 # E2E 與效能預算：寫之前要知道的坑
 
-E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs/agents/testing.md`。這份文件只記從程式碼看不出來的事。
+**E2E 暫時不在 CI 執行**（會拉長部署時間，見 `docs/PRD.md` §9.6），功能 commit 前要在本地跑過 `npm run e2e` 且全數通過；跑法與 port 見下面。E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs/agents/testing.md`。這份文件只記從程式碼看不出來的事。
 
 ## E2E（Playwright）
 
@@ -21,10 +21,10 @@ E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs
 - **離線測試要先等 Service Worker 啟用**：`await page.evaluate(async () => { await navigator.serviceWorker.ready })` 之後再 `context.setOffline(true)`，否則預先快取還沒完成，重新整理會失敗。範例見 `e2e/pwa.spec.ts`。
 - **Playwright 的 route 攔不到 Service Worker 本身（`sw.js`）的請求**：要模擬「部署了新版本」，對該 context 加 cookie `e2e-sw-version`（`context.addCookies([{ name: 'e2e-sw-version', value: '2', url: page.url() }])`）再 `page.reload()`，vite preview 會回傳內容不同的 `sw.js`（`vite.config.ts` 的 `simulateNewServiceWorker()`）。cookie 只影響這個 context，不會干擾平行的測試。重新整理後還要由頁面呼叫 `registration.update()`：Linux 的 WebKit（CI）換頁後自動檢查更新時抓 `sw.js` 不帶 cookie，只有頁面主動 `update()` 才會帶；macOS 的 WebKit 會帶，所以本機看不出差別。
 - **sonner toast 在 Playwright 中是 `listitem`**：`page.getByRole('listitem').filter({ hasText: '有新版本' })`，按鈕再從它裡面取。
-- **新增 Playwright project（瀏覽器）時**，同步修改 `.github/workflows/ci.yml` 的 `playwright install` 參數。
+- **新增 Playwright project（瀏覽器）時**，本機要 `npx playwright install` 該瀏覽器。CI 目前不跑 E2E 也不跑 bundle 大小檢查，`.github/workflows/ci.yml` 裡 E2E、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」的步驟都是註解掉的；之後放回 CI 時，取消註解並同步修改那裡的 `playwright install` 參數。
 - **量回應時間不要用 Playwright 端的計時**：`expect(...).toBeVisible()` 是輪詢（間隔 100 ms 以上），加上與瀏覽器之間的通訊，量不出 < 100 ms 的差異。用 `e2e/performance.spec.ts` 的 `measureClick`，在頁面裡以點擊事件為起點、DOM 符合條件後的下一個畫格為終點計時。終點條件用 CSS 選擇器（只拿來計時，行為仍用 role 斷言）。Playwright 的 Clock（`e2e/fixtures.ts` 固定「今天」）也接管了 `performance.now()`，解析度是 1 ms。
 - **用 `page.mouse` 點元素上的某個位置前，先 `scrollIntoViewIfNeeded()`**：`boundingBox()` 與 `mouse.click` 的座標都是相對於可視範圍，元素在畫面外時點擊會落空，而且沒有任何錯誤，只看到「點了沒反應」。範例見 `e2e/progress-chart.spec.ts`。
-- **`e2e/performance.spec.ts` 在 CI 上跳過**：GitHub 的 runner 量到 Chrome 約 90–120 ms、WebKit 150–435 ms（本機 23–69 ms），不代表使用者的手機。改動訓練頁、加入動作選單或上次紀錄後，在本機跑 `npx playwright test e2e/performance.spec.ts`。
+- **`e2e/performance.spec.ts` 在 CI 上跳過**（現在整個 E2E 都不在 CI 跑，這條是之後放回 CI 時的提醒）：GitHub 的 runner 量到 Chrome 約 90–120 ms、WebKit 150–435 ms（本機 23–69 ms），不代表使用者的手機。改動訓練頁、加入動作選單或上次紀錄後，在本機跑 `npx playwright test e2e/performance.spec.ts`。
 - **大量資料用程式產生 fixture 再匯入**：1,000 筆訓練（每筆 4 個動作）的備份檔匯入約 3 秒，見 `e2e/performance.spec.ts` 的 `thousandWorkouts`。
 - **無障礙檢查集中在 `e2e/accessibility.spec.ts`**：`SCREENS` 列出要檢查的畫面，每個畫面在淺色與深色主題下各跑 axe（serious／critical 不得出現，含色彩對比）、觸控目標 ≥ 44×44 px、輸入框字級 ≥ 16px。新增畫面或對話框時加進 `SCREENS`。axe 前會插入停用 `transition`／`animation` 的樣式：顏色轉場途中取樣會算出不存在的低對比，造成偶發失敗。核取方塊、選項的觸控目標以整個 `label` 計算，所以 `Label` 要撐滿列高（`min-h-11`）。
 - **WebKit 的 Tab 預設只在表單欄位間移動**（與 macOS Safari 相同），按鈕與連結要用 `Alt+Tab`。只用鍵盤操作的測試見 `e2e/keyboard.spec.ts` 的 `tabTo`。
@@ -33,7 +33,7 @@ E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs
 ## 效能預算（PRD §7）
 
 - **點擊後才動態載入的元件，不要包在新的 `<Suspense>` 裡**：React 會把 fallback 換成內容的時機延後約 300 ms（Suspense 的 reveal throttle），第一次打開加入動作選單就從 30 ms 變成 300 ms 以上，`e2e/performance.spec.ts` 會失敗。改在點擊時用 `startTransition` 設定「已載入」的 state，讓 React 等 chunk 載入完成再一次渲染（範例見 `TodayPage` 的加入動作選單、`WorkoutDateHeader` 的日期選擇器）。即使如此，第一次打開仍要等 chunk 下載，全套 E2E 的負載下會超過 100 ms；主要操作的 chunk 要再用 `whenIdleAfterLoad`（`src/lib/whenIdleAfterLoad.ts`）在頁面閒置時先載入，像加入動作選單那樣。
-- **首次載入的效能預算（PRD §7）不在測試裡，是兩支腳本**，都要先 `npm run build`：`npm run check:bundle-size` 以 Chromium 打開首頁，把實際載入的 JS 逐一 gzip 加總，須 < 250 KB，而且不能比 `scripts/bundle-baseline.json` 的基準多超過 1 KB（失敗時會列出和基準相比變動的 chunk），CI 會跑。確定要變大（或變小超過 1 KB 時腳本提醒更新）就執行 `npm run check:bundle-size -- --update`，基準檔連同變更一起 commit；`npm run lighthouse` 以 Lighthouse 手機版預設（模擬節流）跑 3 次取 LCP 中位數，須 < 2.5 秒，結果會隨機器負載浮動，所以不放 CI，改動首頁或新增依賴後手動跑。首頁（今天的訓練頁）新增的大型依賴要動態載入，否則兩者都會超標。
+- **首次載入的效能預算（PRD §7）不在測試裡，是兩支腳本**，都要先 `npm run build`：`npm run check:bundle-size` 以 Chromium 打開首頁，把實際載入的 JS 逐一 gzip 加總，須 < 250 KB，而且不能比 `scripts/bundle-baseline.json` 的基準多超過 1 KB（失敗時會列出和基準相比變動的 chunk）。**CI 暫時不跑它**（見上方，和 E2E 一起停用），所以改動首頁、新增依賴或新增共用模組後要自己在本地跑，不然預算悄悄超標沒人擋。確定要變大（或變小超過 1 KB 時腳本提醒更新）就執行 `npm run check:bundle-size -- --update`，基準檔連同變更一起 commit；`npm run lighthouse` 以 Lighthouse 手機版預設（模擬節流）跑 3 次取 LCP 中位數，須 < 2.5 秒，結果會隨機器負載浮動，所以不放 CI，改動首頁或新增依賴後手動跑。首頁（今天的訓練頁）新增的大型依賴要動態載入，否則兩者都會超標。
 - **`src/domain` 的模組最上層只放沒有副作用的宣告**：domain 經由 `@/domain` 進入首頁，打包工具（rolldown）遇到最上層有副作用的模組（例如 `new Intl.NumberFormat(…)`）會改變 chunk 的切分，把 `button`、`settingsContext` 等共用模組拆成額外的小 chunk，首次載入多約 3 KB，即使用到它的只有動態載入的頁面。`new Intl.*` 已由 ESLint 擋下（`eslint.config.js` 的 `no-restricted-syntax`），其他副作用一樣改成第一次用到時才建立並快取，像 `src/domain/units.ts` 的 `formatterFor`。`check:bundle-size` 比基準多出新的共用 chunk（例如 `button`）時，多半就是這類切分改變；首頁新用到只有動態載入頁才用的元件也會這樣（例如在訓練頁用 Switch，改用首頁已有的 Toggle 就沒事）。
 - **動態載入的頁面不要 import 原本只有首頁（訓練頁）用的模組**：歷史頁的「複製到今天」一度 import `src/features/workout/deleteWithUndo.ts` 來共用「復原」toast，`check:bundle-size` 就多出一個 5 KB 的 `button` 共用 chunk、首次載入多 1.3 KB（`index` 少 3.5 KB，總量卻變大）。這類模組被動態載入的 chunk 也用到時，打包工具會重新切分；小段重複（這裡是 toast 的 5 行設定）比共用便宜。要共用就改放在 `src/lib` 這類兩邊本來就都會用到的地方，並看 `check:bundle-size` 有沒有新的 chunk。
 

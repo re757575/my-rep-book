@@ -1,5 +1,7 @@
-# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build → bundle 大小 → e2e；
+# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build；
 # 只有 push 到 main 且全部通過才部署到 GitHub Pages（§8.4），PR 只跑 CI。
+# E2E、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」暫時註解掉（拖慢部署時間），要放回時取消註解即可：
+# 這三項改在本地跑過再 commit（`npm run e2e`、`npm run check:bundle-size`，見 CLAUDE.md）。
 name: CI
 
 on:
@@ -16,7 +18,7 @@ concurrency:
 
 jobs:
   ci:
-    name: lint、typecheck、test、build、e2e
+    name: lint、typecheck、test、build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -46,27 +48,31 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: 安裝 Playwright 瀏覽器
-        run: npx playwright install --with-deps chromium webkit
+      # 暫時註解掉：安裝 Playwright 瀏覽器（含 E2E 用的 WebKit，下載與安裝很花時間）。
+      # 注意：Bundle 大小檢查與 E2E 都用 Playwright 的瀏覽器，要放回其中任何一個，這一步都要一起取消註解
+      # - name: 安裝 Playwright 瀏覽器
+      #   run: npx playwright install --with-deps chromium webkit
 
+      # 暫時註解掉：Bundle 大小檢查，需要上面的 Playwright 瀏覽器。
       # PRD §7：首次載入的 JS（gzip）< 250 KB。以 Chromium 打開 build 出的 App 首頁實際量測，所以排在安裝瀏覽器之後
-      - name: Bundle 大小檢查
-        run: npm run check:bundle-size
+      # - name: Bundle 大小檢查
+      #   run: npm run check:bundle-size
 
+      # 暫時註解掉：E2E（拖慢部署時間）。功能 commit 前改在本地跑過 `npm run e2e`
       # playwright.config.ts 的 webServer 會以正式 base path（/my-rep-book/）build 並啟動 vite preview
-      - name: E2E
-        id: e2e
-        run: npm run e2e
-
-      - name: 上傳 Playwright trace
-        if: failure() && steps.e2e.outcome == 'failure'
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-traces
-          path: |
-            test-results/
-            playwright-report/
-          retention-days: 14
+      # - name: E2E
+      #   id: e2e
+      #   run: npm run e2e
+      #
+      # - name: 上傳 Playwright trace
+      #   if: failure() && steps.e2e.outcome == 'failure'
+      #   uses: actions/upload-artifact@v7
+      #   with:
+      #     name: playwright-traces
+      #     path: |
+      #       test-results/
+      #       playwright-report/
+      #     retention-days: 14
 
       - name: 上傳 Pages 產物
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

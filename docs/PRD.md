@@ -25,7 +25,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 | G2 | 隨時知道上次的表現 | 加入動作後立即顯示上次紀錄，並自動帶入第一組數值 |
 | G3 | 完全離線可用 | 安裝 PWA 後，飛航模式下所有 MVP 功能正常運作 |
 | G4 | 資料不被綁架 | 隨時可匯出完整資料為 JSON，並能完整匯入還原 |
-| G5 | 可維護、可驗證 | domain 邏輯單元測試覆蓋率 ≥ 80%；5 條關鍵流程有 E2E 測試於 CI 執行 |
+| G5 | 可維護、可驗證 | domain 邏輯單元測試覆蓋率 ≥ 80%（CI 強制）；5 條關鍵流程有 E2E 測試，功能 commit 前在本地執行（CI 暫不執行，見 §9.6） |
 
 ### 1.3 非目標（MVP 不做）
 
@@ -923,9 +923,11 @@ export interface WorkoutRepository {
 
 ### 9.6 CI（GitHub Actions）
 
-每次 push 與 PR 依序執行：`npm run lint` → `npm run typecheck` → `npm test -- --coverage` → `npm run build` → `npm run e2e`（安裝依賴用 `npm ci`）。任一步失敗即失敗；E2E 失敗時上傳 Playwright trace 作為 artifact。
+每次 push 與 PR 依序執行：`npm run lint` → `npm run typecheck` → `npm test -- --coverage` → `npm run build`（安裝依賴用 `npm ci`）。任一步失敗即失敗。
 
-push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artifact` 上傳 `dist/`，再以 `actions/deploy-pages` 部署到 GitHub Pages。E2E 在與正式環境相同的 `base` 路徑（`/my-rep-book/`）下對 `vite preview` 執行，確保路徑設定錯誤能在 CI 中被發現。
+**E2E 與 bundle 大小檢查暫時不在 CI 執行**：兩個瀏覽器的完整 E2E 會明顯拉長部署時間，而 bundle 大小檢查與 E2E 都要安裝 Playwright 的瀏覽器，所以一起停用，改成功能 commit 前在本地跑過 `npm run e2e` 且全數通過；改動首頁或新增依賴時，也要在本地 `npm run build && npm run check:bundle-size`（首次載入的 JS < 250 KB，§7）（見 `CLAUDE.md`）。`ci.yml` 裡的 E2E、上傳 Playwright trace、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」四個步驟都以註解保留（沒有刪除），要放回 CI 時取消註解即可，其中安裝瀏覽器那一步要和 E2E、bundle 檢查一起放回。E2E 仍然在與正式環境相同的 `base` 路徑（`/my-rep-book/`）下對 `vite preview` 執行，路徑設定錯誤在本地就能發現。之後若部署時間不再是問題，可以把這幾個步驟放回 CI。
+
+push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artifact` 上傳 `dist/`，再以 `actions/deploy-pages` 部署到 GitHub Pages。
 
 ---
 
