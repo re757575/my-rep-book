@@ -97,7 +97,8 @@ export function HistoryPage() {
         components={calendarComponents}
         labels={calendarLabels}
       />
-      <DayDetail date={selected} />
+      {/* 換日期時重新掛載，不會在新資料載入前短暫顯示上一天的內容（「複製到今天」也不會拿到上一天的訓練） */}
+      <DayDetail key={selected} date={selected} />
       <PeriodStatsSection month={month} selected={selected} />
     </div>
   )
