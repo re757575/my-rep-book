@@ -70,3 +70,4 @@
 - **模擬「剛輸入、還沒寫進資料庫」的欄位編輯時，要等資料庫開啟後才寫入 localStorage 的待寫清單**（`my-rep-book:pending-field-edits`）：透過 UI 輸入的話寫入幾乎立刻完成，測不出待寫清單的處理；但若在 `reload()` 或 `renderApp` 之後立刻寫入，資料庫開啟時的 `on('ready')` 會先把它補寫掉，測試就失去意義。先 `findBy*` 等一個依資料載入的元素出現再寫入，範例見 `backup.test.tsx` 的 `leavePendingEdit`。
 - **jsdom 沒有 `navigator.storage`**：App 啟動時申請持久儲存，沒有它就當成「未啟用」。要模擬瀏覽器同意或拒絕，在 `renderApp` 之前呼叫 `fakeStorageManager({ grantsPersistence })`（`src/test/fakeStorageManager.ts`），測試結束自動移除。範例見 `src/features/settings/persistentStorage.test.tsx`。
 - **接縫 A 不會註冊 Service Worker**：`virtual:pwa-register/react` 在 Vitest 中是 vite-plugin-pwa 提供的空實作，「有新版本」提示、離線都只能在 E2E 驗證。
+- **重量與次數欄位下方有「增加／減少＋欄位名稱」按鈕**：例如 `within(card).getByRole('button', { name: '增加第 1 組重量（kg）' })`，到上下限時是 `disabled`。每組多了四個按鈕（重量與次數各兩個），數組裡的按鈕時要算進去。連按用 `user.click` 即可，欄位值以最後一個合法的值累加，不等資料庫寫回。範例見 `src/features/workout/stepSetValue.test.tsx`。

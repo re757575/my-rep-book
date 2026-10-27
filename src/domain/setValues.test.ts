@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { isCompleteSet, parseSetInput, validateSetValues, type SetField } from './setValues'
+import {
+  isCompleteSet,
+  isSteppableField,
+  parseSetInput,
+  stepSetValue,
+  validateSetValues,
+  type SetField,
+} from './setValues'
+import { toKg } from './units'
 import type { SetValues } from './types'
 
 describe('parseSetInput：組的欄位輸入', () => {
@@ -159,5 +167,52 @@ describe('validateSetValues 與 isCompleteSet：組數值驗證與完整的組',
   ])('數值不合法：%s', (_, values, errors) => {
     expect(validateSetValues(values)).toEqual(errors)
     expect(isCompleteSet(values)).toBe(false)
+  })
+})
+
+describe('stepSetValue：−／+ 微調', () => {
+  it.each<['weightKg' | 'addedWeightKg', number | null, 1 | -1, number | null]>([
+    ['weightKg', 60, 1, 62.5],
+    ['weightKg', 62.5, -1, 60],
+    ['weightKg', 62.25, 1, 64.75],
+    ['weightKg', 2.5, -1, 0],
+    ['weightKg', 1, -1, 0],
+    ['weightKg', null, 1, 2.5],
+    ['addedWeightKg', null, 1, 2.5],
+    ['addedWeightKg', 10, 1, 12.5],
+  ])('%s %j 方向 %d → %j（kg）', (field, value, direction, expected) => {
+    expect(stepSetValue(field, value, direction, 'kg')).toBe(expected)
+  })
+
+  it('重量已經是 0 或尚未填寫時，− 維持原值', () => {
+    expect(stepSetValue('weightKg', 0, -1, 'kg')).toBe(0)
+    expect(stepSetValue('weightKg', null, -1, 'kg')).toBeNull()
+  })
+
+  it('lb 模式以畫面上顯示的 lb 增減 5，結果換算回 kg', () => {
+    const kg135 = toKg(135, 'lb')
+    expect(stepSetValue('weightKg', kg135, 1, 'lb')).toBeCloseTo(toKg(140, 'lb'), 10)
+    expect(stepSetValue('weightKg', kg135, -1, 'lb')).toBeCloseTo(toKg(130, 'lb'), 10)
+    expect(stepSetValue('weightKg', null, 1, 'lb')).toBeCloseTo(toKg(5, 'lb'), 10)
+    expect(stepSetValue('weightKg', toKg(3, 'lb'), -1, 'lb')).toBe(0)
+  })
+
+  it.each<[number | null, 1 | -1, number | null]>([
+    [8, 1, 9],
+    [8, -1, 7],
+    [1, -1, 1],
+    [9999, 1, 9999],
+    [null, 1, 1],
+    [null, -1, null],
+  ])('reps %j 方向 %d → %j', (value, direction, expected) => {
+    expect(stepSetValue('reps', value, direction, 'kg')).toBe(expected)
+  })
+
+  it('只有重量、額外負重與次數可以微調', () => {
+    expect(isSteppableField('weightKg')).toBe(true)
+    expect(isSteppableField('addedWeightKg')).toBe(true)
+    expect(isSteppableField('reps')).toBe(true)
+    expect(isSteppableField('durationSec')).toBe(false)
+    expect(isSteppableField('distanceKm')).toBe(false)
   })
 })

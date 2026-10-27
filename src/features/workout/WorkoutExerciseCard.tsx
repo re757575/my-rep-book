@@ -87,11 +87,13 @@ export function WorkoutExerciseCard({
             <li
               key={set.id}
               className={cn(
-                'flex items-center gap-2 rounded-md',
+                'flex items-start gap-2 rounded-md',
                 set.isWarmup && 'bg-muted text-muted-foreground',
               )}
             >
-              <span className="w-6 text-center text-sm text-muted-foreground">{index + 1}</span>
+              <span className="flex h-11 w-6 items-center justify-center text-sm text-muted-foreground">
+                {index + 1}
+              </span>
               <Toggle
                 variant="outline"
                 className="size-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"

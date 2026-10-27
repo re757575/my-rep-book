@@ -32,7 +32,9 @@ export { formatDuration, parseDuration } from './duration'
 export {
   emptySetValues,
   isCompleteSet,
+  isSteppableField,
   parseSetInput,
+  stepSetValue,
   validateSetValues,
   type SetField,
   type SetFieldErrors,

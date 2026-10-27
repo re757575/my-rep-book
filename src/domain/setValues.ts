@@ -1,6 +1,6 @@
 import { parseDuration } from './duration'
 import type { ParsedInput, SetValues, TrackingType, WeightUnit } from './types'
-import { toKg } from './units'
+import { kgToLb, toKg } from './units'
 
 /** 該記錄類型所有欄位都還沒填的組數值 */
 export function emptySetValues(type: TrackingType): SetValues {
@@ -125,4 +125,36 @@ export function isCompleteSet(values: SetValues): boolean {
   const fields = fieldsOf(values)
   const filled = REQUIRED_FIELDS[values.type].every((field) => fields[field] != null)
   return filled && Object.keys(validateSetValues(values)).length === 0
+}
+
+/** 重量每按一下增減的量（以顯示單位計）：kg 2.5、lb 5 */
+const WEIGHT_STEP: Readonly<Record<WeightUnit, number>> = { kg: 2.5, lb: 5 }
+
+/** 可以用 −／+ 微調的欄位；時間與距離不提供 */
+export function isSteppableField(field: SetField): field is 'weightKg' | 'addedWeightKg' | 'reps' {
+  return field === 'weightKg' || field === 'addedWeightKg' || field === 'reps'
+}
+
+/**
+ * 欄位按一下 −（`direction` 為 -1）或 +（1）後的值；重量以 kg 儲存。
+ * 重量依 `weightUnit` 增減一階（kg 2.5、lb 5），從畫面上顯示的值開始算，結果不小於 0；
+ * 次數增減 1，限制在 1–9999。尚未填寫（null）的欄位按 + 從 0 起算（次數為 1），按 − 維持 null。
+ * 增減後和原本相同（已到上下限）時代表這個方向不能再按。
+ */
+export function stepSetValue(
+  field: 'weightKg' | 'addedWeightKg' | 'reps',
+  value: number | null,
+  direction: 1 | -1,
+  weightUnit: WeightUnit,
+): number | null {
+  if (field === 'reps') {
+    if (value === null) return direction === 1 ? 1 : null
+    return Math.min(MAX_REPS, Math.max(1, value + direction))
+  }
+  if (value === null) return direction === 1 ? toKg(WEIGHT_STEP[weightUnit], weightUnit) : null
+  // 以顯示的精度（kg 0.01、lb 0.1）為基準，避免 lb 換算的小數誤差影響增減後的值
+  const shown =
+    weightUnit === 'lb' ? Math.round(kgToLb(value) * 10) / 10 : Math.round(value * 100) / 100
+  const next = Math.max(0, Math.round((shown + direction * WEIGHT_STEP[weightUnit]) * 100) / 100)
+  return next === shown ? value : toKg(next, weightUnit)
 }

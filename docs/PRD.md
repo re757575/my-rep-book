@@ -171,6 +171,17 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
   - 收合動作照常可用
 - 今天也可以手動開啟鎖定
 
+#### US-29 −／+ 快速微調數值
+
+> 身為使用者，我想不叫出鍵盤就能微調重量與次數，以便組間單手操作。
+
+- **Given** 今天的訓練頁（或已解鎖的過去日期）　**Then** 重量、額外負重與次數欄位下方各有「−」「+」兩個按鈕，數值即時自動儲存
+- 重量與額外負重一階為 2.5 kg（lb 模式為 5 lb），從畫面上顯示的值開始算；不能小於 0，已經是 0 時「−」停用
+- 次數一階為 1，限制在 1–9999；已到上下限時對應的按鈕停用
+- 欄位空白時，按「+」重量從 0 起算（得 2.5 kg／5 lb）、次數得 1；按「−」不動（停用）
+- 欄位輸入到一半不合法時，按「−」「+」從最後一個合法的值算，並清除錯誤
+- 時間與距離欄位沒有「−」「+」；訓練頁鎖定時也不顯示
+
 ### 4.2 動作庫
 
 #### US-10 瀏覽與搜尋動作
@@ -547,6 +558,7 @@ export interface ExportFile {
 | `cloneSetForNext(previousSet)` | 依 US-03 規則複製上一組 |
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
+| `stepSetValue(field, value, direction, weightUnit)` | −／+ 微調後的值（US-29） |
 | `matchesSearch(exercise, query)` / `exercisesInCategory(...)` | 搜尋與分類篩選 |
 | `getRecentExerciseIds(workouts, limit = 8)` | 最近使用 |
 | `normalizeNameKey(name)` / `isDuplicateName(...)` | 名稱重複檢查 |
