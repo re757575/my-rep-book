@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
+import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
+import { renderAppWithBackup } from '@/test/importBackup'
 import { renderApp } from '@/test/renderApp'
 
 /** 訓練頁上的訓練動作數（每個訓練動作的標題是 h2） */
@@ -85,5 +87,113 @@ describe('收合訓練動作', () => {
     const bench = await addExercise(user, '槓鈴臥推')
     await user.click(toggleOf(bench, '槓鈴臥推'))
     expect(within(bench).getByText('尚未記錄正式組')).toBeInTheDocument()
+  })
+})
+
+describe('一鍵收合／展開全部動作', () => {
+  /** 臥推與深蹲兩個動作，各一組 */
+  async function addTwoExercises(user: UserEvent) {
+    const bench = await addExercise(user, '槓鈴臥推')
+    const squat = await addExercise(user, '槓鈴深蹲')
+    return { bench, squat }
+  }
+
+  it('只有 1 個動作或沒有動作時不顯示', async () => {
+    const { user } = renderApp()
+    await screen.findByRole('button', { name: '加入動作' })
+    expect(screen.queryByRole('button', { name: /^全部(收合|展開)$/ })).not.toBeInTheDocument()
+
+    await addExercise(user, '槓鈴臥推')
+    expect(screen.queryByRole('button', { name: /^全部(收合|展開)$/ })).not.toBeInTheDocument()
+
+    await addExercise(user, '槓鈴深蹲')
+    expect(await screen.findByRole('button', { name: '全部收合' })).toBeInTheDocument()
+  })
+
+  it('「全部收合」收合所有動作，按鈕變成「全部展開」，再按全部展開', async () => {
+    const { user } = renderApp()
+    const { bench, squat } = await addTwoExercises(user)
+
+    await user.click(screen.getByRole('button', { name: '全部收合' }))
+
+    expect(toggleOf(bench, '槓鈴臥推')).toHaveAttribute('aria-expanded', 'false')
+    expect(toggleOf(squat, '槓鈴深蹲')).toHaveAttribute('aria-expanded', 'false')
+    // 每個動作仍顯示自己的總計
+    expect(within(bench).getByText('尚未記錄正式組')).toBeInTheDocument()
+    expect(within(squat).getByText('尚未記錄正式組')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '全部展開' }))
+
+    expect(toggleOf(bench, '槓鈴臥推')).toHaveAttribute('aria-expanded', 'true')
+    expect(toggleOf(squat, '槓鈴深蹲')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: '全部收合' })).toBeInTheDocument()
+  })
+
+  it('還有動作是展開的時候是「全部收合」；手動收合最後一個後變成「全部展開」', async () => {
+    const { user } = renderApp()
+    const { bench, squat } = await addTwoExercises(user)
+
+    await user.click(toggleOf(bench, '槓鈴臥推'))
+    expect(screen.getByRole('button', { name: '全部收合' })).toBeInTheDocument()
+
+    // 只剩深蹲展開：全部收合會收合它，而不是展開臥推
+    await user.click(screen.getByRole('button', { name: '全部收合' }))
+    expect(toggleOf(bench, '槓鈴臥推')).toHaveAttribute('aria-expanded', 'false')
+    expect(toggleOf(squat, '槓鈴深蹲')).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(toggleOf(bench, '槓鈴臥推'))
+    expect(screen.getByRole('button', { name: '全部收合' })).toBeInTheDocument()
+    await user.click(toggleOf(bench, '槓鈴臥推'))
+    expect(await screen.findByRole('button', { name: '全部展開' })).toBeInTheDocument()
+  })
+
+  it('全部收合後新加入的動作是展開的，按鈕變回「全部收合」；重新整理後仍保留', async () => {
+    const { user, reload } = renderApp()
+    await addTwoExercises(user)
+    await user.click(screen.getByRole('button', { name: '全部收合' }))
+
+    const deadlift = await addExercise(user, '硬舉')
+    expect(toggleOf(deadlift, '硬舉')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: '全部收合' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: '全部收合' }))
+    reload()
+
+    expect(await screen.findByRole('button', { name: '全部展開' })).toBeInTheDocument()
+    for (const name of ['槓鈴臥推', '槓鈴深蹲', '硬舉']) {
+      // 動作要等動作庫載入才顯示，比按鈕晚出現
+      const card = await screen.findByRole('region', { name })
+      expect(toggleOf(card, name)).toHaveAttribute('aria-expanded', 'false')
+    }
+  })
+
+  it('鎖定的過去日期也能用（收合只是畫面狀態）', async () => {
+    const { user } = await renderAppWithBackup(
+      backupFixture({
+        workouts: [
+          fixtureWorkout('2026-10-20', [
+            {
+              exerciseId: 'barbell-bench-press',
+              sets: [{ type: 'weight_reps', weightKg: 60, reps: 8 }],
+            },
+            {
+              exerciseId: 'barbell-squat',
+              sets: [{ type: 'weight_reps', weightKg: 80, reps: 5 }],
+            },
+          ]),
+        ],
+      }),
+      '/day/2026-10-20',
+    )
+    expect(await screen.findByRole('button', { name: '鎖定' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    await user.click(await screen.findByRole('button', { name: '全部收合' }))
+
+    const bench = await screen.findByRole('region', { name: '槓鈴臥推' })
+    expect(toggleOf(bench, '槓鈴臥推')).toHaveAttribute('aria-expanded', 'false')
+    expect(within(bench).getByText('1 組 · 最重 60kg×8 · 訓練量 480 kg')).toBeInTheDocument()
   })
 })

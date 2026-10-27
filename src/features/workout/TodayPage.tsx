@@ -19,6 +19,7 @@ import { startRestTimerIfEnabled } from '@/features/restTimer/restTimerStore'
 import { BodyWeightField } from '@/features/bodyWeight/BodyWeightField'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
+import { CollapseAllButton } from './CollapseAllButton'
 import { DailySummary } from './DailySummary'
 import { today, type DayRouteState } from './dayPath'
 import { deleteSetWithUndo, deleteWorkoutExerciseWithUndo } from './deleteWithUndo'
@@ -111,6 +112,9 @@ export function TodayPage({ date }: { date: LocalDate }) {
         <WorkoutLockSwitch locked={locked} onLockedChange={setLocked} />
         <BodyWeightField date={date} />
         {workout && <DailySummary workout={workout} />}
+        {workout && (
+          <CollapseAllButton workoutExerciseIds={workout.exercises.map((item) => item.id)} />
+        )}
 
         {/* 動作庫載入後才顯示，避免動作名稱閃爍 */}
         {library &&
