@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildInitialSet, findLastPerformance } from './lastPerformance'
+import { buildInitialSet, findLastPerformance, pairSetsWithLast } from './lastPerformance'
 import type { LocalDate, SetValues, Workout, WorkoutSet } from './types'
 
 const BENCH = 'barbell-bench-press'
@@ -141,5 +141,50 @@ describe('buildInitialSet：第一組預填', () => {
       isWarmup: false,
       values: { type: 'reps', reps: null, addedWeightKg: null },
     })
+  })
+})
+
+describe('pairSetsWithLast：每個正式組對照上次的哪一組', () => {
+  const last = {
+    date: '2026-10-20',
+    sets: [weightReps(60, 8), weightReps(60, 8), weightReps(62.5, 6)],
+  }
+
+  it('第 N 個正式組對照上次的第 N 個正式組，熱身組不參與', () => {
+    const sets = [set(weightReps(40, 10), true), set(weightReps(60, 8)), set(weightReps(65, 5))]
+    expect(pairSetsWithLast(sets, last)).toEqual(
+      new Map([
+        [sets[1].id, weightReps(60, 8)],
+        [sets[2].id, weightReps(60, 8)],
+      ]),
+    )
+  })
+
+  it('還沒填寫的正式組也對照；超出上次組數的組不對照', () => {
+    const sets = [set(weightReps(null, null)), set(weightReps(60, 8)), set(weightReps(60, 8))]
+    const extra = [...sets, set(weightReps(62.5, 6)), set(weightReps(62.5, 6))]
+    const pairs = pairSetsWithLast(extra, last)
+    expect(pairs.get(extra[0].id)).toEqual(weightReps(60, 8))
+    expect(pairs.get(extra[2].id)).toEqual(weightReps(62.5, 6))
+    expect(pairs.has(extra[3].id)).toBe(false)
+    expect(pairs.has(extra[4].id)).toBe(false)
+  })
+
+  it('刪除或切換熱身後依順序重新對齊', () => {
+    const sets = [set(weightReps(60, 8)), set(weightReps(60, 8)), set(weightReps(65, 5))]
+    expect(pairSetsWithLast(sets.slice(1), last).get(sets[2].id)).toEqual(weightReps(60, 8))
+    const warmedUp = [{ ...sets[0], isWarmup: true }, sets[1], sets[2]]
+    expect(pairSetsWithLast(warmedUp, last).has(sets[0].id)).toBe(false)
+    expect(pairSetsWithLast(warmedUp, last).get(sets[1].id)).toEqual(weightReps(60, 8))
+  })
+
+  it('沒有上次紀錄、或記錄類型和上次不同時，沒有對照', () => {
+    const sets = [set(weightReps(60, 8))]
+    expect(pairSetsWithLast(sets, undefined).size).toBe(0)
+    const otherType = {
+      date: '2026-10-20',
+      sets: [{ type: 'duration', durationSec: 60 } as SetValues],
+    }
+    expect(pairSetsWithLast(sets, otherType).size).toBe(0)
   })
 })

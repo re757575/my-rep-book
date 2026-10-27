@@ -206,6 +206,16 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 過去的日期（鎖定或補記）也顯示，比較對象是那天之前的訓練
 - 只在畫面上標示，不震動、不通知，也不另外儲存；以 kg 比較，不受重量單位影響
 
+#### US-32 逐組對照上次
+
+> 身為使用者，我想在每一組旁看到上次同一組的數值，以便決定這組要不要加重。
+
+- **Given** 動作有上次紀錄（US-02）　**Then** 每個正式組的欄位下方以淡色顯示「上次 60kg×8」：第 N 個正式組對照上次紀錄的第 N 個正式組，格式同「上次」那一列、單位跟隨設定
+- 熱身組不顯示；正式組比上次的組數多時，超出的組不顯示；沒有上次紀錄時完全不顯示
+- 對照的是順序，不是內容：還沒填寫的正式組也顯示（新增一組後就看得到這組上次做多少）；新增、刪除組或切換熱身之後重新對齊，例如刪除第 2 組，原本的第 3 組改對照上次的第 2 組
+- 同一天把同一個動作加入多次時，各個訓練動作各自從第 1 個正式組對照
+- 訓練動作收合時一併隱藏；鎖定與過去的日期也顯示（上次紀錄是那天之前的訓練）
+
 ### 4.2 動作庫
 
 #### US-10 瀏覽與搜尋動作
@@ -583,6 +593,7 @@ export interface ExportFile {
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `stepSetValue(field, value, direction, weightUnit)` / `completesSet(values, field, value)` | −／+ 微調後的值（US-29）；這次編輯是否讓組變完整（US-30 的觸發條件） |
+| `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |
 | `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
 | `startRest` / `restTimerPhase` / `adjustRest` | 組間休息的開始、此刻的階段（倒數中、剛結束、沒有）與增減秒數（US-30） |
 | `matchesSearch(exercise, query)` / `exercisesInCategory(...)` | 搜尋與分類篩選 |

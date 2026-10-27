@@ -45,3 +45,23 @@ export function buildInitialSet(
   const values = first?.type === trackingType ? { ...first } : emptySetValues(trackingType)
   return { isWarmup: false, values }
 }
+
+/**
+ * 每個正式組對照的上次那一組：第 N 個正式組對照上次紀錄的第 N 個正式組（依順序，不看內容）。
+ * key 是組的 ID；熱身組、超出上次組數的組、沒有上次紀錄、記錄類型和上次不同的組不出現。
+ * 不完整的正式組也算，這樣新增一組後就看得到這組上次做多少。
+ */
+export function pairSetsWithLast(
+  sets: readonly WorkoutSet[],
+  lastPerformance: LastPerformance | undefined,
+): Map<string, SetValues> {
+  const pairs = new Map<string, SetValues>()
+  if (!lastPerformance) return pairs
+  let position = 0
+  for (const set of sets) {
+    if (set.isWarmup) continue
+    const last = lastPerformance.sets[position++]
+    if (last && last.type === set.values.type) pairs.set(set.id, last)
+  }
+  return pairs
+}

@@ -72,7 +72,12 @@ export {
   type RemovedSet,
   type RemovedWorkoutExercise,
 } from './workoutEdits'
-export { buildInitialSet, findLastPerformance, type LastPerformance } from './lastPerformance'
+export {
+  buildInitialSet,
+  findLastPerformance,
+  pairSetsWithLast,
+  type LastPerformance,
+} from './lastPerformance'
 export { formatLastPerformance, formatSetValues, formatWeightReps } from './formatSet'
 export { applyFieldEdits, queueFieldEdit, settleFieldEdits, type FieldEdit } from './fieldEdits'
 export { hasDuplicateName, normalizeExerciseName } from './naming'

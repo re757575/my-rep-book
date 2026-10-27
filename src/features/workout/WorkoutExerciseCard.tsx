@@ -4,10 +4,14 @@ import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import {
   formatLastPerformance,
+  formatSetValues,
   formatWorkoutExerciseSummary,
+  pairSetsWithLast,
   type LastPerformance,
   type SetField,
   type SetRecordKind,
+  type SetValues,
+  type WeightUnit,
   type WorkoutExercise,
 } from '@/domain'
 import { RecordBadge } from '@/features/exercises/RecordBadge'
@@ -54,6 +58,7 @@ export function WorkoutExerciseCard({
   const weightUnit = useWeightUnit()
   const [collapsed, setCollapsed] = useCollapsedWorkoutExercise(workoutExercise.id)
   const readOnly = useWorkoutReadOnly()
+  const lastSets = pairSetsWithLast(workoutExercise.sets, lastPerformance)
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2 border-b pb-4">
@@ -97,12 +102,12 @@ export function WorkoutExerciseCard({
                 set.isWarmup && 'bg-muted text-muted-foreground',
               )}
             >
-              <span className="flex h-11 w-6 items-center justify-center text-sm text-muted-foreground">
+              <span className="flex h-11 w-6 shrink-0 items-center justify-center text-sm text-muted-foreground">
                 {index + 1}
               </span>
               <Toggle
                 variant="outline"
-                className="size-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                className="size-11 shrink-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 aria-label={`第 ${index + 1} 組熱身`}
                 pressed={set.isWarmup}
                 disabled={readOnly}
@@ -110,19 +115,23 @@ export function WorkoutExerciseCard({
               >
                 熱
               </Toggle>
-              <div className="flex flex-col gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <SetFields
                   values={set.values}
                   setNumber={index + 1}
                   onChange={(field, value) => onChangeSetField(set.id, field, value)}
                 />
-                <SetRecordBadges kinds={setRecords.get(set.id)} />
+                <SetHints
+                  last={lastSets.get(set.id)}
+                  records={setRecords.get(set.id)}
+                  weightUnit={weightUnit}
+                />
               </div>
               {!readOnly && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="ml-auto size-11 text-muted-foreground"
+                  className="ml-auto size-11 shrink-0 text-muted-foreground"
                   aria-label={`刪除第 ${index + 1} 組`}
                   onClick={() => onDeleteSet(set.id)}
                 >
@@ -149,11 +158,25 @@ const RECORD_LABELS: Readonly<Record<SetRecordKind, string>> = {
   oneRepMax: '1RM 新紀錄',
 }
 
-function SetRecordBadges({ kinds }: { kinds: readonly SetRecordKind[] | undefined }) {
-  if (!kinds) return null
+/** 組的欄位下方：上次同一組的數值（淡色），以及破了哪些紀錄 */
+function SetHints({
+  last,
+  records,
+  weightUnit,
+}: {
+  last: SetValues | undefined
+  records: readonly SetRecordKind[] | undefined
+  weightUnit: WeightUnit
+}) {
+  if (!last && !records) return null
   return (
-    <div className="flex flex-wrap gap-1">
-      {kinds.map((kind) => (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {last && (
+        <p className="text-xs text-muted-foreground tabular-nums">
+          {`上次 ${formatSetValues(last, weightUnit)}`}
+        </p>
+      )}
+      {records?.map((kind) => (
         <RecordBadge key={kind}>{RECORD_LABELS[kind]}</RecordBadge>
       ))}
     </div>
