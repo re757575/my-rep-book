@@ -23,6 +23,7 @@ E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs
 - **sonner toast 在 Playwright 中是 `listitem`**：`page.getByRole('listitem').filter({ hasText: '有新版本' })`，按鈕再從它裡面取。
 - **新增 Playwright project（瀏覽器）時**，同步修改 `.github/workflows/ci.yml` 的 `playwright install` 參數。
 - **量回應時間不要用 Playwright 端的計時**：`expect(...).toBeVisible()` 是輪詢（間隔 100 ms 以上），加上與瀏覽器之間的通訊，量不出 < 100 ms 的差異。用 `e2e/performance.spec.ts` 的 `measureClick`，在頁面裡以點擊事件為起點、DOM 符合條件後的下一個畫格為終點計時。終點條件用 CSS 選擇器（只拿來計時，行為仍用 role 斷言）。Playwright 的 Clock（`e2e/fixtures.ts` 固定「今天」）也接管了 `performance.now()`，解析度是 1 ms。
+- **用 `page.mouse` 點元素上的某個位置前，先 `scrollIntoViewIfNeeded()`**：`boundingBox()` 與 `mouse.click` 的座標都是相對於可視範圍，元素在畫面外時點擊會落空，而且沒有任何錯誤，只看到「點了沒反應」。範例見 `e2e/progress-chart.spec.ts`。
 - **`e2e/performance.spec.ts` 在 CI 上跳過**：GitHub 的 runner 量到 Chrome 約 90–120 ms、WebKit 150–435 ms（本機 23–69 ms），不代表使用者的手機。改動訓練頁、加入動作選單或上次紀錄後，在本機跑 `npx playwright test e2e/performance.spec.ts`。
 - **大量資料用程式產生 fixture 再匯入**：1,000 筆訓練（每筆 4 個動作）的備份檔匯入約 3 秒，見 `e2e/performance.spec.ts` 的 `thousandWorkouts`。
 - **無障礙檢查集中在 `e2e/accessibility.spec.ts`**：`SCREENS` 列出要檢查的畫面，每個畫面在淺色與深色主題下各跑 axe（serious／critical 不得出現，含色彩對比）、觸控目標 ≥ 44×44 px、輸入框字級 ≥ 16px。新增畫面或對話框時加進 `SCREENS`。axe 前會插入停用 `transition`／`animation` 的樣式：顏色轉場途中取樣會算出不存在的低對比，造成偶發失敗。核取方塊、選項的觸控目標以整個 `label` 計算，所以 `Label` 要撐滿列高（`min-h-11`）。

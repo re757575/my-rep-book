@@ -34,6 +34,14 @@ export {
 } from './exerciseRecords'
 export { formatDuration, parseDuration } from './duration'
 export {
+  PROGRESS_METRICS,
+  buildProgressSeries,
+  formatProgressValue,
+  niceTicks,
+  type ProgressMetric,
+  type ProgressPoint,
+} from './progress'
+export {
   DEFAULT_REST_DURATION_SEC,
   REST_DURATIONS_SEC,
   REST_FINISHED_VISIBLE_MS,

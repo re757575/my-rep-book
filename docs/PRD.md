@@ -334,6 +334,18 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - **When** 點「復原」　**Then** 移除這次複製進來的動作；今天原本沒有訓練時，今天的訓練一併移除，月曆不再標點
 - 被封存或隱藏的動作照常複製（過去的紀錄不受影響）
 
+#### US-34 動作的進度圖表
+
+> 身為使用者，我想看到某個動作的最大重量、估算 1RM 與訓練量隨時間的走勢，以便知道有沒有進步。
+
+- 只適用於 `weight_reps` 的動作，且至少有 2 次可計算的訓練（一次連不成趨勢，不顯示圖表）。圖表在動作詳情頁，位於「個人紀錄」與「歷史紀錄」之間，標題為「進度」
+- 用「最大重量」「估算 1RM」「訓練量」切換指標，預設「最大重量」；數值取自 US-23 的每次進度（最大重量是當次最重那一組的重量）。一次只畫一個指標，不同指標不共用一條軸；切換不記住，每次進入頁面回到預設
+- 折線圖，一次訓練一個點：X 軸是日期，依實際的日期間隔排列（不是等距）；Y 軸是目前的重量單位，刻度取乾淨的數字、不一定從 0 開始。以全部歷史計算，與個人紀錄同範圍
+- 圖上方顯示選取那一次的數值與日期，預設是最新一次。點擊或滑過圖上任一處選取最近的一次；鍵盤聚焦圖後用左右鍵移動。選取的點加上標記與垂直線，每個數值都不需要靠滑過才讀得到（圖上方的數值、隱藏的表格與歷史紀錄）
+- 訓練次數 ≤ 24 次時每次都畫點；更多時只畫最新一次與選取的點，避免點擠在一起
+- 圖有文字替代：名稱與範圍的摘要，以及列出每次日期與目前指標數值的表格（只給螢幕閱讀器）
+- 顏色用主題的前景色，不另外配色；亮色與深色主題都清楚可讀
+
 ### 4.4 設定與資料
 
 #### US-16 匯出資料 `[E2E-05]`
@@ -607,6 +619,7 @@ export interface ExportFile {
 | `summarizeWorkout(workout, exercisesById)` | 每日摘要（§US-09） |
 | `formatWorkoutExerciseSummary(sets, weightUnit)` | 收合後顯示的訓練動作總計（US-27） |
 | `stepSetValue(field, value, direction, weightUnit)` / `completesSet(values, field, value)` | −／+ 微調後的值（US-29）；這次編輯是否讓組變完整（US-30 的觸發條件） |
+| `buildProgressSeries(sessions, metric, weightUnit)` / `niceTicks(min, max, count)` | 進度圖表的資料點（由舊到新、顯示單位）與乾淨的 Y 軸刻度（US-34） |
 | `copyWorkoutExercises(source, target, date, context)` / `removeWorkoutExercises(workout, ids, now)` | 把另一天的訓練動作複製到訓練的最後面；復原時移除複製進來的動作（US-33） |
 | `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |
 | `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
@@ -890,7 +903,7 @@ push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artif
 | 功能 | 說明 |
 | --- | --- |
 | 訓練範本／課表 | 例如「推日」，一鍵帶入多個動作 |
-| 進度圖表 | 單一動作的最大重量、估算 1RM、訓練量趨勢圖（數值清單已在 US-23 完成）；各部位組數的長期趨勢（單週／單月統計已在 US-24 完成） |
+| 進度圖表 | 各部位組數的長期趨勢（單週／單月統計已在 US-24 完成；單一動作的趨勢圖已在 US-34 完成） |
 | RPE／RIR | 每組強度記錄 |
 | Drop set、超級組 | 組類型與動作群組 |
 | 拖曳排序 | 取代上移／下移按鈕 |

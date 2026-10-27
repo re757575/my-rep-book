@@ -12,6 +12,7 @@ import {
 } from '@/domain'
 import { useWeightUnit } from '@/features/settings/settingsContext'
 import { ExerciseHistory } from './ExerciseHistory'
+import { ProgressChart } from './ProgressChart'
 
 function RecordItem({ label, value, detail }: { label: string; value: string; detail: string }) {
   const id = useId()
@@ -58,7 +59,7 @@ function PersonalRecords({ records }: { records: ExerciseRecords }) {
 }
 
 /**
- * 重量×次數的動作：先顯示個人紀錄，再在每一筆歷史紀錄加上當次的進度。
+ * 重量×次數的動作：先顯示個人紀錄與進度圖表，再在每一筆歷史紀錄加上當次的進度。
  * 個人紀錄與「是否破紀錄」要看過全部的紀錄才算得出來，所以讀取這個動作的所有訓練。
  */
 function WeightRepsRecordsAndHistory({ exerciseId }: { exerciseId: string }) {
@@ -76,6 +77,7 @@ function WeightRepsRecordsAndHistory({ exerciseId }: { exerciseId: string }) {
   return (
     <>
       {records && <PersonalRecords records={records} />}
+      {records && <ProgressChart sessions={records.sessions} />}
       <ExerciseHistory exerciseId={exerciseId} progress={progress} />
     </>
   )
