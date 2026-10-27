@@ -68,7 +68,7 @@ function CategorySets({ setsByCategory }: { setsByCategory: PeriodStats['setsByC
 
 /**
  * 歷史頁的每週／每月統計：訓練天數、正式組數、總訓練量與各部位的組數。
- * 週為選取日期所在的一週（還沒選日期時為本週），月跟著月曆目前顯示的月份。
+ * 週為選取日期所在的一週，月跟著月曆目前顯示的月份。
  */
 export function PeriodStatsSection({
   month,
@@ -76,11 +76,12 @@ export function PeriodStatsSection({
 }: {
   /** 月曆目前顯示的月份（該月第一天） */
   month: LocalDate
-  selected: LocalDate | undefined
+  /** 選取的日期 */
+  selected: LocalDate
 }) {
   const headingId = useId()
   const [period, setPeriod] = useState<StatsPeriod>('week')
-  const range = periodRange(period, period === 'month' ? month : (selected ?? today()))
+  const range = periodRange(period, period === 'month' ? month : selected)
   const [from, to] = range
   const workouts = useLiveData(
     (repositories) => repositories.workouts.listInRange(from, to),

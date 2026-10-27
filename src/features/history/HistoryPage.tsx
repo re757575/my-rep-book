@@ -54,7 +54,8 @@ const calendarLabels: CalendarProps['labels'] = {
 
 export function HistoryPage() {
   const [month, setMonth] = useState(() => monthStartOf(today()))
-  const [selected, setSelected] = useState<LocalDate>()
+  // 預設選取今天，一進入就看得到今天的明細
+  const [selected, setSelected] = useState<LocalDate>(() => today())
   const [from, to] = visibleRange(month)
   const workoutDates = useLiveData(
     (repositories) => repositories.workouts.listDatesInRange(from, to),
@@ -83,7 +84,7 @@ export function HistoryPage() {
       <Calendar
         className="mx-auto [--cell-size:--spacing(11)]"
         mode="single"
-        selected={selected === undefined ? undefined : fromLocalDate(selected)}
+        selected={fromLocalDate(selected)}
         onSelect={(date) => setSelected(toLocalDate(date))}
         required
         locale={zhTW}
@@ -96,11 +97,7 @@ export function HistoryPage() {
         components={calendarComponents}
         labels={calendarLabels}
       />
-      {selected ? (
-        <DayDetail date={selected} />
-      ) : (
-        <p className="py-4 text-center text-muted-foreground">點選日期查看當天明細</p>
-      )}
+      <DayDetail date={selected} />
       <PeriodStatsSection month={month} selected={selected} />
     </div>
   )

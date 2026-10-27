@@ -242,3 +242,37 @@ describe('日明細', () => {
     expect(setTexts(exercise)).toEqual(['50kg×10'])
   })
 })
+
+describe('歷史預設選取今天', () => {
+  it('進入歷史就顯示今天的明細，今天的日期按鈕是選取狀態', async () => {
+    const { user } = renderApp()
+    await addExercise(user, '槓鈴臥推')
+    await goToTab(user, '歷史')
+
+    const detail = await dayDetail('10/24（六）')
+    expect(await within(detail).findByRole('heading', { name: '槓鈴臥推' })).toBeInTheDocument()
+    expect(await calendarDay('10月24日')).toHaveAccessibleName(/已選取/)
+  })
+
+  it('今天沒有訓練時顯示「這天沒有訓練」，統計是本週', async () => {
+    renderApp('/history')
+
+    const detail = await dayDetail('10/24（六）')
+    expect(await within(detail).findByText('這天沒有訓練')).toBeInTheDocument()
+    expect(
+      within(await screen.findByRole('region', { name: '統計' })).getByText('本週'),
+    ).toBeInTheDocument()
+  })
+
+  it('切換月份後選取的日期不變，點選別的日期才換明細', async () => {
+    const { user } = renderApp('/history')
+    await dayDetail('10/24（六）')
+
+    await user.click(await screen.findByRole('button', { name: '前往上個月' }))
+    expect(await dayDetail('10/24（六）')).toBeInTheDocument()
+
+    await user.click(await calendarDay('9月15日'))
+    expect(await dayDetail('9/15（二）')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '10/24（六）' })).not.toBeInTheDocument()
+  })
+})
