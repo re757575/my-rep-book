@@ -92,7 +92,7 @@ docs/               # PRD、實機測試清單、給 agent 的開發指引
 設定頁最下方的「關於」會顯示目前的 App 版本（US-43），版本號取自 `package.json` 的 `version`，建置時注入。版本號與 `CHANGELOG.md` 都由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依 commit 訊息（[Conventional Commits](https://www.conventionalcommits.org/)）自動產生，不手動修改 `version` 或編輯 `CHANGELOG.md`。
 
 ```bash
-npm run release          # 依 commit 型別自動判斷版號（fix → patch／feat → minor）
+npm run release          # 依 commit 型別自動判斷版號（0.x 階段：fix、feat 都升 patch，breaking 升 minor）
 npm run release:patch    # 強制升 patch 版號
 npm run release:minor    # 強制升 minor 版號
 npm run release:major    # 強制升 major 版號
@@ -100,7 +100,7 @@ npm run release:major    # 強制升 major 版號
 
 執行前工作區要乾淨、停在要發布的分支。它會更新 `package.json`（與 `package-lock.json`）的版本號、重新產生 `CHANGELOG.md`、建立一個 `chore(release): x.y.z` commit 並打上 `vX.Y.Z` 的 git tag，完成後再自行 push（`git push --follow-tags`）。部署仍是 push 到 `main` 就觸發，與 tag 無關。
 
-第一次發布（目前是 `0.0.0`，還沒有任何 tag）用 `npm run release:minor`，得到 `0.1.0`；直接 `npm run release` 會因為沒有前一個 tag 而只升 patch。目前仍在 0.x 階段，commit 帶 `!` 或含 `BREAKING CHANGE` 只會跳 minor，要發布 1.0.0 需明確執行 `npm run release:major`。
+已發布 `0.1.0`、`0.1.1`。目前仍在 0.x 階段，自動判斷時 `fix` 與 `feat` 都只升 patch，commit 帶 `!` 或含 `BREAKING CHANGE` 才升 minor；想為新功能升 minor 就明確執行 `npm run release:minor`。要發布 1.0.0 需明確執行 `npm run release:major`。
 
 上線前的實機檢查清單見 [`docs/manual-device-test.md`](docs/manual-device-test.md)。
 
