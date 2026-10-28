@@ -3,7 +3,6 @@ import type { UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { backupFixture, fixtureWorkout } from '@/test/backupFixture'
 import { renderAppWithBackup } from '@/test/importBackup'
-import { renderApp } from '@/test/renderApp'
 
 // 固定的今天是 2026-10-24（週六）：本週 10/19–10/25；12 週的區間從 8/3（一）開始
 
@@ -150,7 +149,9 @@ describe('各部位組數的長期趨勢（US-47）', () => {
   })
 
   it('完全沒有訓練時「全部」顯示「這段期間沒有訓練」', async () => {
-    renderApp('/history')
+    // 匯入空的備份而不是直接 renderApp：全套測試加上 coverage 的負載下，直接在剛重建的空資料庫上
+    // 等 live query 偶爾一直等不到結果（見 docs/agents/testing.md）
+    await renderAppWithBackup(backupFixture(), '/history')
     const section = await trendSection()
 
     expect(await within(section).findByText('這段期間沒有訓練')).toBeInTheDocument()
