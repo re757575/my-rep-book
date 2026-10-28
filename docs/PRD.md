@@ -408,6 +408,19 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 展開時內容同 US-15（各組數值、熱身／遞減／力竭的標示、備註）
 - 展開與收合只是畫面狀態：不寫進資料庫、不記住，每次進入頁面都回到預設（最近 3 筆展開）
 
+#### US-45 訓練節奏
+
+> 身為使用者，我想一眼看到本週練了幾天、已經連續幾週有練，以便保持規律。
+
+- 歷史頁最上方（標題下、月曆上）有「訓練節奏」區塊，顯示三項：**本週已練**（天）、**連續**（週）、**最長連續**（週）
+- 一週是週一到週日（同 US-24）。「練了」就是那天有訓練（月曆有標點的日期，同 US-24 的訓練天數）；一週裡至少有一天練了，就是「有訓練的週」
+- **本週已練**：今天所在的那一週練了幾天，不隨選取的日期或月曆顯示的月份改變
+- **連續**：連續幾個有訓練的週。本週已經有訓練時算到本週；本週還沒練時算到上週（本週還沒結束，不算中斷），上週也沒練就是 0
+- **最長連續**：全部歷史中最長的連續週數，至少等於目前的連續週數
+- 本週還沒練、而且目前有連續週數（> 0）時，區塊多一行提示「本週還沒練，練一天就能延續連續 N 週」
+- 沒有任何訓練時三項都是 0，不顯示提示
+- 只由訓練紀錄算出，不新增儲存的欄位，也不影響匯出檔
+
 ### 4.4 設定與資料
 
 #### US-16 匯出資料 `[E2E-05]`
@@ -771,6 +784,7 @@ export interface ExportFile {
 | `applyTemplate(template, workout, date, inputs, context)` | 把範本的動作加到訓練最後面，第一組預填、其餘複製前一組（US-41）；復原用 `removeWorkoutExercises` |
 | `renameTemplate` / `setTemplateSetCount` / `moveTemplateExercise` / `removeTemplateExercise` / `addTemplateExercise` / `removeExerciseFromTemplate` | 範本的編輯：改名、改組數（夾在 1–20）、換位置、移除（至少留 1 個）、加入動作、刪除自訂動作時移除（US-42） |
 | `isDoneSet(set)` / `isFinishedSet(set)` / `setSetDone(workout, exerciseId, setId, done, now)` | 組是否算數（沒有 `done` 或 `done` 不是 false）；是否為已完成的完整組（計入統計的條件）；勾選或取消勾選一組（US-44） |
+| `buildTrainingRhythm(dates, today)` | 本週已練天數、目前連續週數與最長連續週數（US-45） |
 | `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |
 | `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
 | `startRest` / `restTimerPhase` / `adjustRest` | 組間休息的開始、此刻的階段（倒數中、剛結束、沒有）與增減秒數（US-30） |

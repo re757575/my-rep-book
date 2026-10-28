@@ -10,6 +10,7 @@ import { addDays, fromLocalDate, toLocalDate, type LocalDate } from '@/domain'
 import { today } from '@/features/workout/dayPath'
 import { DayDetail } from './DayDetail'
 import { PeriodStatsSection } from './PeriodStatsSection'
+import { TrainingRhythmSection } from './TrainingRhythmSection'
 
 type CalendarProps = ComponentProps<typeof Calendar>
 
@@ -81,6 +82,7 @@ export function HistoryPage() {
           </Button>
         </div>
       </div>
+      <TrainingRhythmSection />
       <Calendar
         className="mx-auto [--cell-size:--spacing(11)]"
         mode="single"

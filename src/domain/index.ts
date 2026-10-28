@@ -141,6 +141,7 @@ export {
   type TemplateExerciseInfo,
 } from './templates'
 export { periodRange, summarizePeriod, type PeriodStats, type StatsPeriod } from './periodStats'
+export { buildTrainingRhythm, type TrainingRhythm } from './trainingRhythm'
 export {
   PROMPT_WEEKS,
   buildTrainingPrompt,
