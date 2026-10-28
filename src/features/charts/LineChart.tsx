@@ -54,17 +54,23 @@ export function LineChart({
   activeIndex,
   onActiveIndexChange,
   ariaLabel,
+  includeZero = false,
 }: {
   dates: readonly LocalDate[]
   series: readonly LineSeries[]
   activeIndex: number
   onActiveIndexChange: (index: number) => void
   ariaLabel: string
+  /** Y 軸一定包含 0（例如組數這類計數，從 0 開始才不會誇大差距）；預設只涵蓋資料的範圍 */
+  includeZero?: boolean
 }) {
   const days = dates.map(dayNumber)
   const span = Math.max(days.at(-1)! - days[0], 1)
   const allValues = series.flatMap((line) => line.values)
-  const { ticks, min, max } = niceTicks(Math.min(...allValues), Math.max(...allValues))
+  const { ticks, min, max } = niceTicks(
+    includeZero ? Math.min(0, ...allValues) : Math.min(...allValues),
+    Math.max(...allValues),
+  )
   const yOf = (value: number) => MARGIN.top + PLOT_HEIGHT * (1 - (value - min) / (max - min))
   const xs = days.map((day) => MARGIN.left + (PLOT_WIDTH * (day - days[0])) / span)
   const withYear = dates[0].slice(0, 4) !== dates.at(-1)!.slice(0, 4)

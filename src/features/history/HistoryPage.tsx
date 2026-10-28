@@ -8,6 +8,7 @@ import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { useLiveData } from '@/data'
 import { addDays, fromLocalDate, toLocalDate, type LocalDate } from '@/domain'
 import { today } from '@/features/workout/dayPath'
+import { CategoryTrendSection } from './CategoryTrendSection'
 import { DayDetail } from './DayDetail'
 import { PeriodStatsSection } from './PeriodStatsSection'
 import { TrainingRhythmSection } from './TrainingRhythmSection'
@@ -102,6 +103,7 @@ export function HistoryPage() {
       {/* 換日期時重新掛載，不會在新資料載入前短暫顯示上一天的內容（「複製到今天」也不會拿到上一天的訓練） */}
       <DayDetail key={selected} date={selected} />
       <PeriodStatsSection month={month} selected={selected} />
+      <CategoryTrendSection />
     </div>
   )
 }

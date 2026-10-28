@@ -143,6 +143,14 @@ export {
 export { periodRange, summarizePeriod, type PeriodStats, type StatsPeriod } from './periodStats'
 export { buildTrainingRhythm, type TrainingRhythm } from './trainingRhythm'
 export {
+  TREND_WEEKS,
+  averageOfCompletedWeeks,
+  buildCategoryTrend,
+  trendRange,
+  type TrendWeeks,
+  type WeeklySetPoint,
+} from './categoryTrend'
+export {
   PROMPT_WEEKS,
   buildTrainingPrompt,
   hasPromptData,
