@@ -467,6 +467,14 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 體重筆數 ≤ 24 時每一筆都畫點；更多時只畫最新一筆與選取的那一筆
 - 圖有文字替代：名稱與範圍的摘要，以及列出每筆日期、體重、7 日平均的表格（只給螢幕閱讀器）
 
+#### US-43 顯示 App 版本號
+
+> 身為使用者，我想在設定頁看到目前的 App 版本，以便回報問題時附上版本，也能確認已經更新到新版。
+
+- 設定頁最下方有「關於」區塊，顯示「版本 v{x.y.z}」，例如 `v0.2.0`
+- 版本號取自 `package.json` 的 `version`，建置時注入，不需要網路，離線也看得到；每次建置的內容都對應到那個版本，所以「有新版本」提示（US-20）更新後，這裡的版本號會跟著變
+- 版本號由 `npm run release`（commit-and-tag-version，依 Conventional Commits 決定版號）更新，同時產生 `CHANGELOG.md`、建立 `chore(release)` commit 與 `vX.Y.Z` tag；不手動修改 `version` 或 `CHANGELOG.md`。尚未發布過時顯示 `v0.0.0`
+
 ### 4.5 訓練範本
 
 #### US-40 存成範本
@@ -864,6 +872,7 @@ export interface ExportFile {
 | 單元／App 測試 | Vitest + React Testing Library + user-event + `fake-indexeddb`（測試接縫見 §9） |
 | E2E | Playwright |
 | Lint／格式 | ESLint + Prettier |
+| 版本發布 | commit-and-tag-version（`npm run release`，見 US-43） |
 | CI | GitHub Actions |
 | 部署 | GitHub Pages（GitHub Actions 建置後以 `actions/deploy-pages` 發佈，見 §8.4） |
 

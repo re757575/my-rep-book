@@ -15,7 +15,11 @@
     "e2e": "playwright test",
     "check:bundle-size": "node scripts/check-bundle-size.ts",
     "lighthouse": "node scripts/lighthouse.ts",
-    "screenshot": "node scripts/screenshot.ts"
+    "screenshot": "node scripts/screenshot.ts",
+    "release": "commit-and-tag-version",
+    "release:patch": "commit-and-tag-version --release-as patch",
+    "release:minor": "commit-and-tag-version --release-as minor",
+    "release:major": "commit-and-tag-version --release-as major"
   },
   "volta": {
     "node": "22.23.4",
@@ -56,6 +60,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "@vitest/coverage-v8": "5.0.5",
+    "commit-and-tag-version": "13.1.2",
     "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-react-hooks": "7.1.1",

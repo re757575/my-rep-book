@@ -87,7 +87,13 @@ function simulateNewServiceWorker(): Plugin {
   }
 }
 
+/** 設定頁顯示的 App 版本號：來自 package.json 的 version，由 `npm run release` 更新 */
+const { version } = JSON.parse(
+  readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf8'),
+) as { version: string }
+
 export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(version) },
   base: BASE,
   plugins: [
     react(),

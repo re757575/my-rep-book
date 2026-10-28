@@ -50,6 +50,7 @@ App 部署在 `/my-rep-book/` 底下，開發伺服器也使用同一個 base pa
 | `npm run check:bundle-size` | 檢查首次載入的 JS（gzip）大小，需先 build |
 | `npm run lighthouse` | 量首頁 LCP（手機模擬），需先 build；不在 CI 執行 |
 | `npm run screenshot -- <路徑>` | 以示範資料截取某個畫面的手機截圖，選項見 `scripts/screenshot.ts` 開頭 |
+| `npm run release` | 發布新版本：依 commit 決定版號、更新 `CHANGELOG.md`、打 tag，見下方「版本發布」 |
 
 第一次跑 E2E 前要先安裝瀏覽器：`npx playwright install chromium webkit`。
 
@@ -85,6 +86,21 @@ docs/               # PRD、實機測試清單、給 agent 的開發指引
 每次 push 與 PR 依序執行 lint → typecheck → 單元測試（含覆蓋率）→ build（見 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）。只有 push 到 `main` 且全部通過才會部署到 GitHub Pages；PR 只跑 CI。
 
 **E2E 與 bundle 大小檢查暫時不在 CI 執行**（會拉長部署時間；`ci.yml` 裡相關步驟以註解保留），功能 commit 前請在本地跑過 `npm run e2e` 且全數通過；改動首頁或新增依賴時，也要在本地跑 `npm run build && npm run check:bundle-size`（預算內超過基準就直接加 `-- --update` 更新基準）。
+
+## 版本發布
+
+設定頁最下方的「關於」會顯示目前的 App 版本（US-43），版本號取自 `package.json` 的 `version`，建置時注入。版本號與 `CHANGELOG.md` 都由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依 commit 訊息（[Conventional Commits](https://www.conventionalcommits.org/)）自動產生，不手動修改 `version` 或編輯 `CHANGELOG.md`。
+
+```bash
+npm run release          # 依 commit 型別自動判斷版號（fix → patch／feat → minor）
+npm run release:patch    # 強制升 patch 版號
+npm run release:minor    # 強制升 minor 版號
+npm run release:major    # 強制升 major 版號
+```
+
+執行前工作區要乾淨、停在要發布的分支。它會更新 `package.json`（與 `package-lock.json`）的版本號、重新產生 `CHANGELOG.md`、建立一個 `chore(release): x.y.z` commit 並打上 `vX.Y.Z` 的 git tag，完成後再自行 push（`git push --follow-tags`）。部署仍是 push 到 `main` 就觸發，與 tag 無關。
+
+第一次發布（目前是 `0.0.0`，還沒有任何 tag）用 `npm run release:minor`，得到 `0.1.0`；直接 `npm run release` 會因為沒有前一個 tag 而只升 patch。目前仍在 0.x 階段，commit 帶 `!` 或含 `BREAKING CHANGE` 只會跳 minor，要發布 1.0.0 需明確執行 `npm run release:major`。
 
 上線前的實機檢查清單見 [`docs/manual-device-test.md`](docs/manual-device-test.md)。
 

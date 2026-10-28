@@ -7,6 +7,7 @@ import { EffortSection } from '@/features/effort/EffortSection'
 import { RestTimerSection } from '@/features/restTimer/RestTimerSection'
 import { TemplatesSection } from '@/features/templates/TemplatesSection'
 import { BackupSection } from './BackupSection'
+import { AboutSection } from './AboutSection'
 import { BirthDateSection } from './BirthDateSection'
 import { HeightSection } from './HeightSection'
 import { PersistentStorageSection } from './PersistentStorageSection'
@@ -91,6 +92,7 @@ export function SettingsPage() {
         </>
       )}
       <PersistentStorageSection />
+      <AboutSection />
     </div>
   )
 }
