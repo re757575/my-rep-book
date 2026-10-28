@@ -2,6 +2,15 @@
 
 本檔案由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依照 [Conventional Commits](https://www.conventionalcommits.org/) 規範的 commit 訊息自動產生，請勿手動編輯內容，執行 `npm run release` 即可更新。
 
+## [0.1.2](https://github.com/re757575/my-rep-book/compare/v0.1.1...v0.1.2) (2026-10-28)
+
+### Features
+
+* **history:** 歷史頁新增訓練節奏，看本週練幾天與連續幾週有練 ([57227b0](https://github.com/re757575/my-rep-book/commit/57227b04578d817aa5f62058bcd859b3cf1be954))
+
+### Bug Fixes
+
+* **pwa:** manifest 補上明確的 id ([1346b9d](https://github.com/re757575/my-rep-book/commit/1346b9df751ab013aca443581f861ce34f789239))
 ## [0.1.1](https://github.com/re757575/my-rep-book/compare/v0.1.0...v0.1.1) (2026-10-28)
 
 ### Features
