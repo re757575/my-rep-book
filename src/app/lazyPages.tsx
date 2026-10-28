@@ -33,6 +33,14 @@ export const EditCustomExercisePage = lazy(async () => ({
   default: (await import('@/features/exercises/EditCustomExercisePage')).EditCustomExercisePage,
 }))
 
+export const TemplatesPage = lazy(async () => ({
+  default: (await import('@/features/templates/TemplatesPage')).TemplatesPage,
+}))
+
+export const TemplateDetailPage = lazy(async () => ({
+  default: (await import('@/features/templates/TemplateDetailPage')).TemplateDetailPage,
+}))
+
 export const SettingsPage = lazy(async () => ({
   default: (await import('@/features/settings/SettingsPage')).SettingsPage,
 }))

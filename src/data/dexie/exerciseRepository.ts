@@ -1,6 +1,7 @@
 import {
   PRESET_EXERCISES,
   normalizeExerciseName,
+  removeExerciseFromTemplate,
   type CustomExercise,
   type LibraryExercise,
 } from '@/domain'
@@ -88,12 +89,20 @@ export function createDexieExerciseRepository(db: MyRepBookDb): ExerciseReposito
     },
 
     async deleteCustom(id) {
-      await db.transaction('rw', db.customExercises, db.workouts, async () => {
+      await db.transaction('rw', db.customExercises, db.workouts, db.templates, async () => {
         // 已有紀錄的動作只能封存，避免訓練引用到不存在的動作
         if ((await db.workouts.where('exerciseIds').equals(id).count()) > 0) {
           throw new Error(`自訂動作 ${id} 已有紀錄，無法刪除`)
         }
         await db.customExercises.delete(id)
+        // 範本裡的這個動作一併移除；範本因此沒有動作時整個刪除（US-42）
+        const now = new Date().toISOString()
+        for (const template of await db.templates.toArray()) {
+          const updated = removeExerciseFromTemplate(template, id, now)
+          if (updated === template) continue
+          if (updated) await db.templates.put(updated)
+          else await db.templates.delete(template.id)
+        }
       })
     },
   }

@@ -7,7 +7,7 @@ const tabs = [
   { to: '/', label: '今天', icon: NotebookPen, activeOn: ['/', '/day/*'] },
   { to: '/history', label: '歷史', icon: CalendarDays, activeOn: ['/history/*'] },
   { to: '/exercises', label: '動作庫', icon: Dumbbell, activeOn: ['/exercises/*'] },
-  { to: '/settings', label: '設定', icon: Settings, activeOn: ['/settings/*'] },
+  { to: '/settings', label: '設定', icon: Settings, activeOn: ['/settings/*', '/templates/*'] },
 ] as const
 
 export function BottomTabBar() {

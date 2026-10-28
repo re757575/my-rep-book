@@ -4,6 +4,7 @@ import {
   backupFixture,
   fixtureBodyWeight,
   fixtureCustomExercise,
+  fixtureTemplate,
   fixtureWorkout,
 } from '../src/test/backupFixture.ts'
 import { importBackup } from './backup.ts'
@@ -53,6 +54,12 @@ const FIXTURE = backupFixture({
     }),
   ],
   bodyWeights: [fixtureBodyWeight('2026-10-20', 72.5), fixtureBodyWeight('2026-10-24', 72)],
+  templates: [
+    fixtureTemplate('push', '推日', [
+      ['barbell-bench-press', 3],
+      ['custom-treadmill', 1],
+    ]),
+  ],
   settings: { weightUnit: 'kg', theme: 'system', heightCm: 175 },
 })
 
@@ -120,6 +127,42 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
       // 送出空白表單，連同錯誤訊息一起檢查
       await dialog.getByRole('button', { name: '儲存' }).click()
       await expect(dialog.getByText('請輸入中文名稱')).toBeVisible()
+    },
+  },
+  {
+    name: '從範本加入選單',
+    open: async (page) => {
+      await page.goto('./')
+      await page.getByRole('button', { name: '從範本加入' }).click()
+      const dialog = page.getByRole('dialog', { name: '從範本加入' })
+      await expect(dialog.getByRole('list', { name: '範本' }).getByRole('listitem')).toHaveCount(1)
+    },
+  },
+  {
+    name: '存成範本對話框',
+    open: async (page) => {
+      await page.goto('./')
+      await page.getByRole('button', { name: '存成範本' }).click()
+      const dialog = page.getByRole('dialog', { name: '存成範本' })
+      // 送出空白名稱，連同錯誤訊息一起檢查
+      await dialog.getByRole('button', { name: '儲存' }).click()
+      await expect(dialog.getByText('請輸入範本名稱')).toBeVisible()
+    },
+  },
+  {
+    name: '範本列表',
+    open: async (page) => {
+      await page.goto('templates')
+      await expect(page.getByRole('list', { name: '範本' }).getByRole('listitem')).toHaveCount(1)
+    },
+  },
+  {
+    name: '範本詳情',
+    open: async (page) => {
+      await page.goto('templates/push')
+      await expect(
+        page.getByRole('list', { name: '範本的動作' }).getByRole('listitem'),
+      ).toHaveCount(2)
     },
   },
   {

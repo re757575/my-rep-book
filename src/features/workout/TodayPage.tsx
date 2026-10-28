@@ -19,6 +19,8 @@ import {
 import { startRestTimerIfEnabled } from '@/features/restTimer/restTimerStore'
 import { BodyWeightField } from '@/features/bodyWeight/BodyWeightField'
 import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
+import { ApplyTemplateButton } from '@/features/templates/ApplyTemplateButton'
+import { SaveTemplateButton } from '@/features/templates/SaveTemplateButton'
 import { whenIdleAfterLoad } from '@/lib/whenIdleAfterLoad'
 import { CollapseAllButton } from './CollapseAllButton'
 import { DailySummary } from './DailySummary'
@@ -215,23 +217,30 @@ export function TodayPage({ date }: { date: LocalDate }) {
             )
           })}
 
-        {!locked && (
-          <Button
-            variant="outline"
-            className="h-11"
-            onClick={() =>
-              // 用 transition 等選單載入完成再一次打開，不經過 Suspense 的 fallback（React 會把 fallback
-              // 換成內容的時機延後約 300 ms，第一次打開就會慢半拍）
-              startTransition(() => {
-                setPickerLoaded(true)
-                setPickerOpen(true)
-              })
-            }
-          >
-            <Plus aria-hidden="true" />
-            加入動作
-          </Button>
-        )}
+        {/* 三顆按鈕放同一行：多一行會讓頁面變高，WebKit 上第一次打開加入動作選單慢了約 60 ms */}
+        <div className="flex gap-2">
+          {!locked && (
+            <>
+              <Button
+                variant="outline"
+                className="h-11 flex-1"
+                onClick={() =>
+                  // 用 transition 等選單載入完成再一次打開，不經過 Suspense 的 fallback（React 會把 fallback
+                  // 換成內容的時機延後約 300 ms，第一次打開就會慢半拍）
+                  startTransition(() => {
+                    setPickerLoaded(true)
+                    setPickerOpen(true)
+                  })
+                }
+              >
+                <Plus aria-hidden="true" />
+                加入動作
+              </Button>
+              <ApplyTemplateButton date={date} className="flex-1" />
+            </>
+          )}
+          {workout && <SaveTemplateButton workout={workout} className="flex-1" />}
+        </div>
         {/* 第一次打開才載入；之後保持掛載，關閉時才有動畫 */}
         {pickerLoaded && (
           <AddExerciseDialog

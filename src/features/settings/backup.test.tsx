@@ -61,7 +61,7 @@ describe('匯出資料', () => {
     expect(file.fileName).toBe('my-rep-book-backup-20261024-1200.json')
     expect(JSON.parse(file.text)).toEqual({
       app: 'my-rep-book',
-      schemaVersion: 4,
+      schemaVersion: 5,
       exportedAt: NOW,
       data: {
         workouts: [
@@ -88,6 +88,7 @@ describe('匯出資料', () => {
         customExercises: [],
         hiddenPresetIds: [],
         bodyWeights: [],
+        templates: [],
         settings: { weightUnit: 'kg', theme: 'dark', heightCm: null, birthDate: null },
       },
     })
@@ -230,7 +231,7 @@ describe('拒絕匯入時顯示原因，現有資料不變', () => {
     { case: '不是 JSON', content: '這不是備份檔', reason: '檔案不是有效的 JSON' },
     {
       case: '版本比目前 App 新',
-      content: backupFixture({}, { schemaVersion: 5 }),
+      content: backupFixture({}, { schemaVersion: 6 }),
       reason: '此備份來自較新版本的 App，請先更新 App',
     },
     {

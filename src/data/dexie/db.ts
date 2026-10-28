@@ -1,6 +1,6 @@
 import { Dexie, type EntityTable } from 'dexie'
 import { migrateWorkoutSetTypes } from '@/domain'
-import type { BodyWeightEntry, CustomExercise, Settings, Workout } from '@/domain'
+import type { BodyWeightEntry, CustomExercise, Settings, Workout, WorkoutTemplate } from '@/domain'
 
 /** workouts 的一列：加上衍生欄位 exerciseIds（multiEntry 索引），由 repository 寫入時推導 */
 export type WorkoutRow = Workout & { exerciseIds: string[] }
@@ -21,6 +21,7 @@ export type MyRepBookDb = Dexie & {
   hiddenPresets: EntityTable<HiddenPresetRow, 'id'>
   settings: EntityTable<SettingsRow, 'key'>
   bodyWeights: EntityTable<BodyWeightEntry, 'date'>
+  templates: EntityTable<WorkoutTemplate, 'id'>
 }
 
 export const DB_NAME = 'my-rep-book'
@@ -48,6 +49,8 @@ export function createDb(name = DB_NAME): MyRepBookDb {
           row.exercises = (migrateWorkoutSetTypes(row) as WorkoutRow).exercises
         }),
     )
+  // v4：新增訓練範本（US-40）；其他資料表沿用
+  db.version(4).stores({ templates: 'id' })
   return db
 }
 

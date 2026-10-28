@@ -10,6 +10,7 @@ import type {
   LocalDate,
   Settings,
   Workout,
+  WorkoutTemplate,
 } from '@/domain'
 
 export interface WorkoutRepository {
@@ -89,9 +90,24 @@ export interface BackupRepository {
   replaceAll(data: BackupData): Promise<void>
 }
 
+export interface TemplateRepository {
+  /** 列出全部範本，依建立時間由舊到新 */
+  listAll(): Promise<WorkoutTemplate[]>
+  getById(id: string): Promise<WorkoutTemplate | undefined>
+  /** 新增或覆寫範本（建立範本，或復原刪除的範本） */
+  save(template: WorkoutTemplate): Promise<void>
+  /**
+   * 在單一 transaction 中讀取範本、套用 `change` 後寫回，連續快速編輯（例如連點組數的「＋」）
+   * 才不會以過時的資料覆寫掉前一次的變更。找不到該範本時什麼都不做。
+   */
+  update(id: string, change: (current: WorkoutTemplate) => WorkoutTemplate): Promise<void>
+  delete(id: string): Promise<void>
+}
+
 export interface Repositories {
   workouts: WorkoutRepository
   exercises: ExerciseRepository
+  templates: TemplateRepository
   bodyWeights: BodyWeightRepository
   settings: SettingsRepository
   backup: BackupRepository

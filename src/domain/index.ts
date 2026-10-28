@@ -119,6 +119,25 @@ export { hasDuplicateName, normalizeExerciseName } from './naming'
 export { RECENT_EXERCISES_LIMIT, getRecentExercises } from './recent'
 export { summarizeWorkout, type WorkoutSummary } from './summary'
 export { formatWorkoutExerciseSummary } from './exerciseSummary'
+export {
+  DEFAULT_TEMPLATE_SETS,
+  MAX_TEMPLATE_NAME_LENGTH,
+  MAX_TEMPLATE_SETS,
+  MIN_TEMPLATE_SETS,
+  addTemplateExercise,
+  applyTemplate,
+  buildTemplateFromWorkout,
+  formatTemplateSummary,
+  moveTemplateExercise,
+  parseTemplateName,
+  removeExerciseFromTemplate,
+  removeTemplateExercise,
+  renameTemplate,
+  setTemplateSetCount,
+  summarizeTemplate,
+  type ParsedTemplateName,
+  type TemplateExerciseInfo,
+} from './templates'
 export { periodRange, summarizePeriod, type PeriodStats, type StatsPeriod } from './periodStats'
 export {
   PROMPT_WEEKS,

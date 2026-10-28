@@ -4,13 +4,21 @@ import type { MyRepBookDb } from './db'
 import { toCustomExercise, toCustomExerciseRow } from './exerciseRepository'
 import type { PendingFieldEdits } from './pendingFieldEdits'
 import { toSettings } from './settingsRepository'
+import { sortTemplates } from './templateRepository'
 import { toWorkout, toWorkoutRow } from './workoutRepository'
 
 export function createDexieBackupRepository(
   db: MyRepBookDb,
   { workouts, pending }: { workouts: WorkoutRepository; pending: PendingFieldEdits },
 ): BackupRepository {
-  const allTables = [db.workouts, db.customExercises, db.hiddenPresets, db.bodyWeights, db.settings]
+  const allTables = [
+    db.workouts,
+    db.customExercises,
+    db.hiddenPresets,
+    db.bodyWeights,
+    db.templates,
+    db.settings,
+  ]
 
   return {
     async exportAll() {
@@ -21,6 +29,7 @@ export function createDexieBackupRepository(
         const customRows = await db.customExercises.toArray()
         const hiddenPresetIds = await db.hiddenPresets.toCollection().primaryKeys()
         const bodyWeights = await db.bodyWeights.orderBy('date').toArray()
+        const templates = sortTemplates(await db.templates.toArray())
         const { lastExportedAt: _lastExportedAt, ...settings } = toSettings(
           await db.settings.get('settings'),
         )
@@ -31,6 +40,7 @@ export function createDexieBackupRepository(
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
           hiddenPresetIds,
           bodyWeights,
+          templates,
           settings,
         }
       })
@@ -47,6 +57,7 @@ export function createDexieBackupRepository(
         await db.customExercises.bulkAdd(data.customExercises.map(toCustomExerciseRow))
         await db.hiddenPresets.bulkAdd(data.hiddenPresetIds.map((id) => ({ id })))
         await db.bodyWeights.bulkAdd(data.bodyWeights)
+        await db.templates.bulkAdd(data.templates)
         await db.settings.put({ ...data.settings, lastExportedAt, key: 'settings' })
       })
       // 取代成功後才清空待寫清單：留下的編輯屬於舊資料，下次開啟時不能補寫到匯入的資料上

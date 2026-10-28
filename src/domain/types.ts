@@ -176,6 +176,26 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = {
   lastExportedAt: null,
 }
 
+/** 範本裡的一個動作：只記動作與組數（US-40） */
+export interface TemplateExercise {
+  /** UUID；同一個動作可以出現兩次，所以不能用 exerciseId 當 key */
+  id: string
+  exerciseId: string
+  /** 整數 1–20 */
+  setCount: number
+}
+
+/** 訓練範本（US-40）：存在 IndexedDB，名稱可以重複 */
+export interface WorkoutTemplate {
+  id: string
+  /** 去掉前後空白後 1–30 個字 */
+  name: string
+  /** 陣列順序即動作順序；至少 1 個 */
+  exercises: TemplateExercise[]
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
 /** 備份內容：匯出檔的 data，也是匯入時整份取代的內容 */
 export interface BackupData {
   /** 不含衍生欄位 */
@@ -184,5 +204,7 @@ export interface BackupData {
   hiddenPresetIds: string[]
   /** 依日期由舊到新 */
   bodyWeights: BodyWeightEntry[]
+  /** 依建立時間由舊到新 */
+  templates: WorkoutTemplate[]
   settings: Omit<Settings, 'lastExportedAt'>
 }

@@ -10,6 +10,8 @@ import {
   HistoryPage,
   NewCustomExercisePage,
   SettingsPage,
+  TemplateDetailPage,
+  TemplatesPage,
 } from './lazyPages'
 
 export const routes: RouteObject[] = [
@@ -26,6 +28,8 @@ export const routes: RouteObject[] = [
       { path: 'exercises/:id', element: <ExerciseDetailPage /> },
       { path: 'exercises/:id/edit', element: <EditCustomExercisePage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'templates', element: <TemplatesPage /> },
+      { path: 'templates/:id', element: <TemplateDetailPage /> },
     ],
   },
 ]

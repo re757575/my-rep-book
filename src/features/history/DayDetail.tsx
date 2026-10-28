@@ -9,6 +9,7 @@ import { useLibraryExercises } from '@/features/exercises/useLibraryExercises'
 import { DailySummary } from '@/features/workout/DailySummary'
 import { dayPath, today, UNLOCKED } from '@/features/workout/dayPath'
 import { WorkoutSetList } from '@/features/workout/WorkoutSetList'
+import { SaveTemplateButton } from '@/features/templates/SaveTemplateButton'
 import { copyWorkoutToToday } from './copyWorkoutToToday'
 
 function DayDetailExercise({
@@ -70,6 +71,7 @@ export function DayDetail({ date }: { date: LocalDate }) {
               複製到今天
             </Button>
           )}
+          {workout && <SaveTemplateButton workout={workout} />}
           {(workout || bodyWeight) && (
             <Button asChild variant="outline" className="h-11">
               {/* 明確要修改，一進入就解鎖 */}

@@ -79,6 +79,18 @@ const sampleData: BackupData = {
     { date: '2026-10-19', weightKg: 72.5, updatedAt: T },
     { date: '2026-10-20', weightKg: 72.25, updatedAt: T },
   ],
+  templates: [
+    {
+      id: 'tpl-1',
+      name: '推日',
+      exercises: [
+        { id: 'te-1', exerciseId: 'barbell-bench-press', setCount: 4 },
+        { id: 'te-2', exerciseId: 'custom-1', setCount: 1 },
+      ],
+      createdAt: T,
+      updatedAt: T,
+    },
+  ],
   settings: { weightUnit: 'lb', theme: 'dark', heightCm: 175, birthDate: '1990-05-20' },
 }
 
@@ -88,10 +100,10 @@ function parse(file: unknown) {
 }
 
 describe('匯出檔解析', () => {
-  it('匯出檔包含 app 識別、schemaVersion 4、匯出時間與 data', () => {
+  it('匯出檔包含 app 識別、schemaVersion 5、匯出時間與 data', () => {
     expect(createExportFile(sampleData, '2026-10-24T04:00:00.000Z')).toEqual({
       app: 'my-rep-book',
-      schemaVersion: 4,
+      schemaVersion: 5,
       exportedAt: '2026-10-24T04:00:00.000Z',
       data: sampleData,
     })
@@ -232,6 +244,41 @@ describe('格式錯誤時指出錯誤位置', () => {
       error: 'bodyWeights[2].date 重複',
     },
     {
+      case: '缺少 templates',
+      file: fileWith((file) => delete (file.data as Partial<BackupData>).templates),
+      error: '缺少 templates',
+    },
+    {
+      case: '範本名稱去掉空白後是空的',
+      file: fileWith((file) => (file.data.templates[0].name = '   ')),
+      error: 'templates[0].name 格式錯誤',
+    },
+    {
+      case: '範本名稱超過 30 個字',
+      file: fileWith((file) => (file.data.templates[0].name = '推'.repeat(31))),
+      error: 'templates[0].name 格式錯誤',
+    },
+    {
+      case: '範本沒有任何動作',
+      file: fileWith((file) => (file.data.templates[0].exercises = [])),
+      error: 'templates[0].exercises 格式錯誤',
+    },
+    {
+      case: '範本的組數不是 1–20 的整數',
+      file: fileWith((file) => (file.data.templates[0].exercises[1].setCount = 21)),
+      error: 'templates[0].exercises[1].setCount 格式錯誤',
+    },
+    {
+      case: '範本的組數不是整數',
+      file: fileWith((file) => (file.data.templates[0].exercises[0].setCount = 2.5)),
+      error: 'templates[0].exercises[0].setCount 格式錯誤',
+    },
+    {
+      case: '兩個範本的 ID 相同',
+      file: fileWith((file) => file.data.templates.push({ ...file.data.templates[0] })),
+      error: 'templates[1].id 重複',
+    },
+    {
       case: '生日不是合法的日期',
       file: fileWith((file) => (file.data.settings.birthDate = '1990-02-30')),
       error: 'settings.birthDate 格式錯誤',
@@ -248,7 +295,7 @@ describe('格式錯誤時指出錯誤位置', () => {
 
 describe('schema 版本與遷移', () => {
   it('版本比目前 App 新時拒絕', () => {
-    expect(parse(fileWith((file) => (file.schemaVersion = 5)))).toEqual({
+    expect(parse(fileWith((file) => (file.schemaVersion = 6)))).toEqual({
       ok: false,
       error: '此備份來自較新版本的 App，請先更新 App',
     })
@@ -282,6 +329,7 @@ describe('schema 版本與遷移', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
       delete (file.data as Partial<BackupData>).bodyWeights
+      delete (file.data as Partial<BackupData>).templates
       delete (file.data.settings as { heightCm?: unknown }).heightCm
       delete (file.data.settings as { birthDate?: unknown }).birthDate
     })
@@ -290,6 +338,7 @@ describe('schema 版本與遷移', () => {
       data: {
         ...sampleData,
         bodyWeights: [],
+        templates: [],
         settings: { ...sampleData.settings, heightCm: null, birthDate: null },
       },
     })
@@ -298,11 +347,16 @@ describe('schema 版本與遷移', () => {
   it('v2 的檔案（還沒有生日）遷移成尚未填寫生日', () => {
     const v2 = fileWith((file) => {
       file.schemaVersion = 2
+      delete (file.data as Partial<BackupData>).templates
       delete (file.data.settings as { birthDate?: unknown }).birthDate
     })
     expect(parse(v2)).toEqual({
       ok: true,
-      data: { ...sampleData, settings: { ...sampleData.settings, birthDate: null } },
+      data: {
+        ...sampleData,
+        templates: [],
+        settings: { ...sampleData.settings, birthDate: null },
+      },
     })
   })
 
@@ -319,15 +373,17 @@ describe('schema 版本與遷移', () => {
   it('v3 的檔案（組是 isWarmup）遷移成 setType：true 變熱身，false 變正式', () => {
     const v3 = fileWith((file) => {
       file.schemaVersion = 3
+      delete (file.data as Partial<BackupData>).templates
       withLegacyWarmupFlags(file)
     })
-    expect(parse(v3)).toEqual({ ok: true, data: sampleData })
+    expect(parse(v3)).toEqual({ ok: true, data: { ...sampleData, templates: [] } })
   })
 
   it('v1 的檔案也一路遷移到 setType', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
       delete (file.data as Partial<BackupData>).bodyWeights
+      delete (file.data as Partial<BackupData>).templates
       delete (file.data.settings as { heightCm?: unknown }).heightCm
       delete (file.data.settings as { birthDate?: unknown }).birthDate
       withLegacyWarmupFlags(file)
@@ -372,6 +428,14 @@ describe('schema 版本與遷移', () => {
     })
   })
 
+  it('v4 的檔案（還沒有範本）遷移成沒有任何範本', () => {
+    const v4 = fileWith((file) => {
+      file.schemaVersion = 4
+      delete (file.data as Partial<BackupData>).templates
+    })
+    expect(parse(v4)).toEqual({ ok: true, data: { ...sampleData, templates: [] } })
+  })
+
   it('v1 的設定格式錯誤時，遷移後照樣指出錯誤位置', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1
@@ -381,20 +445,20 @@ describe('schema 版本與遷移', () => {
   })
 
   it('舊版的檔案先遷移再驗證', () => {
-    // 假設 v4 的設定以 unit 記錄重量單位，v5 改名為 weightUnit
-    const v4 = fileWith((file) => {
+    // 假設 v5 的設定以 unit 記錄重量單位，v6 改名為 weightUnit
+    const v5 = fileWith((file) => {
       const { weightUnit, ...rest } = file.data.settings
       ;(file.data as { settings: unknown }).settings = { ...rest, unit: weightUnit }
     })
     const migrations: BackupMigrations = {
-      4: (data) => {
+      5: (data) => {
         const { unit, ...settings } = data.settings as Record<string, unknown>
         return { ...data, settings: { ...settings, weightUnit: unit } }
       },
     }
 
-    expect(parse(v4)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
-    expect(parseBackupFile(JSON.stringify(v4), { migrations, currentVersion: 5 })).toEqual({
+    expect(parse(v5)).toEqual({ ok: false, error: '缺少 settings.weightUnit' })
+    expect(parseBackupFile(JSON.stringify(v5), { migrations, currentVersion: 6 })).toEqual({
       ok: true,
       data: sampleData,
     })
@@ -417,6 +481,20 @@ describe('引用的動作', () => {
       referencing(file, 'no-such-preset')
       referencing(file, 'custom-deleted')
       referencing(file, 'no-such-preset')
+    })
+    expect(parse(file)).toEqual({
+      ok: false,
+      error: '找不到以下動作：no-such-preset、custom-deleted',
+    })
+  })
+
+  it('範本引用了不存在的動作時拒絕，和訓練引用的缺少動作一起列出', () => {
+    const file = fileWith((file) => {
+      referencing(file, 'no-such-preset')
+      file.data.templates[0].exercises.push(
+        { id: 'te-3', exerciseId: 'custom-deleted', setCount: 3 },
+        { id: 'te-4', exerciseId: 'no-such-preset', setCount: 3 },
+      )
     })
     expect(parse(file)).toEqual({
       ok: false,

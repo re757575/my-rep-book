@@ -5,6 +5,7 @@ import { useRepositories } from '@/data'
 import { THEMES, WEIGHT_UNITS, type Theme, type WeightUnit } from '@/domain'
 import { EffortSection } from '@/features/effort/EffortSection'
 import { RestTimerSection } from '@/features/restTimer/RestTimerSection'
+import { TemplatesSection } from '@/features/templates/TemplatesSection'
 import { BackupSection } from './BackupSection'
 import { BirthDateSection } from './BirthDateSection'
 import { HeightSection } from './HeightSection'
@@ -76,6 +77,7 @@ export function SettingsPage() {
           />
           <RestTimerSection />
           <EffortSection />
+          <TemplatesSection />
           <HeightSection heightCm={settings.heightCm} />
           <BirthDateSection birthDate={settings.birthDate} />
           <SettingOptions

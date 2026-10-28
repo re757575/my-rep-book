@@ -7,6 +7,7 @@ import type {
   SetType,
   SetValues,
   Workout,
+  WorkoutTemplate,
 } from '../domain/types.ts'
 
 /** fixture 中的一組：組數值，可指定組類型（預設正式）與強度（RPE） */
@@ -65,6 +66,31 @@ export function fixtureCustomExercise(
   }
 }
 
+/**
+ * 訓練範本；`exercises` 是 `[動作 ID, 組數]`，ID 依範本 ID 與順序產生。
+ *
+ * @example
+ * fixtureTemplate('push', '推日', [['barbell-bench-press', 4]])
+ */
+export function fixtureTemplate(
+  id: string,
+  name: string,
+  exercises: [exerciseId: string, setCount: number][],
+  createdAt = FIXTURE_TIME,
+): WorkoutTemplate {
+  return {
+    id,
+    name,
+    exercises: exercises.map(([exerciseId, setCount], index) => ({
+      id: `${id}-${index + 1}`,
+      exerciseId,
+      setCount,
+    })),
+    createdAt,
+    updatedAt: createdAt,
+  }
+}
+
 /** 某一天的體重（kg） */
 export function fixtureBodyWeight(date: string, weightKg: number): BodyWeightEntry {
   return { date, weightKg, updatedAt: FIXTURE_TIME }
@@ -77,7 +103,7 @@ export function backupFixture(
     ...data
   }: Partial<Omit<BackupData, 'settings'>> & { settings?: Partial<BackupData['settings']> } = {},
   {
-    schemaVersion = 3,
+    schemaVersion = 5,
     exportedAt = FIXTURE_TIME,
   }: { schemaVersion?: number; exportedAt?: string } = {},
 ) {
@@ -90,6 +116,7 @@ export function backupFixture(
       customExercises: [],
       hiddenPresetIds: [],
       bodyWeights: [],
+      templates: [],
       ...data,
       settings: { weightUnit: 'kg', theme: 'system', heightCm: null, birthDate: null, ...settings },
     } satisfies BackupData,

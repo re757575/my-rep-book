@@ -31,7 +31,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 
 - 帳號、登入、雲端同步、多裝置同步
 - 社群、分享、排行榜
-- 訓練範本／課表、進度圖表、PR 追蹤（列入 v2，見 §11）
+- 訓練範本／課表、進度圖表、PR 追蹤（列入 v2，見 §11；範本已在 US-40～US-42 完成）
 - 同一天多個訓練 session
 - 多語系（介面僅繁體中文）
 - 桌機版特別最佳化（只需版面不破）
@@ -61,6 +61,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 | 訓練（Workout） | 某一天的訓練紀錄，以日期為唯一鍵，一天一筆 |
 | 訓練動作（Workout Exercise） | 某次訓練中做的某個動作，包含多組與一則備註 |
 | 組（Set） | 一組的數值紀錄，欄位依動作的記錄類型決定 |
+| 範本（Template） | 事先存好的一份動作清單與各動作的組數（例如「推日」），一鍵加進訓練；不含重量與次數，數值每次依上次紀錄帶入 |
 | 記錄類型（Tracking Type） | `weight_reps`（重量×次數）、`reps`（次數，可選負重）、`duration`（時間）、`distance_duration`（距離＋時間） |
 | 組類型（Set Type） | 一組是怎麼做的：`regular`（正式）、`warmup`（熱身）、`drop`（遞減，Drop set）、`failure`（力竭），見 US-37 |
 | 熱身組 | 組類型為熱身的組，不計入訓練量、不作為「上次紀錄」 |
@@ -298,7 +299,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - **Given** 自訂動作　**When** 編輯名稱、部位、器材　**Then** 更新後所有歷史紀錄顯示新名稱
 - **Given** 自訂動作已有任何訓練紀錄　**Then** 記錄類型欄位停用並提示「已有紀錄，無法變更記錄類型」
 - **Given** 自訂動作已有紀錄　**Then** 只提供「封存」，不提供「刪除」；封存後不出現在選單，但歷史紀錄照常顯示，可在動作庫中「取消封存」
-- **Given** 自訂動作沒有任何紀錄　**When** 點「刪除」　**Then** 跳出確認對話框，確認後永久刪除
+- **Given** 自訂動作沒有任何紀錄　**When** 點「刪除」　**Then** 跳出確認對話框，確認後永久刪除；範本（US-40）裡的這個動作一併移除
 
 #### US-13 隱藏預設動作、複製為自訂
 
@@ -466,6 +467,39 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 - 體重筆數 ≤ 24 時每一筆都畫點；更多時只畫最新一筆與選取的那一筆
 - 圖有文字替代：名稱與範圍的摘要，以及列出每筆日期、體重、7 日平均的表格（只給螢幕閱讀器）
 
+### 4.5 訓練範本
+
+#### US-40 存成範本
+
+> 身為使用者，我想把一天的訓練存成範本，以便下次練同一個課表（例如「推日」）時不用一個一個加動作。
+
+- 訓練頁（這天至少有一個動作）與歷史的日明細（有訓練的日期）都有「存成範本」按鈕。這個動作不修改訓練，所以訓練頁鎖定（US-28）時照樣可用
+- **When** 點「存成範本」　**Then** 跳出對話框，有「範本名稱」欄位（預設空白）與「儲存」「取消」。名稱去掉前後空白後必須有 1–30 個字，不合法時在欄位下方顯示錯誤、不能儲存；名稱可以和其他範本相同
+- 範本記下訓練動作的順序，每個動作記「組數」＝這天該動作的**正式組數**（熱身組不算，不論組有沒有填完，至少 1 組、最多 20 組）。不記重量、次數、組類型、強度與備註：這些每次依上次紀錄帶入（US-02、US-03）。同一個動作在這天出現兩次時，範本裡也是兩個動作
+- 儲存後關閉對話框，顯示 toast「已存成範本『{名稱}』」；範本存在本機，隨匯出檔備份（US-16）
+
+#### US-41 從範本加入動作
+
+> 身為使用者，我想一鍵把範本的動作加進今天的訓練，以便馬上開始記錄。
+
+- 訓練頁（未鎖定）在「加入動作」旁有「從範本加入」按鈕，打開對話框列出所有範本（依建立時間由舊到新）：名稱、「N 個動作 · M 組」與動作名稱（以頓號串起）。對話框底部有「管理範本」連結（US-42）
+- **Given** 還沒有任何範本　**Then** 對話框顯示「還沒有範本」，說明「在訓練頁或歷史的日明細點『存成範本』建立」
+- **When** 點某個範本　**Then** 範本的動作依順序加到檢視日期訓練的最後面（和 US-33 一樣：不取代也不合併同名的動作，同一個動作可以出現兩次；那天還沒有訓練時建立），對話框關閉並顯示 toast「已加入『{範本名稱}』的 N 個動作」附「復原」按鈕（約 5 秒，同 US-07）
+- 每個動作建立範本記的組數：第一組依 US-02 預填（帶入上次紀錄的第一個完整正式組，沒有上次紀錄則欄位空白），其餘各組依 US-03 複製前一組；全部是正式組，不帶強度
+- **When** 點「復原」　**Then** 移除這次加進來的動作；那天原本沒有訓練時，訓練一併移除，月曆不再標點
+- 加入範本不啟動組間休息計時（US-30）；被封存或隱藏的動作照常加入
+
+#### US-42 管理範本
+
+> 身為使用者，我想修改或刪除範本，以便課表調整時範本跟著更新。
+
+- 設定頁有「訓練範本」區塊，顯示範本數量與「管理範本」連結，前往範本列表 `/templates`：每個範本一列（名稱與「N 個動作 · M 組」），點進去前往 `/templates/:id`；沒有範本時顯示「還沒有範本」與建立的說明（同 US-41）
+- 範本詳情頁有「範本名稱」欄位：輸入即儲存，不合法（空白或超過 30 字）時在欄位下方顯示錯誤且不寫入
+- 詳情頁依順序列出範本的動作，每一列有：動作名稱、組數的「−」「＋」（1–20 組，到頭時停用）、上移、下移（同 US-06）與移除動作。範本只剩一個動作時，移除停用（要整個去掉請刪除範本）
+- 「加入動作」開啟和訓練頁相同的選單（US-01），選了之後加到最後面，預設 3 組
+- 「刪除範本」直接刪除並回到列表，toast「已刪除範本『{名稱}』」附「復原」按鈕（約 5 秒），不跳確認對話框（同 US-07）；復原放回原本的範本（含 ID 與順序）。找不到範本（例如已刪除）時顯示「找不到這個範本」與回列表的連結
+- 刪除沒有紀錄的自訂動作（US-12）時，範本裡的這個動作一併移除；範本因此沒有任何動作時，整個範本一併刪除
+
 ---
 
 ## 5. 資料模型
@@ -614,6 +648,22 @@ export interface Workout {
   updatedAt: Timestamp;
 }
 
+/** 範本裡的一個動作：只記動作與組數（US-40） */
+export interface TemplateExercise {
+  id: string; // UUID，同一個動作可以出現兩次
+  exerciseId: string;
+  setCount: number; // 整數 1–20
+}
+
+/** 訓練範本：存於 IndexedDB */
+export interface WorkoutTemplate {
+  id: string; // UUID
+  name: string; // 去掉前後空白後 1–30 個字，可以重複
+  exercises: TemplateExercise[]; // 陣列順序即動作順序；至少 1 個
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 /** 體重：一天最多一筆 */
 export interface BodyWeightEntry {
   date: LocalDate; // 主鍵
@@ -639,8 +689,9 @@ export interface Settings {
 | `hiddenPresets` | `&id` | — | `{ id: string }` |
 | `settings` | `&key` | — | 單筆 `{ key: 'settings', ...Settings }` |
 | `bodyWeights` | `&date` | — | `BodyWeightEntry`（IndexedDB v2 新增） |
+| `templates` | `&id` | — | `WorkoutTemplate`（IndexedDB v4 新增） |
 
-- IndexedDB v1 建立前 4 張資料表，v2 新增 `bodyWeights`；v1 時存的設定沒有 `heightCm`，讀取時以預設值 `null` 補上
+- IndexedDB v1 建立前 4 張資料表，v2 新增 `bodyWeights`，v4 新增 `templates`；v1 時存的設定沒有 `heightCm`，讀取時以預設值 `null` 補上
 - IndexedDB v3 把組的 `isWarmup: boolean` 換成 `setType`（`true` → `warmup`，`false` → `regular`）：升級時轉換 `workouts` 的每一組，資料表與索引不變
 - 體重與組的數值一樣經由待寫清單寫入（`FieldEdit` 的 `bodyWeight`），輸入後立刻重新整理也不會遺失
 
@@ -652,13 +703,14 @@ export interface Settings {
 ```ts
 export interface ExportFile {
   app: 'my-rep-book';
-  schemaVersion: 4;
+  schemaVersion: 5;
   exportedAt: Timestamp;
   data: {
     workouts: Workout[];             // 不含衍生欄位 exerciseIds
     customExercises: CustomExercise[];
     hiddenPresetIds: string[];
     bodyWeights: BodyWeightEntry[];  // 依日期由舊到新
+    templates: WorkoutTemplate[];    // 依建立時間由舊到新
     settings: Omit<Settings, 'lastExportedAt'>;
   };
 }
@@ -667,10 +719,11 @@ export interface ExportFile {
 - v1 → v2：加上空的 `bodyWeights`，`settings.heightCm` 設為 `null`
 - v2 → v3：`settings.birthDate` 設為 `null`
 - v3 → v4：各組的 `isWarmup` 換成 `setType`（`true` → `warmup`，`false` → `regular`）
+- v4 → v5：加上空的 `templates`
 - 各組的 `rpe`（US-39）是選填欄位：沒有它的舊檔照常匯入，所以不需要升版；`rpe` 必須是 1–10 的整數
 
 - 以 zod schema 驗證；遷移函式以 `migrations[from]` 形式逐版升級：`v1 → v2 → … → current`
-- 匯入時若 workouts 引用了不存在的 `exerciseId`（例如未知的預設 slug），拒絕匯入並列出缺少的 ID
+- 匯入時若 workouts 或 templates 引用了不存在的 `exerciseId`（例如未知的預設 slug），拒絕匯入並列出缺少的 ID
 
 ### 5.8 Domain 核心函式（純函式，皆需單元測試）
 
@@ -691,6 +744,9 @@ export interface ExportFile {
 | `buildBodyWeightChart(entries, range, today)` | 體重趨勢圖區間內的點（由舊到新，含 7 日平均）（US-36） |
 | `buildProgressSeries(sessions, metric, weightUnit)` / `niceTicks(min, max, count)` | 進度圖表的資料點（由舊到新、顯示單位）與乾淨的 Y 軸刻度（US-34） |
 | `copyWorkoutExercises(source, target, date, context)` / `removeWorkoutExercises(workout, ids, now)` | 把另一天的訓練動作複製到訓練的最後面；復原時移除複製進來的動作（US-33） |
+| `parseTemplateName(text)` / `buildTemplateFromWorkout(workout, name, context)` / `summarizeTemplate(template)` / `formatTemplateSummary(template)` | 範本名稱驗證；把一天的訓練存成範本（組數＝正式組數）；範本的動作數與組數，以及「3 個動作 · 9 組」摘要（US-40） |
+| `applyTemplate(template, workout, date, inputs, context)` | 把範本的動作加到訓練最後面，第一組預填、其餘複製前一組（US-41）；復原用 `removeWorkoutExercises` |
+| `renameTemplate` / `setTemplateSetCount` / `moveTemplateExercise` / `removeTemplateExercise` / `addTemplateExercise` / `removeExerciseFromTemplate` | 範本的編輯：改名、改組數（夾在 1–20）、換位置、移除（至少留 1 個）、加入動作、刪除自訂動作時移除（US-42） |
 | `pairSetsWithLast(sets, lastPerformance)` | 每個正式組對照上次的第幾個正式組（US-32） |
 | `buildRecordBaseline(workouts, exerciseId, before)` / `findNewRecordSets(baseline, workout, exerciseId)` | 檢視日期之前的最大重量與估算 1RM；訓練頁每一組的新紀錄標示（US-31） |
 | `startRest` / `restTimerPhase` / `adjustRest` | 組間休息的開始、此刻的階段（倒數中、剛結束、沒有）與增減秒數（US-30） |
@@ -719,7 +775,7 @@ export interface ExportFile {
 | 今天 | `/`、`/day/:date` | `/` 顯示今天；`/day/:date` 顯示指定日期，未來日期導回 `/` |
 | 歷史 | `/history`、`/history/body-weight`、`/history/ai-prompt` | 月曆與日明細；體重紀錄清單；AI 提示詞 |
 | 動作庫 | `/exercises`、`/exercises/:id` | 列表與動作詳情 |
-| 設定 | `/settings` | 單位、身高、主題、匯出入、儲存狀態 |
+| 設定 | `/settings`、`/templates`、`/templates/:id` | 單位、身高、主題、匯出入、儲存狀態；訓練範本（列表與詳情，從設定頁進入） |
 
 自訂動作表單：`/exercises/new`、`/exercises/:id/edit`。加入動作選單為訓練頁上的全螢幕 Dialog（shadcn `Dialog` 或 `Drawer`），不改變路由。
 
@@ -743,7 +799,7 @@ export interface ExportFile {
 │  1       [ 01:30 ]          🗑│
 │        ＋ 新增一組           │
 ├─────────────────────────────┤
-│        ＋ 加入動作           │
+│ ＋ 加入動作│從範本加入│存成範本│  ← 同一行
 ├─────────────────────────────┤
 │  今天   歷史   動作庫   設定  │
 └─────────────────────────────┘
@@ -762,6 +818,7 @@ export interface ExportFile {
 | 用途 | 元件 |
 | --- | --- |
 | 加入動作選單 | `Drawer`（手機）／`Dialog` |
+| 從範本加入、存成範本 | `Dialog` |
 | 分類 tabs | `Tabs` 或水平捲動 `ToggleGroup` |
 | 搜尋 | `Input` |
 | 刪除與復原 | `sonner` toast |
@@ -835,6 +892,7 @@ src/
 │   ├── workout/          # 訓練頁、組輸入、加入動作選單
 │   ├── exercises/        # 動作庫、動作詳情、自訂動作表單
 │   ├── history/          # 月曆、日明細
+│   ├── templates/        # 訓練範本：存成、從範本加入、列表與詳情
 │   └── settings/         # 設定、匯出入
 ├── components/ui/        # shadcn/ui 元件
 └── lib/                  # 通用工具（日期、uuid 等）
@@ -974,7 +1032,6 @@ push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artif
 
 | 功能 | 說明 |
 | --- | --- |
-| 訓練範本／課表 | 例如「推日」，一鍵帶入多個動作 |
 | 進度圖表 | 各部位組數的長期趨勢（單週／單月統計已在 US-24 完成；單一動作的趨勢圖已在 US-34 完成） |
 | 超級組 | 動作群組（組類型已在 US-37 完成） |
 | 拖曳排序 | 取代上移／下移按鈕 |

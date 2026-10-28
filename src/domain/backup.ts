@@ -6,6 +6,7 @@ import { MAX_RPE, MIN_RPE } from './effort'
 import { PRESET_EXERCISES } from './presets'
 import { migrateWorkoutSetTypes } from './setTypes'
 import { validateSetValues } from './setValues'
+import { MAX_TEMPLATE_NAME_LENGTH, MAX_TEMPLATE_SETS, MIN_TEMPLATE_SETS } from './templates'
 import {
   EQUIPMENTS,
   MUSCLES,
@@ -23,7 +24,7 @@ import {
 export const BACKUP_APP_ID = 'my-rep-book'
 
 /** 目前 App 的匯出檔 schema 版本 */
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 
 /** 匯出檔（PRD §5.7） */
 export interface ExportFile {
@@ -112,6 +113,22 @@ const customExerciseSchema = z.object({
   updatedAt: timestamp,
 })
 
+const templateSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(MAX_TEMPLATE_NAME_LENGTH),
+  exercises: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        exerciseId: z.string().min(1),
+        setCount: z.number().int().min(MIN_TEMPLATE_SETS).max(MAX_TEMPLATE_SETS),
+      }),
+    )
+    .min(1),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+})
+
 const bodyWeightSchema = z.object({
   date: z.string().refine(isValidLocalDate),
   weightKg: z.number().refine(isValidBodyWeightKg),
@@ -139,6 +156,7 @@ const backupDataSchema = z.object({
   bodyWeights: z
     .array(bodyWeightSchema)
     .superRefine(rejectDuplicates((entry) => entry.date, 'date')),
+  templates: z.array(templateSchema).superRefine(rejectDuplicates((template) => template.id, 'id')),
   settings: z.object({
     weightUnit: z.enum(WEIGHT_UNITS),
     theme: z.enum(THEMES),
@@ -218,6 +236,8 @@ export const BACKUP_MIGRATIONS: BackupMigrations = {
       ? data.workouts.map(migrateWorkoutSetTypes)
       : data.workouts,
   }),
+  // v5 新增訓練範本
+  4: (data) => ({ ...data, templates: [] }),
 }
 
 interface MigrationOptions {
@@ -277,7 +297,7 @@ export function parseBackupFile(
 }
 
 /**
- * 檢查引用的動作：訓練與隱藏清單引用的動作都要存在（預設動作或檔案中的自訂動作），
+ * 檢查引用的動作：訓練、範本與隱藏清單引用的動作都要存在（預設動作或檔案中的自訂動作），
  * 組的記錄類型也要和動作一致。回傳錯誤訊息，沒有問題時回傳 undefined。
  */
 function checkReferences(data: BackupData): string | undefined {
@@ -292,6 +312,11 @@ function checkReferences(data: BackupData): string | undefined {
   const missing = new Set<string>()
   for (const workout of data.workouts) {
     for (const { exerciseId } of workout.exercises) {
+      if (!trackingTypes.has(exerciseId)) missing.add(exerciseId)
+    }
+  }
+  for (const template of data.templates) {
+    for (const { exerciseId } of template.exercises) {
       if (!trackingTypes.has(exerciseId)) missing.add(exerciseId)
     }
   }
