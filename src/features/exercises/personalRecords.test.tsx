@@ -29,11 +29,12 @@ const backup = backupFixture({
   ],
 })
 
-/** 個人紀錄中某一項的 [數值, 說明] */
+/** 個人紀錄中某一項的 [數值, 各行說明…]（US-46：每一項說明各占一行） */
 function recordItem(name: '最大重量' | '估算 1RM') {
   const section = screen.getByRole('region', { name: '個人紀錄' })
-  const [value, detail] = within(section).getByRole('definition', { name }).children
-  return [value.textContent, detail.textContent]
+  return [...within(section).getByRole('definition', { name }).children].map(
+    (line) => line.textContent,
+  )
 }
 
 /** 歷史紀錄中各次的 [日期, 進度, 標記] */
@@ -65,7 +66,7 @@ describe('動作詳情的個人紀錄與每次的進度', () => {
     await screen.findByRole('region', { name: '個人紀錄' })
 
     expect(recordItem('最大重量')).toEqual(['62.5kg×5', '2026/10/15（四）'])
-    expect(recordItem('估算 1RM')).toEqual(['80 kg', '60kg×10 · 2026/10/20（二）'])
+    expect(recordItem('估算 1RM')).toEqual(['80 kg', '60kg×10', '2026/10/20（二）'])
   })
 
   it('每一筆歷史紀錄顯示當次最重的一組、估算 1RM、訓練量，破紀錄時加上標記', async () => {
@@ -89,7 +90,7 @@ describe('動作詳情的個人紀錄與每次的進度', () => {
     await screen.findByRole('region', { name: '個人紀錄' })
 
     expect(recordItem('最大重量')).toEqual(['137.8lb×5', '2026/10/15（四）'])
-    expect(recordItem('估算 1RM')).toEqual(['176.4 lb', '132.3lb×10 · 2026/10/20（二）'])
+    expect(recordItem('估算 1RM')).toEqual(['176.4 lb', '132.3lb×10', '2026/10/20（二）'])
   })
 
   it('沒有完整的正式組時不顯示個人紀錄，歷史紀錄照常列出', async () => {

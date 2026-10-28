@@ -14,7 +14,16 @@ import { useWeightUnit } from '@/features/settings/settingsContext'
 import { ExerciseHistory } from './ExerciseHistory'
 import { ProgressChart } from './ProgressChart'
 
-function RecordItem({ label, value, detail }: { label: string; value: string; detail: string }) {
+/** 一張卡片：標籤、數值，以及各占一行的說明（一行內不換行，窄螢幕也不會把日期拆開，US-46） */
+function RecordItem({
+  label,
+  value,
+  details,
+}: {
+  label: string
+  value: string
+  details: string[]
+}) {
   const id = useId()
   return (
     <div className="flex flex-col gap-0.5 rounded-lg bg-muted px-3 py-2">
@@ -23,13 +32,17 @@ function RecordItem({ label, value, detail }: { label: string; value: string; de
       </dt>
       <dd aria-labelledby={id} className="flex flex-col gap-0.5">
         <span className="text-lg font-semibold tabular-nums">{value}</span>
-        <span className="text-xs text-muted-foreground">{detail}</span>
+        {details.map((detail) => (
+          <span key={detail} className="text-xs whitespace-nowrap text-muted-foreground">
+            {detail}
+          </span>
+        ))}
       </dd>
     </div>
   )
 }
 
-/** 個人紀錄：最大重量與估算 1RM，各自附上第一次達到的日子 */
+/** 個人紀錄：最大重量與估算 1RM，各自附上第一次達到的日子（估算 1RM 另外一行是算出它的那一組） */
 function PersonalRecords({ records }: { records: ExerciseRecords }) {
   const headingId = useId()
   const weightUnit = useWeightUnit()
@@ -43,12 +56,15 @@ function PersonalRecords({ records }: { records: ExerciseRecords }) {
         <RecordItem
           label="最大重量"
           value={formatWeightReps(maxWeight.set, weightUnit)}
-          detail={formatDateWithYear(maxWeight.date)}
+          details={[formatDateWithYear(maxWeight.date)]}
         />
         <RecordItem
           label="估算 1RM"
           value={`${formatRoundedWeight(oneRepMax.estimatedKg, weightUnit)} ${weightUnit}`}
-          detail={`${formatWeightReps(oneRepMax.set, weightUnit)} · ${formatDateWithYear(oneRepMax.date)}`}
+          details={[
+            formatWeightReps(oneRepMax.set, weightUnit),
+            formatDateWithYear(oneRepMax.date),
+          ]}
         />
       </dl>
       <p className="text-xs text-muted-foreground">
