@@ -75,3 +75,87 @@ describe('分類映射：只看主要部位', () => {
     ])
   })
 })
+
+describe('分類映射：包含次要部位', () => {
+  const base = PRESET_EXERCISES[0]
+  const chestPrimary = {
+    ...base,
+    id: 'chest-p',
+    primaryMuscles: ['chest'],
+    secondaryMuscles: [],
+  } as const
+  const chestSecondary = {
+    ...base,
+    id: 'chest-s',
+    primaryMuscles: ['triceps'],
+    secondaryMuscles: ['chest'],
+  } as const
+  const unrelated = {
+    ...base,
+    id: 'other',
+    primaryMuscles: ['back'],
+    secondaryMuscles: ['biceps'],
+  } as const
+
+  it('預設與 includeSecondary: false 都只看主要部位', () => {
+    const exercises = [chestSecondary, chestPrimary, unrelated]
+    expect(exercisesInCategory(exercises, 'chest')).toEqual([chestPrimary])
+    expect(exercisesInCategory(exercises, 'chest', { includeSecondary: false })).toEqual([
+      chestPrimary,
+    ])
+  })
+
+  it('開啟後納入次要部位，主要部位屬於該分類的排前面，兩段各自維持原順序', () => {
+    const anotherSecondary = { ...chestSecondary, id: 'chest-s2' }
+    const anotherPrimary = { ...chestPrimary, id: 'chest-p2' }
+    const exercises = [chestSecondary, unrelated, chestPrimary, anotherSecondary, anotherPrimary]
+
+    expect(
+      exercisesInCategory(exercises, 'chest', { includeSecondary: true }).map((e) => e.id),
+    ).toEqual(['chest-p', 'chest-p2', 'chest-s', 'chest-s2'])
+  })
+
+  it('次要部位透過映射表歸類：斜方肌的次要部位算在「肩」、前臂算在「手臂：二頭」', () => {
+    const trapsSecondary = {
+      ...base,
+      id: 'traps-s',
+      primaryMuscles: ['back'],
+      secondaryMuscles: ['traps'],
+    } as const
+    const forearmsSecondary = {
+      ...base,
+      id: 'forearms-s',
+      primaryMuscles: ['back'],
+      secondaryMuscles: ['forearms'],
+    } as const
+
+    expect(exercisesInCategory([trapsSecondary], 'shoulders', { includeSecondary: true })).toEqual([
+      trapsSecondary,
+    ])
+    expect(exercisesInCategory([forearmsSecondary], 'biceps', { includeSecondary: true })).toEqual([
+      forearmsSecondary,
+    ])
+  })
+
+  it('主要與次要都屬於該分類的動作只出現一次', () => {
+    const both = {
+      ...base,
+      id: 'both',
+      primaryMuscles: ['shoulders'],
+      secondaryMuscles: ['traps'],
+    } as const
+
+    expect(exercisesInCategory([both], 'shoulders', { includeSecondary: true })).toEqual([both])
+  })
+
+  it('預設動作庫：選「三頭」開啟後多出臥推等把三頭當次要部位的動作', () => {
+    const primaryIds = idsIn('triceps')
+    const withSecondary = exercisesInCategory(PRESET_EXERCISES, 'triceps', {
+      includeSecondary: true,
+    }).map((exercise) => exercise.id)
+
+    expect(withSecondary.slice(0, primaryIds.length)).toEqual(primaryIds)
+    expect(withSecondary).toContain('barbell-bench-press')
+    expect(withSecondary.length).toBeGreaterThan(primaryIds.length)
+  })
+})

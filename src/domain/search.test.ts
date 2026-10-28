@@ -84,3 +84,32 @@ describe('搜尋加上分類篩選', () => {
     expect(filterExercises(PRESET_EXERCISES, { query: '', category: 'all' })).toHaveLength(66)
   })
 })
+
+describe('搜尋加上分類篩選：包含次要部位', () => {
+  function ids(query: string, category: Parameters<typeof filterExercises>[1]['category']) {
+    return filterExercises(PRESET_EXERCISES, { query, category, includeSecondary: true }).map(
+      (exercise) => exercise.id,
+    )
+  }
+
+  it('搜尋「bench」＋三頭：主要部位為三頭的排前面，把三頭當次要部位的臥推排後面', () => {
+    expect(ids('bench', 'triceps')).toEqual([
+      'close-grip-bench-press',
+      'bench-dip',
+      'barbell-bench-press',
+      'dumbbell-bench-press',
+    ])
+  })
+
+  it('選「全部」時 includeSecondary 沒有影響', () => {
+    expect(
+      filterExercises(PRESET_EXERCISES, { query: '', category: 'all', includeSecondary: true }),
+    ).toHaveLength(66)
+  })
+
+  it('沒有指定 includeSecondary 時只看主要部位', () => {
+    expect(
+      filterExercises(PRESET_EXERCISES, { query: 'bench', category: 'triceps' }).map((e) => e.id),
+    ).toEqual(['close-grip-bench-press', 'bench-dip'])
+  })
+})

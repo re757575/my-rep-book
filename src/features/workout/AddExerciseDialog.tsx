@@ -15,6 +15,7 @@ import {
 } from '@/domain'
 import { CategoryFilterBar } from '@/features/exercises/CategoryFilterBar'
 import { ExerciseList } from '@/features/exercises/ExerciseList'
+import { IncludeSecondaryToggle } from '@/features/exercises/IncludeSecondaryToggle'
 
 // 自訂動作表單帶著 react-hook-form 與 zod，按「新增自訂動作」才載入，不放進首次載入的 JS（PRD §7）
 const CustomExerciseForm = lazy(async () => ({
@@ -127,6 +128,7 @@ function ExercisePicker({
   const recentHeadingId = useId()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>('all')
+  const [includeSecondary, setIncludeSecondary] = useState(false)
   // 搜尋或篩選時只看結果清單
   const recent = query.trim() === '' && category === 'all' ? exercises?.recent : undefined
   const selectable = exercises?.library.filter((exercise) => !isHiddenOrArchived(exercise))
@@ -157,9 +159,14 @@ function ExercisePicker({
         <div className="sticky top-0 z-10 bg-background">
           <CategoryFilterBar value={category} onChange={setCategory} />
         </div>
+        <IncludeSecondaryToggle
+          category={category}
+          checked={includeSecondary}
+          onCheckedChange={setIncludeSecondary}
+        />
         {selectable && (
           <ExerciseList
-            exercises={filterExercises(selectable, { query, category })}
+            exercises={filterExercises(selectable, { query, category, includeSecondary })}
             onSelect={onSelect}
           />
         )}

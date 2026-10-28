@@ -13,11 +13,19 @@ export function matchesSearch(exercise: ExerciseBase, query: string): boolean {
   )
 }
 
-/** 依分類篩選後再依搜尋字串比對，保留原本的動作順序 */
+/**
+ * 依分類篩選後再依搜尋字串比對，保留原本的動作順序。
+ * `includeSecondary` 只在選了分類時有作用：也列出次要部位屬於該分類的動作，排在後面（US-49）
+ */
 export function filterExercises<T extends ExerciseBase>(
   exercises: readonly T[],
-  { query, category }: { query: string; category: CategoryFilter },
+  {
+    query,
+    category,
+    includeSecondary = false,
+  }: { query: string; category: CategoryFilter; includeSecondary?: boolean },
 ): T[] {
-  const inCategory = category === 'all' ? exercises : exercisesInCategory(exercises, category)
+  const inCategory =
+    category === 'all' ? exercises : exercisesInCategory(exercises, category, { includeSecondary })
   return inCategory.filter((exercise) => matchesSearch(exercise, query))
 }

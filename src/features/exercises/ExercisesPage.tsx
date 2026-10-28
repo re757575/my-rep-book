@@ -7,11 +7,13 @@ import { Switch } from '@/components/ui/switch'
 import { filterExercises, isHiddenOrArchived, type CategoryFilter } from '@/domain'
 import { CategoryFilterBar } from './CategoryFilterBar'
 import { ExerciseList } from './ExerciseList'
+import { IncludeSecondaryToggle } from './IncludeSecondaryToggle'
 import { useLibraryExercises } from './useLibraryExercises'
 
 export function ExercisesPage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>('all')
+  const [includeSecondary, setIncludeSecondary] = useState(false)
   const [showHiddenOrArchived, setShowHiddenOrArchived] = useState(false)
   const library = useLibraryExercises()
   const listed = showHiddenOrArchived
@@ -41,6 +43,11 @@ export function ExercisesPage() {
         className="h-11"
       />
       <CategoryFilterBar value={category} onChange={setCategory} />
+      <IncludeSecondaryToggle
+        category={category}
+        checked={includeSecondary}
+        onCheckedChange={setIncludeSecondary}
+      />
       <label
         htmlFor="show-hidden-or-archived"
         className="flex min-h-11 items-center justify-between gap-4 text-sm"
@@ -52,7 +59,9 @@ export function ExercisesPage() {
           onCheckedChange={setShowHiddenOrArchived}
         />
       </label>
-      {listed && <ExerciseList exercises={filterExercises(listed, { query, category })} />}
+      {listed && (
+        <ExerciseList exercises={filterExercises(listed, { query, category, includeSecondary })} />
+      )}
     </div>
   )
 }
