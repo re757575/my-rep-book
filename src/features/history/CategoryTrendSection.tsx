@@ -46,10 +46,17 @@ export function CategoryTrendSection() {
   const [weeks, setWeeks] = useState<TrendWeeks>(12)
   const [selected, setSelected] = useState<number>()
   const [from, to] = trendRange(weeks, today())
-  const workouts = useLiveData(
-    (repositories) => repositories.workouts.listInRange(from, to),
+  // 連同讀取的區間一起回傳：切換區間的瞬間 live query 還是上一個區間的資料，
+  // 用它畫新區間的圖會閃一下 0 組
+  const loaded = useLiveData(
+    async (repositories) => ({
+      from,
+      to,
+      workouts: await repositories.workouts.listInRange(from, to),
+    }),
     [from, to],
   )
+  const workouts = loaded?.from === from && loaded.to === to ? loaded.workouts : undefined
   const library = useLibraryExercises()
 
   const points =
