@@ -2,6 +2,11 @@
 
 本檔案由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依照 [Conventional Commits](https://www.conventionalcommits.org/) 規範的 commit 訊息自動產生，請勿手動編輯內容，執行 `npm run release` 即可更新。
 
+## [0.1.5](https://github.com/re757575/my-rep-book/compare/v0.1.4...v0.1.5) (2026-10-28)
+
+### Features
+
+* **exercises:** 動作篩選新增「包含次要部位」開關，找不到動作時多一條路 ([53cb212](https://github.com/re757575/my-rep-book/commit/53cb21291ec49e7fed26f48f1102ac236d528683))
 ## [0.1.4](https://github.com/re757575/my-rep-book/compare/v0.1.3...v0.1.4) (2026-10-28)
 
 ### Features
