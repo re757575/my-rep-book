@@ -7,7 +7,7 @@ import type { ExerciseRecords } from './exerciseRecords'
 import { formatSetValues, formatWeightReps } from './formatSet'
 import { BROWSE_CATEGORY_LABELS } from './labels'
 import { summarizePeriod } from './periodStats'
-import { isCompleteSet } from './setValues'
+import { isFinishedSet } from './setDone'
 import {
   BROWSE_CATEGORIES,
   type BodyWeightEntry,
@@ -126,7 +126,7 @@ function workoutDetails({ workouts, exercises, weightUnit }: TrainingPromptInput
     lines.push(`### ${formatDateWithYear(workout.date)}`)
     for (const item of workout.exercises) {
       const sets = item.sets
-        .filter((set) => isCompleteSet(set.values))
+        .filter((set) => isFinishedSet(set))
         .map(
           (set) =>
             `${setTypeLabel(set)}${formatSetValues(set.values, weightUnit)}${set.rpe === undefined ? '' : ` ${formatEffort(set.rpe, 'rpe')}`}`,

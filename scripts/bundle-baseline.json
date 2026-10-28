@@ -1,17 +1,17 @@
 {
-  "totalGzipBytes": 205176,
+  "totalGzipBytes": 205422,
   "chunks": {
     "AddExerciseDialog": {
       "count": 1,
-      "gzipBytes": 1700
+      "gzipBytes": 1699
     },
     "ExerciseList": {
       "count": 1,
-      "gzipBytes": 1005
+      "gzipBytes": 1007
     },
     "TemplatePickerDialog": {
       "count": 1,
-      "gzipBytes": 1171
+      "gzipBytes": 1170
     },
     "categories": {
       "count": 1,
@@ -19,23 +19,23 @@
     },
     "data": {
       "count": 1,
-      "gzipBytes": 39491
+      "gzipBytes": 39559
     },
     "dialog": {
       "count": 1,
-      "gzipBytes": 999
+      "gzipBytes": 998
     },
     "dist": {
       "count": 5,
-      "gzipBytes": 22279
+      "gzipBytes": 22278
     },
     "es2015": {
       "count": 1,
-      "gzipBytes": 8264
+      "gzipBytes": 8265
     },
     "index": {
       "count": 1,
-      "gzipBytes": 120463
+      "gzipBytes": 120639
     },
     "jsx-runtime": {
       "count": 1,
@@ -55,7 +55,7 @@
     },
     "toggle-group": {
       "count": 1,
-      "gzipBytes": 1553
+      "gzipBytes": 1556
     },
     "undoToast": {
       "count": 1,

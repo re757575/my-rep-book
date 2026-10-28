@@ -117,6 +117,11 @@ export interface WorkoutSet {
   setType: SetType
   /** 強度（RPE，整數 1–10，US-39）；沒有填就沒有這個欄位。RIR = 10 − RPE */
   rpe?: number
+  /**
+   * 完成勾選（US-44）：false 未完成、true 已完成；沒有這個欄位表示不追蹤，算完成。
+   * 只有從範本加入或複製到今天建立的組會有，未完成的組不計入任何摘要、統計與上次紀錄
+   */
+  done?: boolean
   values: SetValues
 }
 

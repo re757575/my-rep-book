@@ -1,6 +1,7 @@
-import { ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { Toggle } from '@/components/ui/toggle'
 import {
   formatLastPerformance,
   formatSetValues,
@@ -23,13 +24,15 @@ import { useWeightUnit } from '@/features/settings/settingsContext'
 import { cn } from '@/lib/utils'
 import { SetFields } from './SetFields'
 import { useCollapsedWorkoutExercise } from './useCollapsedWorkoutExercise'
-import { useWorkoutReadOnly } from './workoutReadOnly'
+import { useWorkoutReadOnly, WorkoutReadOnlyContext } from './workoutReadOnly'
 
 /**
  * 訓練動作：動作名稱、上次紀錄、各組的類型按鈕與輸入欄位，以及「新增一組」。
  * `actions` 顯示在動作名稱旁（排序、刪除動作），`children` 顯示在最下方（備註）。
  * 點動作名稱可以收合：收合後只留名稱、操作與這個動作的總計（`formatWorkoutExerciseSummary`）。
  * 破了紀錄的組在欄位下方標示「重量新紀錄」「1RM 新紀錄」（US-31）。
+ * 有完成勾選的組（從範本加入或複製進來的，US-44）左側是勾選按鈕，取代組的序號；
+ * 已完成的組和鎖定時一樣不能再異動（欄位唯讀，類型、強度與刪除停用），要改先取消勾選。
  * 訓練頁鎖定時各組只能看：類型按鈕停用，刪除組與新增一組不顯示。
  */
 export function WorkoutExerciseCard({
@@ -43,6 +46,7 @@ export function WorkoutExerciseCard({
   onChangeSetField,
   onCycleSetType,
   onSetRpe,
+  onSetDone,
   onDeleteSet,
 }: {
   workoutExercise: WorkoutExercise
@@ -59,6 +63,8 @@ export function WorkoutExerciseCard({
   onCycleSetType: (setId: string) => void
   /** 設定這一組的強度（RPE）；`undefined` 是取消（US-39） */
   onSetRpe: (setId: string, rpe: number | undefined) => void
+  /** 勾選或取消勾選這一組的完成狀態（US-44） */
+  onSetDone: (setId: string, done: boolean) => void
   onDeleteSet: (setId: string) => void
 }) {
   const headingId = useId()
@@ -68,6 +74,8 @@ export function WorkoutExerciseCard({
   const readOnly = useWorkoutReadOnly()
   const effort = useEffortSettings()
   const lastSets = pairSetsWithLast(workoutExercise.sets, lastPerformance)
+  // 動作裡第一個未完成的組是「下一組」
+  const nextSetId = workoutExercise.sets.find((set) => set.done === false)?.id
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-2 border-b pb-4">
@@ -103,70 +111,96 @@ export function WorkoutExerciseCard({
           </p>
         )}
         <ol className="flex flex-col gap-2">
-          {workoutExercise.sets.map((set, index) => (
-            <li
-              key={set.id}
-              className={cn(
-                'flex flex-col gap-1 rounded-md',
-                set.setType === 'warmup' && 'bg-muted text-muted-foreground',
-              )}
-            >
-              <div className="flex items-start gap-2">
-                <span className="flex h-11 w-6 shrink-0 items-center justify-center text-sm text-muted-foreground">
-                  {index + 1}
-                </span>
-                {/* 按一下換成下一個類型：正式 → 熱身 → 遞減 → 力竭，標熱身仍然只要一下 */}
-                <Button
-                  variant={set.setType === 'regular' ? 'outline' : 'default'}
-                  className="size-11 shrink-0"
-                  aria-label={`第 ${index + 1} 組類型：${SET_TYPE_LABELS[set.setType]}`}
-                  disabled={readOnly}
-                  onClick={() => onCycleSetType(set.id)}
-                >
-                  {SET_TYPE_SHORT_LABELS[set.setType]}
-                </Button>
-                <div className="flex min-w-0 flex-col gap-1">
-                  <SetFields
-                    values={set.values}
-                    setNumber={index + 1}
-                    onChange={(field, value) => onChangeSetField(set.id, field, value)}
-                  />
-                  <SetHints
-                    setType={set.setType}
-                    last={lastSets.get(set.id)}
-                    records={setRecords.get(set.id)}
-                    weightUnit={weightUnit}
-                  />
-                </div>
-                {!readOnly && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-auto size-11 shrink-0 text-muted-foreground"
-                    aria-label={`刪除第 ${index + 1} 組`}
-                    onClick={() => onDeleteSet(set.id)}
-                  >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
+          {workoutExercise.sets.map((set, index) => {
+            // 訓練頁鎖定，或這一組已完成：整列不能再異動，只剩勾選按鈕（鎖定時也停用）
+            const setLocked = readOnly || set.done === true
+            return (
+              <li
+                key={set.id}
+                className={cn(
+                  'flex flex-col gap-1 rounded-md',
+                  set.setType === 'warmup' && 'bg-muted text-muted-foreground',
                 )}
-              </div>
-              {/* 強度：只有正式組（不是熱身）、開啟強度記錄時才有；鎖定時只在已經記了強度時顯示。
-                  左邊空出序號與類型按鈕的寬度（24 + 8 + 44 + 8 px），按鈕才排得下 */}
-              {effort.enabled &&
-                set.setType !== 'warmup' &&
-                (!readOnly || set.rpe !== undefined) && (
-                  <div className="pb-1 pl-[5.25rem]">
-                    <EffortPicker
-                      setNumber={index + 1}
-                      rpe={set.rpe}
-                      scale={effort.scale}
+              >
+                <div className="flex items-start gap-1">
+                  {set.done === undefined ? (
+                    <span className="flex h-11 w-6 shrink-0 items-center justify-center text-sm text-muted-foreground">
+                      {index + 1}
+                    </span>
+                  ) : (
+                    // 未完成時是外框加序號，完成後實心加勾號；下一組加強調的外框
+                    <Toggle
+                      variant="outline"
+                      aria-label={`第 ${index + 1} 組完成`}
+                      aria-current={set.id === nextSetId ? 'step' : undefined}
+                      pressed={set.done}
                       disabled={readOnly}
-                      onChange={(rpe) => onSetRpe(set.id, rpe)}
+                      onPressedChange={(pressed) => onSetDone(set.id, pressed)}
+                      className={cn(
+                        'size-11 shrink-0 px-0 tabular-nums data-[state=on]:bg-primary data-[state=on]:text-primary-foreground',
+                        set.id === nextSetId && 'border-primary ring-2 ring-primary/40',
+                      )}
+                    >
+                      {set.done ? <Check aria-hidden="true" /> : index + 1}
+                    </Toggle>
+                  )}
+                  {/* 按一下換成下一個類型：正式 → 熱身 → 遞減 → 力竭，標熱身仍然只要一下 */}
+                  <Button
+                    variant={set.setType === 'regular' ? 'outline' : 'default'}
+                    className="size-11 shrink-0"
+                    aria-label={`第 ${index + 1} 組類型：${SET_TYPE_LABELS[set.setType]}`}
+                    disabled={setLocked}
+                    onClick={() => onCycleSetType(set.id)}
+                  >
+                    {SET_TYPE_SHORT_LABELS[set.setType]}
+                  </Button>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <WorkoutReadOnlyContext value={setLocked}>
+                      <SetFields
+                        values={set.values}
+                        setNumber={index + 1}
+                        onChange={(field, value) => onChangeSetField(set.id, field, value)}
+                      />
+                    </WorkoutReadOnlyContext>
+                    <SetHints
+                      setType={set.setType}
+                      last={lastSets.get(set.id)}
+                      records={setRecords.get(set.id)}
+                      weightUnit={weightUnit}
                     />
                   </div>
-                )}
-            </li>
-          ))}
+                  {!setLocked && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto size-11 shrink-0 text-muted-foreground"
+                      aria-label={`刪除第 ${index + 1} 組`}
+                      onClick={() => onDeleteSet(set.id)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
+                  )}
+                </div>
+                {/* 強度：只有正式組（不是熱身）、開啟強度記錄時才有；鎖定時只在已經記了強度時顯示。
+                  左邊空出序號（有完成勾選時是 44 px 的按鈕）與類型按鈕的寬度（24 + 4 + 44 + 4 px），按鈕才排得下 */}
+                {effort.enabled &&
+                  set.setType !== 'warmup' &&
+                  (!setLocked || set.rpe !== undefined) && (
+                    <div
+                      className={cn('pb-1', set.done === undefined ? 'pl-[4.75rem]' : 'pl-[6rem]')}
+                    >
+                      <EffortPicker
+                        setNumber={index + 1}
+                        rpe={set.rpe}
+                        scale={effort.scale}
+                        disabled={setLocked}
+                        onChange={(rpe) => onSetRpe(set.id, rpe)}
+                      />
+                    </div>
+                  )}
+              </li>
+            )
+          })}
         </ol>
         {!readOnly && (
           <Button variant="ghost" className="h-11" onClick={onAddSet}>

@@ -38,6 +38,9 @@ const FIXTURE = backupFixture({
           { type: 'weight_reps', weightKg: 40, reps: 10, setType: 'warmup' },
           // 比 10/20 重：動作詳情會顯示「新紀錄」標記，一併檢查它的對比
           { type: 'weight_reps', weightKg: 62.5, reps: 8 },
+          // 範本或複製進來的組：有完成勾選（US-44），一併檢查勾選按鈕的對比與觸控目標
+          { type: 'weight_reps', weightKg: 62.5, reps: 8, done: true },
+          { type: 'weight_reps', weightKg: 62.5, reps: 8, done: false },
         ],
       },
       {

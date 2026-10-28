@@ -85,7 +85,8 @@ export interface TemplateExerciseInfo {
 
 /**
  * 把範本的動作依順序加到 `target` 的最後面（US-41）；`target` 為 undefined 時建立 `date` 的訓練。
- * 每個動作建立範本記的組數：第一組依上次紀錄預填（US-02），其餘複製前一組（US-03）。
+ * 每個動作建立範本記的組數：第一組依上次紀錄預填（US-02），其餘複製前一組（US-03）；
+ * 組都是未完成（US-44），勾選後才算做過。
  * `info` 裡沒有的動作（找不到動作定義）略過；一個也加不了時 `target` 不變，`addedIds` 為空。
  */
 export function applyTemplate(
@@ -105,7 +106,7 @@ export function applyTemplate(
       const next = previous
         ? cloneSetForNext(previous)
         : buildInitialSet(exerciseInfo.lastPerformance, exerciseInfo.trackingType)
-      sets.push({ id: createId(), ...next })
+      sets.push({ id: createId(), ...next, done: false })
     }
     return [{ id: exerciseId, exerciseId: item.exerciseId, note: '', sets }]
   })

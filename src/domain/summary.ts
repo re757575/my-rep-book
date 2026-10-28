@@ -1,5 +1,5 @@
 import { isWorkingSet } from './setTypes'
-import { isCompleteSet } from './setValues'
+import { isFinishedSet } from './setDone'
 import type { Workout } from './types'
 
 /** 每日摘要 */
@@ -18,11 +18,11 @@ function sum(numbers: number[]) {
   return numbers.reduce((total, value) => total + value, 0)
 }
 
-/** 每日摘要：不完整的組與熱身組不計入任何一項 */
+/** 每日摘要：不完整的組、未完成的組（US-44）與熱身組不計入任何一項 */
 export function summarizeWorkout(workout: Workout): WorkoutSummary {
   const workingSets = workout.exercises
     .flatMap((item) => item.sets)
-    .filter((set) => isWorkingSet(set) && isCompleteSet(set.values))
+    .filter((set) => isWorkingSet(set) && isFinishedSet(set))
   return {
     exerciseCount: new Set(workout.exercises.map((item) => item.exerciseId)).size,
     workingSetCount: workingSets.length,

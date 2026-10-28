@@ -1,5 +1,6 @@
 import { isWorkingSet } from './setTypes'
-import { emptySetValues, isCompleteSet } from './setValues'
+import { isFinishedSet } from './setDone'
+import { emptySetValues } from './setValues'
 import type { LocalDate, SetValues, TrackingType, Workout, WorkoutSet } from './types'
 
 /** 上次紀錄：那一天的日期，以及該動作所有完整的正式組（依原本的順序），至少 1 組 */
@@ -29,7 +30,7 @@ export function findLastPerformance(
   const sets = last.exercises
     .filter((item) => item.exerciseId === exerciseId)
     .flatMap((item) => item.sets)
-    .filter((set) => isWorkingSet(set) && isCompleteSet(set.values))
+    .filter((set) => isWorkingSet(set) && isFinishedSet(set))
     .map((set) => set.values)
   return sets.length > 0 ? { date: last.date, sets } : undefined
 }

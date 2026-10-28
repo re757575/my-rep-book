@@ -20,6 +20,7 @@ export {
   rpeToRir,
   type EffortScale,
 } from './effort'
+export { isDoneSet, isFinishedSet } from './setDone'
 export { CATEGORY_MUSCLES, exercisesInCategory } from './categories'
 export { filterExercises, matchesSearch, type CategoryFilter } from './search'
 export {
@@ -101,6 +102,7 @@ export {
   restoreSet,
   restoreWorkoutExercise,
   cycleSetType,
+  setSetDone,
   updateSetValues,
   updateWorkoutExerciseNote,
   type EditContext,

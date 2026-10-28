@@ -1,4 +1,4 @@
-import { isCompleteSet } from './setValues'
+import { isFinishedSet } from './setDone'
 import type { LocalDate, Workout } from './types'
 
 /** 一組的重量與次數 */
@@ -63,8 +63,9 @@ function workingSetsWithIds(
   const sets: (WeightRepsSet & { id: string })[] = []
   for (const item of workout.exercises) {
     if (item.exerciseId !== exerciseId) continue
-    for (const { id, setType, values } of item.sets) {
-      if (setType === 'warmup' || values.type !== 'weight_reps' || !isCompleteSet(values)) continue
+    for (const set of item.sets) {
+      const { id, setType, values } = set
+      if (setType === 'warmup' || values.type !== 'weight_reps' || !isFinishedSet(set)) continue
       sets.push({ id, weightKg: values.weightKg ?? 0, reps: values.reps ?? 0 })
     }
   }

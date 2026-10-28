@@ -180,7 +180,7 @@ describe('applyTemplate：把範本的動作加到訓練', () => {
     [PLANK, { trackingType: 'duration', lastPerformance: undefined }],
   ])
 
-  it('每個動作建立範本記的組數：第一組依上次紀錄預填，其餘複製前一組，都是正式組且不帶強度', () => {
+  it('每個動作建立範本記的組數：第一組依上次紀錄預填，其餘複製前一組，都是未完成的正式組且不帶強度', () => {
     const { workout, addedIds } = applyTemplate(
       templateOf([BENCH, 3], [FLY, 2]),
       undefined,
@@ -198,9 +198,9 @@ describe('applyTemplate：把範本的動作加到訓練', () => {
           exerciseId: BENCH,
           note: '',
           sets: [
-            { id: 'id-2', setType: 'regular', values: wr(60, 8) },
-            { id: 'id-3', setType: 'regular', values: wr(60, 8) },
-            { id: 'id-4', setType: 'regular', values: wr(60, 8) },
+            { id: 'id-2', setType: 'regular', done: false, values: wr(60, 8) },
+            { id: 'id-3', setType: 'regular', done: false, values: wr(60, 8) },
+            { id: 'id-4', setType: 'regular', done: false, values: wr(60, 8) },
           ],
         },
         {
@@ -208,8 +208,8 @@ describe('applyTemplate：把範本的動作加到訓練', () => {
           exerciseId: FLY,
           note: '',
           sets: [
-            { id: 'id-6', setType: 'regular', values: wr(null, null) },
-            { id: 'id-7', setType: 'regular', values: wr(null, null) },
+            { id: 'id-6', setType: 'regular', done: false, values: wr(null, null) },
+            { id: 'id-7', setType: 'regular', done: false, values: wr(null, null) },
           ],
         },
       ],

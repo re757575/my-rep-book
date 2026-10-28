@@ -9,6 +9,7 @@ import {
   completesSet,
   findNewRecordSets,
   moveWorkoutExercise,
+  setSetDone,
   setSetRpe,
   cycleSetType,
   type EditContext,
@@ -181,6 +182,13 @@ export function TodayPage({ date }: { date: LocalDate }) {
                     setSetRpe(current, workoutExercise.id, setId, rpe, editContext().now),
                   )
                 }
+                onSetDone={async (setId, done) => {
+                  await editWorkout((current) =>
+                    setSetDone(current, workoutExercise.id, setId, done, editContext().now),
+                  )
+                  // 勾選完成時開始組間休息；取消勾選不開始
+                  if (done) startRestIfToday()
+                }}
                 onCycleSetType={(setId) =>
                   editWorkout((current) =>
                     cycleSetType(current, workoutExercise.id, setId, editContext().now),

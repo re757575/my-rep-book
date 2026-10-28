@@ -89,6 +89,8 @@ const workoutSchema = z.object({
             setType: z.enum(SET_TYPES),
             // 強度（US-39）：選填的整數 1–10；舊備份沒有這個欄位
             rpe: z.number().int().min(MIN_RPE).max(MAX_RPE).optional(),
+            // 完成勾選（US-44）：選填；舊備份沒有這個欄位，視為不追蹤（算完成）
+            done: z.boolean().optional(),
             values: setValuesSchema,
           }),
         ),

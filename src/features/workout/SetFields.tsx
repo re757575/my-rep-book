@@ -24,7 +24,7 @@ export function SetFields({
   onChange: ChangeSetField
 }) {
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex items-start gap-1">
       <FieldsByType values={values} setNumber={setNumber} onChange={onChange} />
     </div>
   )

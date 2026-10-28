@@ -117,6 +117,32 @@ describe('applyFieldEdits：把待寫的編輯套用到訓練', () => {
     ])
   })
 
+  it('已完成的組（US-44）不再被欄位編輯改動；未完成與不追蹤的組照常', () => {
+    const tracked: Workout = {
+      ...workout,
+      exercises: [
+        {
+          ...workout.exercises[0],
+          sets: [
+            { ...workout.exercises[0].sets[0], done: true },
+            { ...workout.exercises[0].sets[1], done: false },
+          ],
+        },
+      ],
+    }
+    const result = applyFieldEdits(tracked, [weight(70, 's1'), weight(70, 's2')], NOW)
+
+    expect(result.exercises[0].sets.map((set) => set.values)).toEqual([
+      { type: 'weight_reps', weightKg: 60, reps: 8 },
+      { type: 'weight_reps', weightKg: 70, reps: 8 },
+    ])
+    // 沒有勾選的組（不追蹤）照常寫入，完成狀態不被改動
+    expect(applyFieldEdits(workout, [weight(70)], NOW).exercises[0].sets[0].values).toMatchObject({
+      weightKg: 70,
+    })
+    expect(result.exercises[0].sets.map((set) => set.done)).toEqual([true, false])
+  })
+
   it('清空欄位寫入 null', () => {
     const result = applyFieldEdits(workout, [weight(null)], NOW)
 

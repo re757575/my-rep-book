@@ -11,10 +11,12 @@ import {
   removeWorkoutExercise,
   removeWorkoutExercises,
   restoreSet,
+  setSetDone,
   setSetRpe,
   restoreWorkoutExercise,
+  updateSetValues,
 } from './workoutEdits'
-import type { Workout, WorkoutExercise, WorkoutSet } from './types'
+import type { SetValues, Workout, WorkoutExercise, WorkoutSet } from './types'
 
 describe('cloneSetForNext：新增一組時複製上一組', () => {
   it.each<[string, WorkoutSet]>([
@@ -346,7 +348,7 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
   let counter = 0
   const context = { now: NOW, createId: () => `new-${++counter}` }
 
-  it('今天還沒有訓練時建立訓練：只複製完整的組與組類型，不複製備註與沒有完整組的動作', () => {
+  it('今天還沒有訓練時建立訓練：只複製完整的組與組類型（組都是未完成），不複製備註與沒有完整組的動作', () => {
     counter = 0
     const { workout, copiedIds } = copyWorkoutExercises(source, undefined, '2026-10-24', context)
 
@@ -358,8 +360,8 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
           exerciseId: 'barbell-bench-press',
           note: '',
           sets: [
-            { id: 'new-2', setType: 'warmup', values: weightReps(40, 10) },
-            { id: 'new-3', setType: 'regular', values: weightReps(60, 8) },
+            { id: 'new-2', setType: 'warmup', done: false, values: weightReps(40, 10) },
+            { id: 'new-3', setType: 'regular', done: false, values: weightReps(60, 8) },
           ],
         },
         {
@@ -367,7 +369,12 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
           exerciseId: 'plank',
           note: '',
           sets: [
-            { id: 'new-5', setType: 'regular', values: { type: 'duration', durationSec: 90 } },
+            {
+              id: 'new-5',
+              setType: 'regular',
+              done: false,
+              values: { type: 'duration', durationSec: 90 },
+            },
           ],
         },
       ],
@@ -394,6 +401,46 @@ describe('copyWorkoutExercises：複製另一天的訓練', () => {
     ])
     expect(workout?.createdAt).toBe(CREATED)
     expect(workout?.updatedAt).toBe(NOW)
+  })
+
+  it('未完成的組不複製（還沒做過）；複製出來的組一律是未完成，不管原本是不是已完成', () => {
+    counter = 0
+    const planned: Workout = {
+      ...source,
+      exercises: [
+        {
+          id: 'src-bench',
+          exerciseId: 'barbell-bench-press',
+          note: '',
+          sets: [
+            { id: 'd1', setType: 'regular', done: true, values: weightReps(60, 8) },
+            { id: 'd2', setType: 'regular', done: false, values: weightReps(60, 8) },
+            { id: 'd3', setType: 'regular', values: weightReps(62.5, 6) },
+          ],
+        },
+        {
+          id: 'src-all-planned',
+          exerciseId: 'plank',
+          note: '',
+          sets: [
+            {
+              id: 'p1',
+              setType: 'regular',
+              done: false,
+              values: { type: 'duration', durationSec: 60 },
+            },
+          ],
+        },
+      ],
+    }
+    const { workout, copiedIds } = copyWorkoutExercises(planned, undefined, '2026-10-24', context)
+
+    expect(workout?.exercises).toHaveLength(1)
+    expect(copiedIds).toHaveLength(1)
+    expect(workout?.exercises[0].sets.map((item) => [item.values, item.done])).toEqual([
+      [weightReps(60, 8), false],
+      [weightReps(62.5, 6), false],
+    ])
   })
 
   it('複製出來的組與原本互相獨立', () => {
@@ -542,5 +589,68 @@ describe('setSetRpe：設定與取消一組的強度', () => {
       })(),
     })
     expect(copied?.exercises[0].sets.some((set) => 'rpe' in set)).toBe(false)
+  })
+})
+
+describe('完成勾選（US-44）', () => {
+  const weightReps = (weightKg: number | null, reps: number | null) =>
+    ({ type: 'weight_reps', weightKg, reps }) as const
+  const planned: Workout = {
+    date: '2026-10-24',
+    exercises: [
+      {
+        id: 'we-1',
+        exerciseId: 'barbell-bench-press',
+        note: '',
+        sets: [
+          { id: 'a', setType: 'regular', done: true, values: weightReps(60, 8) },
+          { id: 'b', setType: 'regular', done: false, values: weightReps(60, 8) },
+          { id: 'c', setType: 'regular', values: weightReps(60, 8) },
+        ],
+      },
+    ],
+    createdAt: CREATED,
+    updatedAt: CREATED,
+  }
+  const done = (target: Workout) => target.exercises[0].sets.map((item) => item.done)
+
+  it('setSetDone：勾選或取消指定那一組，其他組與數值不動，更新時間更新', () => {
+    const checked = setSetDone(planned, 'we-1', 'b', true, NOW)
+    expect(done(checked)).toEqual([true, true, undefined])
+    expect(checked.exercises[0].sets[1].values).toEqual(weightReps(60, 8))
+    expect(checked.updatedAt).toBe(NOW)
+    expect(done(setSetDone(planned, 'we-1', 'a', false, NOW))).toEqual([false, false, undefined])
+  })
+
+  it('setSetDone：找不到該組時訓練內容不變', () => {
+    expect(setSetDone(planned, 'we-1', 'nope', true, NOW).exercises).toEqual(planned.exercises)
+  })
+
+  it('updateSetValues 只改數值，不改完成狀態：改了未完成的組仍是未完成，要自己勾選', () => {
+    const change = (values: SetValues) => ({ ...values, reps: 9 }) as SetValues
+    const next = updateSetValues(planned, 'we-1', 'b', change, NOW)
+
+    expect(done(next)).toEqual([true, false, undefined])
+    expect(next.exercises[0].sets[1].values).toEqual(weightReps(60, 9))
+  })
+
+  it('在有勾選的組後面新增一組，新的組也是未完成；沒有勾選的組後面新增的組沒有勾選', () => {
+    const ctx = { now: NOW, createId: () => 'new' }
+    const after = addSetToWorkoutExercise(planned, 'we-1', 'weight_reps', undefined, ctx)
+    // 最後一組（c）不追蹤 → 新的組也不追蹤
+    expect(done(after)).toEqual([true, false, undefined, undefined])
+
+    const tracked = setSetDone(planned, 'we-1', 'c', false, NOW)
+    expect(done(addSetToWorkoutExercise(tracked, 'we-1', 'weight_reps', undefined, ctx))).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ])
+    expect(cloneSetForNext(planned.exercises[0].sets[0])).toEqual({
+      setType: 'regular',
+      done: false,
+      values: weightReps(60, 8),
+    })
   })
 })

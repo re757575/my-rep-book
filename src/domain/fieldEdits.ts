@@ -37,7 +37,10 @@ export function queueFieldEdit(pending: readonly FieldEdit[], edit: FieldEdit): 
   return [...pending.filter((item) => fieldKey(item) !== key), edit]
 }
 
-/** 套用一個編輯；體重、該組或訓練動作已不存在、欄位不屬於該組的記錄類型時，訓練不變 */
+/**
+ * 套用一個編輯；體重、該組或訓練動作已不存在、欄位不屬於該組的記錄類型、
+ * 該組已完成（US-44，完成後不能再異動，要改先取消勾選）時，訓練不變
+ */
 function applyFieldEdit(workout: Workout, edit: FieldEdit, now: Timestamp): Workout {
   if (edit.kind === 'bodyWeight') return workout
   const target = workout.exercises.find((item) => item.id === edit.workoutExerciseId)
@@ -47,7 +50,7 @@ function applyFieldEdit(workout: Workout, edit: FieldEdit, now: Timestamp): Work
       return updateWorkoutExerciseNote(workout, edit.workoutExerciseId, edit.note, now)
     case 'setValue': {
       const set = target.sets.find((item) => item.id === edit.setId)
-      if (!set || !(edit.field in set.values)) return workout
+      if (!set || set.done === true || !(edit.field in set.values)) return workout
       return updateSetValues(
         workout,
         edit.workoutExerciseId,

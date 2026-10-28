@@ -46,6 +46,18 @@ test('範本：從歷史的日明細存成範本，在今天從範本加入', as
   await expect(bench.getByRole('textbox', { name: '第 2 組次數' })).toHaveValue('8')
   await expect(page.getByRole('region', { name: '平板支撐' })).toBeVisible()
 
+  // 範本加進來的組是未完成（US-44）：勾選後變成按下狀態，並開始組間休息
+  const first = bench.getByRole('button', { name: '第 1 組完成' })
+  await expect(first).toHaveAttribute('aria-pressed', 'false')
+  await expect(first).toHaveAttribute('aria-current', 'step')
+  await first.click()
+  await expect(first).toHaveAttribute('aria-pressed', 'true')
+  await expect(bench.getByRole('button', { name: '第 2 組完成' })).toHaveAttribute(
+    'aria-current',
+    'step',
+  )
+  await expect(page.getByRole('region', { name: '組間休息' }).getByRole('timer')).toBeVisible()
+
   await page.getByRole('button', { name: '復原' }).click()
   await expect(page.getByRole('region', { name: '槓鈴臥推' })).toBeHidden()
 })

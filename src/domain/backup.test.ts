@@ -436,6 +436,28 @@ describe('schema 版本與遷移', () => {
     expect(parse(v4)).toEqual({ ok: true, data: { ...sampleData, templates: [] } })
   })
 
+  it('每一組的完成勾選（done）是選填的布林：沒有這個欄位的舊備份照常匯入，不需要遷移', () => {
+    const withDone = fileWith((file) => {
+      ;(file.data.workouts[0].exercises[0].sets[0] as { done?: boolean }).done = false
+      ;(file.data.workouts[0].exercises[0].sets[1] as { done?: boolean }).done = true
+    })
+    const result = parse(withDone)
+    expect(result.ok && result.data.workouts[0].exercises[0].sets.map((set) => set.done)).toEqual([
+      false,
+      true,
+    ])
+  })
+
+  it.each([1, 'false', null])('完成勾選 %j 不是布林時指出錯誤位置', (done) => {
+    const file = fileWith((file) => {
+      ;(file.data.workouts[0].exercises[0].sets[1] as { done?: unknown }).done = done
+    })
+    expect(parse(file)).toEqual({
+      ok: false,
+      error: 'workouts[0].exercises[0].sets[1].done 格式錯誤',
+    })
+  })
+
   it('v1 的設定格式錯誤時，遷移後照樣指出錯誤位置', () => {
     const v1 = fileWith((file) => {
       file.schemaVersion = 1

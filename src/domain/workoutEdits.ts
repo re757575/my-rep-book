@@ -1,6 +1,6 @@
 import { buildInitialSet, type LastPerformance } from './lastPerformance'
 import { nextSetType } from './setTypes'
-import { isCompleteSet } from './setValues'
+import { isFinishedSet } from './setDone'
 import type {
   ExerciseBase,
   LocalDate,
@@ -18,9 +18,16 @@ export interface EditContext {
   createId: () => string
 }
 
-/** 「新增一組」：複製上一組的數值與組類型 */
+/**
+ * 「新增一組」：複製上一組的數值與組類型。上一組有完成勾選（US-44）時，新的組也有，而且是未完成；
+ * 強度不複製
+ */
 export function cloneSetForNext(previousSet: WorkoutSet): Omit<WorkoutSet, 'id'> {
-  return { setType: previousSet.setType, values: { ...previousSet.values } }
+  return {
+    setType: previousSet.setType,
+    ...(previousSet.done === undefined ? {} : { done: false }),
+    values: { ...previousSet.values },
+  }
 }
 
 /**
@@ -107,6 +114,28 @@ export function setSetRpe(
         const { rpe: _previous, ...rest } = set
         return rpe === undefined ? rest : { ...rest, rpe }
       }),
+    }),
+    now,
+  )
+}
+
+/**
+ * 勾選或取消勾選一組的完成狀態（US-44）。找不到該組時訓練不變；
+ * 呼叫端只對有完成勾選的組使用（沒有勾選的組不追蹤，不會呼叫這個函式）
+ */
+export function setSetDone(
+  workout: Workout,
+  workoutExerciseId: string,
+  setId: string,
+  done: boolean,
+  now: Timestamp,
+): Workout {
+  return updateWorkoutExercise(
+    workout,
+    workoutExerciseId,
+    (item) => ({
+      ...item,
+      sets: item.sets.map((set) => (set.id === setId ? { ...set, done } : set)),
     }),
     now,
   )
@@ -312,8 +341,8 @@ export function restoreWorkoutExercise(
 
 /**
  * 把 `source`（另一天的訓練）的動作依順序複製到 `target` 的最後面；`target` 為 undefined 時建立 `date` 的訓練。
- * 只複製完整的組（數值與組類型），不複製備註；沒有完整的組的動作跳過。
- * 複製出來的動作與組都有新的 ID。沒有任何可複製的動作時 `target` 不變，`copiedIds` 為空。
+ * 只複製已完成的完整組（數值與組類型），不複製備註；沒有可複製的組的動作跳過。
+ * 複製出來的動作與組都有新的 ID，組都是未完成（US-44）。沒有任何可複製的動作時 `target` 不變，`copiedIds` 為空。
  */
 export function copyWorkoutExercises(
   source: Workout,
@@ -322,7 +351,7 @@ export function copyWorkoutExercises(
   { now, createId }: EditContext,
 ): { workout: Workout | undefined; copiedIds: string[] } {
   const copies: WorkoutExercise[] = source.exercises.flatMap((item) => {
-    const sets = item.sets.filter((set) => isCompleteSet(set.values))
+    const sets = item.sets.filter((set) => isFinishedSet(set))
     if (sets.length === 0) return []
     return [
       {
@@ -332,6 +361,7 @@ export function copyWorkoutExercises(
         sets: sets.map((set) => ({
           id: createId(),
           setType: set.setType,
+          done: false,
           values: { ...set.values },
         })),
       },
