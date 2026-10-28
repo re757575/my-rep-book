@@ -2,6 +2,15 @@
 
 本檔案由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依照 [Conventional Commits](https://www.conventionalcommits.org/) 規範的 commit 訊息自動產生，請勿手動編輯內容，執行 `npm run release` 即可更新。
 
+## [0.1.3](https://github.com/re757575/my-rep-book/compare/v0.1.2...v0.1.3) (2026-10-28)
+
+### Features
+
+* **history:** 歷史頁新增組數趨勢，看各部位每週組數的長期走勢 ([9e52954](https://github.com/re757575/my-rep-book/commit/9e529546668a6ef77658462e41e27098183721f7))
+
+### Bug Fixes
+
+* **exercises:** 個人紀錄卡片的說明各占一行，日期不再被拆成兩半 ([635a963](https://github.com/re757575/my-rep-book/commit/635a963e4c6719f9d3eef5bf4187090d78fcd33a))
 ## [0.1.2](https://github.com/re757575/my-rep-book/compare/v0.1.1...v0.1.2) (2026-10-28)
 
 ### Features
