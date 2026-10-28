@@ -8,7 +8,7 @@ async function waitForServiceWorker(page: Page) {
   })
 }
 
-test('manifest：名稱、圖示、standalone，start_url 與 scope 都是 /my-rep-book/', async ({
+test('manifest：名稱、圖示、standalone，id、start_url 與 scope 都是 /my-rep-book/', async ({
   page,
 }) => {
   await page.goto('./')
@@ -24,6 +24,7 @@ test('manifest：名稱、圖示、standalone，start_url 與 scope 都是 /my-r
     name: 'My Rep Book',
     short_name: 'Rep Book',
     display: 'standalone',
+    id: '/my-rep-book/',
     start_url: '/my-rep-book/',
     scope: '/my-rep-book/',
   })

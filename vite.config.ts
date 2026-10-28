@@ -114,6 +114,9 @@ export default defineConfig({
         short_name: 'Rep Book',
         description: '個人健身紀錄：資料存在本機，可離線使用',
         lang: 'zh-Hant-TW',
+        // App 的唯一識別，明確寫出而不是讓 Chrome 從 start_url 推導。值與推導的結果相同
+        // （同一個網址），所以已經安裝的使用者識別不變
+        id: BASE,
         // 與 Vite 的 base、Router 的 basename 一致
         start_url: BASE,
         scope: BASE,

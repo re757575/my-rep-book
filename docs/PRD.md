@@ -963,7 +963,7 @@ export interface WorkoutRepository {
 
 - 發佈網址為專案頁面 `https://<user>.github.io/my-rep-book/`，Vite `base` 設為 `/my-rep-book/`，React Router `basename` 同步設定
 - GitHub Pages 不支援伺服器端 rewrite：建置後將 `index.html` 複製為 `404.html`，讓直接開啟 `/my-rep-book/day/2026-10-20` 等深層連結也能載入 SPA，由 React Router 處理路由
-- PWA manifest 的 `start_url` 與 `scope` 設為 `/my-rep-book/`；Service Worker 的 `navigateFallback` 指向 `index.html`，安裝後離線開啟任何路由皆可用
+- PWA manifest 的 `id`、`start_url` 與 `scope` 都設為 `/my-rep-book/`（`id` 明確寫出，值與 Chrome 從 `start_url` 推導的相同，已安裝的使用者識別不變）；Service Worker 的 `navigateFallback` 指向 `index.html`，安裝後離線開啟任何路由皆可用
 - 只有 `main` 分支觸發部署；GitHub Pages 沒有 PR 預覽環境，PR 只跑 CI 不部署
 
 ---
