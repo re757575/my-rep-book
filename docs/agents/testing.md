@@ -46,7 +46,7 @@
   - 月曆本身是 `grid`，名稱是月份：`findByRole('grid', { name: '2026年10月' })`
   - 切換月份的按鈕是「前往上個月」「前往下個月」。不能再往後時是 `aria-disabled="true"`，**不是** `disabled`，`toBeDisabled()` 不會通過，要用 `toHaveAttribute('aria-disabled', 'true')`
   - 沒有設 `mode`（也沒有 `onDayClick`）時，日期只是 `gridcell`，不會渲染成 `button`；只拿來顯示的月曆也要設 `mode` 才查得到日期按鈕
-- **歷史月曆（`/history`）的標點在日期按鈕的名稱上**：有訓練的日期名稱多了「，有訓練」後綴（例如「2026年10月20日 星期二，有訓練」），斷言用 `toHaveAccessibleName(/有訓練/)`。日期由 live query 載入，要用 `waitFor`；斷言某天「沒有標點」前，先 `waitFor` 另一個有訓練的日期出現標點，否則載入前就會通過。範例見 `src/features/history/historyCalendar.test.tsx`。
+- **歷史月曆（`/history`）的標點在日期按鈕的名稱上**：有訓練的日期名稱多了「，有訓練（組數少）」這類後綴（例如「2026年10月20日 星期二，有訓練（組數少）」；級別是「組數少」「組數中等」「組數多」「尚未完成任何組」，US-48），斷言「有沒有標點」用 `toHaveAccessibleName(/有訓練/)`，斷言級別時用完整的後綴，或取按鈕裡的 `[data-level]`（`low`／`medium`／`high`／`none`）。月曆下方的圖例是名稱為「月曆標點圖例」的 `list`。範例見 `src/features/history/calendarLevels.test.tsx`。日期由 live query 載入，要用 `waitFor`；斷言某天「沒有標點」前，先 `waitFor` 另一個有訓練的日期出現標點，否則載入前就會通過。範例見 `src/features/history/historyCalendar.test.tsx`。
 - **歷史頁一進入就選取今天**，所以頁面上一開始就有名稱為 `10/24（六）` 的日明細（今天沒有訓練時是「這天沒有訓練」），今天的日期按鈕名稱帶「，已選取」。斷言「某天的明細還沒出現」不能再假設進入時沒有任何明細；要測別天的明細，先點那天的日期。
 - **歷史的日明細是以 `M/D（週）` 命名的 `region`**（`findByRole('region', { name: '10/20（二）' })`），裡面有「每日摘要」、以動作名稱命名的 `article`（各組是名稱為「組」的 `list`，熱身、遞減、力竭的組文字前面多了類型名稱（例如 `熱身40kg×10`、`遞減50kg×8`），與動作歷史相同），以及 `link`「編輯」。
 - **toast 在換頁後仍在**：sonner 的 `<Toaster />` 掛在 App 上，在訓練頁刪除後切到別的分頁，「復原」還按得到；先把 `findByRole('button', { name: '復原' })` 的結果存起來，換頁後再點。

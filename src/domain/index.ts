@@ -142,6 +142,7 @@ export {
 } from './templates'
 export { periodRange, summarizePeriod, type PeriodStats, type StatsPeriod } from './periodStats'
 export { buildTrainingRhythm, type TrainingRhythm } from './trainingRhythm'
+export { DAY_LEVEL_RANGES, dayLevel, type DayLevel } from './dayLevel'
 export {
   TREND_WEEKS,
   averageOfCompletedWeeks,

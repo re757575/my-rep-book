@@ -1,17 +1,17 @@
 {
-  "totalGzipBytes": 205637,
+  "totalGzipBytes": 205641,
   "chunks": {
     "AddExerciseDialog": {
       "count": 1,
-      "gzipBytes": 1720
+      "gzipBytes": 1723
     },
     "CategoryFilterBar": {
       "count": 1,
-      "gzipBytes": 412
+      "gzipBytes": 410
     },
     "ExerciseList": {
       "count": 1,
-      "gzipBytes": 765
+      "gzipBytes": 763
     },
     "TemplatePickerDialog": {
       "count": 1,
@@ -31,15 +31,15 @@
     },
     "dist": {
       "count": 5,
-      "gzipBytes": 22269
+      "gzipBytes": 22270
     },
     "es2015": {
       "count": 1,
-      "gzipBytes": 8262
+      "gzipBytes": 8264
     },
     "index": {
       "count": 1,
-      "gzipBytes": 120679
+      "gzipBytes": 120681
     },
     "jsx-runtime": {
       "count": 1,
