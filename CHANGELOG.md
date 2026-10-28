@@ -2,6 +2,15 @@
 
 本檔案由 [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) 依照 [Conventional Commits](https://www.conventionalcommits.org/) 規範的 commit 訊息自動產生，請勿手動編輯內容，執行 `npm run release` 即可更新。
 
+## [0.1.4](https://github.com/re757575/my-rep-book/compare/v0.1.3...v0.1.4) (2026-10-28)
+
+### Features
+
+* **history:** 月曆標點依當天組數分級，看出訓練的輕重節奏 ([5a7131d](https://github.com/re757575/my-rep-book/commit/5a7131d315b2cc014f8cf81023b8646f0ee237c4))
+
+### Bug Fixes
+
+* **history:** 組數趨勢切換區間時不再用舊資料閃一下 0 組 ([c615929](https://github.com/re757575/my-rep-book/commit/c615929c330c098fb54c9e2bee445445c207eda8))
 ## [0.1.3](https://github.com/re757575/my-rep-book/compare/v0.1.2...v0.1.3) (2026-10-28)
 
 ### Features
