@@ -129,9 +129,8 @@ try {
       if (changes.length > 0) console.log(['和基準相比有變動的 chunk：', ...changes].join('\n'))
       if (delta > BASELINE_TOLERANCE_BYTES) {
         console.error(
-          `比基準多 ${kb(delta)}，超過 ${kb(BASELINE_TOLERANCE_BYTES)}：先看上面變動的 chunk。` +
-            '出現新的共用 chunk 通常是首頁開始用到原本只有動態載入頁才用的模組；' +
-            '確定要變大時執行 npm run check:bundle-size -- --update 更新基準，連同變更一起 commit',
+          `比基準多 ${kb(delta)}，超過 ${kb(BASELINE_TOLERANCE_BYTES)}：只要還在預算內，` +
+            '直接執行 npm run check:bundle-size -- --update 更新基準，連同變更一起 commit，不需要為了大小調整程式',
         )
         process.exitCode = 1
       } else if (delta < -BASELINE_TOLERANCE_BYTES) {
