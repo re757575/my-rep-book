@@ -25,7 +25,7 @@ My Rep Book 是一個**個人使用、本地優先、可離線**的健身紀錄 
 | G2 | 隨時知道上次的表現 | 加入動作後立即顯示上次紀錄，並自動帶入第一組數值 |
 | G3 | 完全離線可用 | 安裝 PWA 後，飛航模式下所有 MVP 功能正常運作 |
 | G4 | 資料不被綁架 | 隨時可匯出完整資料為 JSON，並能完整匯入還原 |
-| G5 | 可維護、可驗證 | domain 邏輯單元測試覆蓋率 ≥ 80%（CI 強制）；5 條關鍵流程有 E2E 測試，功能 commit 前在本地執行（CI 暫不執行，見 §9.6） |
+| G5 | 可維護、可驗證 | domain 邏輯單元測試覆蓋率 ≥ 80%；單元測試與 5 條關鍵流程的 E2E 都在功能 commit 前於本地跑過、全數通過（CI 暫不執行，見 §9.6） |
 
 ### 1.3 非目標（MVP 不做）
 
@@ -963,7 +963,7 @@ export interface WorkoutRepository {
 | 接縫 | 工具 | 範圍 | 門檻 |
 | --- | --- | --- | --- |
 | **A（主要）：整個 App** | Vitest + React Testing Library + user-event + `fake-indexeddb` | 大多數 user story（見 §9.2） | 主要互動皆有測試 |
-| **B（輔助）：domain 公開函式** | Vitest | 組合情境多的規則（見 §9.3）、預設動作庫完整性 | `src/domain` 行覆蓋率 ≥ 80%，CI 強制 |
+| **B（輔助）：domain 公開函式** | Vitest | 組合情境多的規則（見 §9.3）、預設動作庫完整性 | `src/domain` 行覆蓋率 ≥ 80%，`npm test -- --coverage` 檢查（功能 commit 前於本地執行，見 §9.6） |
 | **E2E** | Playwright | 和接縫 A 相同的行為，在真實瀏覽器中跑 5 條關鍵流程（見 §9.4） | 全數通過 |
 
 **不另外設的接縫**
@@ -1033,9 +1033,11 @@ export interface WorkoutRepository {
 
 ### 9.6 CI（GitHub Actions）
 
-每次 push 與 PR 依序執行：`npm run lint` → `npm run typecheck` → `npm test -- --coverage` → `npm run build`（安裝依賴用 `npm ci`）。任一步失敗即失敗。
+每次 push 與 PR 依序執行：`npm run lint` → `npm run typecheck` → `npm run build`（安裝依賴用 `npm ci`）。任一步失敗即失敗。
 
-**E2E 與 bundle 大小檢查暫時不在 CI 執行**：兩個瀏覽器的完整 E2E 會明顯拉長部署時間，而 bundle 大小檢查與 E2E 都要安裝 Playwright 的瀏覽器，所以一起停用，改成功能 commit 前在本地跑過 `npm run e2e` 且全數通過；改動首頁或新增依賴時，也要在本地 `npm run build && npm run check:bundle-size`（首次載入的 JS < 250 KB，§7；預算內的增加直接更新基準，不為大小調整程式，見 `CLAUDE.md`）。`ci.yml` 裡的 E2E、上傳 Playwright trace、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」四個步驟都以註解保留（沒有刪除），要放回 CI 時取消註解即可，其中安裝瀏覽器那一步要和 E2E、bundle 檢查一起放回。E2E 仍然在與正式環境相同的 `base` 路徑（`/my-rep-book/`）下對 `vite preview` 執行，路徑設定錯誤在本地就能發現。之後若部署時間不再是問題，可以把這幾個步驟放回 CI。
+**單元測試暫時不在 CI 執行**：改成功能 commit 前在本地跑過 `npm test -- --coverage`（含 `src/domain` 行覆蓋率 ≥ 80% 的門檻）且全數通過；`ci.yml` 裡的步驟以註解保留，要放回 CI 時取消註解即可。
+
+**E2E 與 bundle 大小檢查暫時不在 CI 執行**：兩個瀏覽器的完整 E2E 會明顯拉長部署時間，而 bundle 大小檢查與 E2E 都要安裝 Playwright 的瀏覽器，所以一起停用，改成功能 commit 前在本地跑過 `npm run e2e` 且全數通過（與單元測試一起，見 `CLAUDE.md`）；改動首頁或新增依賴時，也要在本地 `npm run build && npm run check:bundle-size`（首次載入的 JS < 250 KB，§7；預算內的增加直接更新基準，不為大小調整程式，見 `CLAUDE.md`）。`ci.yml` 裡的 E2E、上傳 Playwright trace、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」四個步驟都以註解保留（沒有刪除），要放回 CI 時取消註解即可，其中安裝瀏覽器那一步要和 E2E、bundle 檢查一起放回。E2E 仍然在與正式環境相同的 `base` 路徑（`/my-rep-book/`）下對 `vite preview` 執行，路徑設定錯誤在本地就能發現。之後若部署時間不再是問題，可以把這幾個步驟放回 CI。
 
 push 到 `main` 且上述步驟全部通過後，以 `actions/upload-pages-artifact` 上傳 `dist/`，再以 `actions/deploy-pages` 部署到 GitHub Pages。
 

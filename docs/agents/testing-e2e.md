@@ -1,6 +1,6 @@
 # E2E 與效能預算：寫之前要知道的坑
 
-**E2E 暫時不在 CI 執行**（會拉長部署時間，見 `docs/PRD.md` §9.6），功能 commit 前要在本地跑過 `npm run e2e` 且全數通過；跑法與 port 見下面。E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs/agents/testing.md`。這份文件只記從程式碼看不出來的事。
+**E2E 與單元測試暫時不在 CI 執行**（會拉長部署時間，見 `docs/PRD.md` §9.6），功能 commit 前要在本地跑過 `npm run e2e` 與單元測試 `npm test -- --coverage` 且全數通過；跑法與 port 見下面。E2E 的範圍見 `docs/PRD.md` §9.4；接縫 A（Vitest + RTL）的坑在 `docs/agents/testing.md`。這份文件只記從程式碼看不出來的事。
 
 ## E2E（Playwright）
 

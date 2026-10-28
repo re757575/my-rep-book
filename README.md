@@ -83,9 +83,9 @@ docs/               # PRD、實機測試清單、給 agent 的開發指引
 
 ## CI 與部署
 
-每次 push 與 PR 依序執行 lint → typecheck → 單元測試（含覆蓋率）→ build（見 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）。只有 push 到 `main` 且全部通過才會部署到 GitHub Pages；PR 只跑 CI。
+每次 push 與 PR 依序執行 lint → typecheck → build（見 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）。只有 push 到 `main` 且全部通過才會部署到 GitHub Pages；PR 只跑 CI。
 
-**E2E 與 bundle 大小檢查暫時不在 CI 執行**（會拉長部署時間；`ci.yml` 裡相關步驟以註解保留），功能 commit 前請在本地跑過 `npm run e2e` 且全數通過；改動首頁或新增依賴時，也要在本地跑 `npm run build && npm run check:bundle-size`（預算內超過基準就直接加 `-- --update` 更新基準）。
+**單元測試、E2E 與 bundle 大小檢查暫時不在 CI 執行**（會拉長部署時間；`ci.yml` 裡相關步驟以註解保留），所以 **功能 commit 前請在本地跑過 `npm test -- --coverage` 與 `npm run e2e` 且全數通過**；改動首頁或新增依賴時，也要在本地跑 `npm run build && npm run check:bundle-size`（預算內超過基準就直接加 `-- --update` 更新基準）。
 
 ## 版本發布
 

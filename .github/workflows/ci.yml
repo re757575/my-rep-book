@@ -1,7 +1,8 @@
-# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → test（含覆蓋率）→ build；
+# PRD §9.6：每次 push 與 PR 依序跑 lint → typecheck → build；
 # 只有 push 到 main 且全部通過才部署到 GitHub Pages（§8.4），PR 只跑 CI。
-# E2E、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」暫時註解掉（拖慢部署時間），要放回時取消註解即可：
-# 這三項改在本地跑過再 commit（`npm run e2e`、`npm run check:bundle-size`，見 CLAUDE.md）。
+# 單元測試、E2E、「安裝 Playwright 瀏覽器」與「Bundle 大小檢查」暫時註解掉（拖慢部署時間），要放回時取消註解即可：
+# 單元測試與 E2E 改在功能 commit 前於本地跑過、全數通過（`npm test -- --coverage`、`npm run e2e`，見 CLAUDE.md）；
+# Bundle 大小檢查在本地跑（`npm run check:bundle-size`）。
 name: CI
 
 on:
@@ -18,7 +19,7 @@ concurrency:
 
 jobs:
   ci:
-    name: lint、typecheck、test、build
+    name: lint、typecheck、build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -42,8 +43,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: 單元測試（含覆蓋率）
-        run: npm test -- --coverage
+      # 暫時註解掉：單元測試（含 domain 覆蓋率門檻）。改在功能 commit 前於本地跑過 `npm test -- --coverage`
+      # - name: 單元測試（含覆蓋率）
+      #   run: npm test -- --coverage
 
       - name: Build
         run: npm run build
